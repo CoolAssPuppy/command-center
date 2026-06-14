@@ -37,12 +37,7 @@ public struct FeedPublisher {
         guard let url = containedURL(base: providerDirectory, relativePath: relativePath) else {
             throw PublishError.pathEscapesProviderFolder
         }
-        try fileManager.createDirectory(
-            at: url.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        let data = try JSONEncoder().encode(value)
-        try data.write(to: url, options: .atomic)
+        try writeJSONAtomically(value, to: url, using: fileManager)
         return url
     }
 }

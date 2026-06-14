@@ -30,6 +30,7 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 - The Bash tool runs zsh, which does NOT word-split an unquoted `$VAR` in `for x in $VAR` (bash does). Use a literal list in the for statement, or `${=VAR}`, or an array. A copy loop silently iterated once over the whole string before this was caught.
 - A large deeply-nested Swift literal (e.g. a JSONValue.object tree) can exceed the type-checker budget ("unable to type-check this expression in reasonable time"). Build it from named sub-expression `let`s instead of one literal. Hit in defaultSettingsDocument (P2.6a).
 - An NSApplicationDelegate that holds a @MainActor-isolated property must itself be @MainActor (its AppKit delegate methods already run on the main thread). Otherwise the default property initializer is "called in a synchronous nonisolated context". Hit in P2.7.
+- Result<Void, E> is not Equatable (Void is not Equatable), so XCTAssertEqual on it fails to compile. For an operation that returns nothing on success, return `E?` (nil = success) instead — Equatable and reads cleanly. Hit in P5.2a.
 
 ## Design
 

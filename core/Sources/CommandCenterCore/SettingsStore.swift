@@ -25,9 +25,7 @@ public struct SettingsStore {
 
     @discardableResult
     public func write(_ settings: JSONValue) throws -> URL {
-        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        let data = try JSONEncoder().encode(settings)
-        try data.write(to: fileURL, options: .atomic)
+        try writeJSONAtomically(settings, to: fileURL, using: fileManager)
         return fileURL
     }
 

@@ -62,7 +62,7 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 
 ## Phase 5: open provider platform
 
-- [ ] P5.2a Ingest core logic (CommandCenterCore, testable): capability-token issuance/validation/revocation, a registration model (pending consent -> approved), and an IngestHandler that processes typed ingest requests (register, publish, revoke) — validating tokens and writing feeds via FeedPublisher into an injected container. Security tests: publish without a valid token refused, revoked token stops working, registration needs consent. Identity = loopback + consent tokens (lessons).
+- [x] P5.2a Ingest core logic (CommandCenterCore, testable): capability-token issuance/validation/revocation, a registration model (pending consent -> approved), and an IngestHandler that processes typed ingest requests (register, publish, revoke) — validating tokens and writing feeds via FeedPublisher into an injected container. Security tests: publish without a valid token refused, revoked token stops working, registration needs consent. Identity = loopback + consent tokens (lessons).
 - [ ] P5.1 Local ingest endpoint TRANSPORT (app, thin): loopback NWListener HTTP + WebSocket wired to the IngestHandler, default port + Bonjour discovery. Compile-verify unsigned; do not bind real ports in unit tests.
 - [ ] P5.3 CommandCenterKit SDK: register, publish, openStream, transport auto-select, token storage. Tests.
 - [ ] P5.4 Full widget vocabulary including charts and tables in renderers.
@@ -102,6 +102,14 @@ Three parallel specialist audits (dashboard TS, Swift, cross-language contract).
 Remaining MINOR/deferred (non-blocking, by design): accountEmail optional field unused by the Apple provider (privacy stance prefers names+counts — consider dropping); manifest schemaVersion not version-guarded (feed envelope is); deriveAllowedSchemes can widen the scheme set from a manifest (documented trust boundary, native re-validates host); JSONValue decodes numbers as Double (no large-int feed fields today).
 
 ## Review log
+
+### Iteration 22 (P5.2a)
+
+Shipped: the ingest core in CommandCenterCore. ProviderRegistration + RegistrationStore persist provider registrations (consent state pending/approved/denied) to CommandCenter/registrations.json, surviving restarts. IngestHandler processes register (idempotent, starts pending), approve (issues a capability token ONCE, persists only its SHA-256 hash, writes the manifest), deny, revoke, and publish (writes the feed via FeedPublisher only for an approved provider with a matching token). Tokens are secrets: only the hash is stored, comparison is constant-time, and values are never logged. Quality: factored the encode+atomic-write pattern into writeJSONAtomically, now used by FeedPublisher, SettingsStore, and RegistrationStore (removed 3-way duplication).
+
+Verified: 9 new swift tests (60 total) green: pending start, idempotent register, publish refused before approval / with wrong token / for unknown / revoked / denied providers, approved publish writes a FeedStore-readable feed, and a restart test asserting the token still works AND the raw token never appears in the persisted file. Changed publish to return IngestError? (Void Result is not Equatable). Unsigned native build + dashboard gates green.
+
+Next: P5.1 the loopback NWListener transport (thin, wired to IngestHandler), then the CommandCenterKit SDK. Possible later hardening noted: move token hashes to the Keychain rather than the container file.
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 
