@@ -20,7 +20,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 
 - [x] P1.1 Scaffold `dashboard/`: npm, strict TS, Vite, Vitest, jsdom, Testing Library DOM, ESLint, Zod. Scripts: test, lint, build, dev.
 - [x] P1.2 Core domain types and Zod schemas: FeedEnvelope, Status, Glance, Card, Action, and the Widget union (metric, list, table, chart, timeline, progress, text). Validation tests with factory functions.
-- [ ] P1.3 Convenience-kind schemas and mappers to cards/widgets: calendar.today, reminders.today, linear.inbox, docs.recent. Tests.
+- [x] P1.3 Convenience-kind schemas and mappers to cards/widgets: calendar.today, reminders.today, linear.inbox, docs.recent. Tests.
 - [ ] P1.4 Time engine: world-clock current time, day/night, date offset, timeline overlap, all with injectable now. Pure, deterministic tests.
 - [ ] P1.5 Weather client: Open-Meteo fetch and parse, MSW-mocked behavior tests.
 - [ ] P1.6 Dashboard composition: from a getDashboard payload, compose ordered cards and resolve states ok, stale, needs_auth, error, absent. Tests.
@@ -91,3 +91,11 @@ Shipped: dashboard project scaffold (strict TS, Vite, Vitest, ESLint type-checke
 Verified: 21 tests green across feed, widgets, actions, including rejection of out-of-vocabulary widgets, missing glance, future schema versions, and bad dates. Lint and typecheck clean. Production audit 0 vulnerabilities (dev-only advisories noted).
 
 Next: P1.3 convenience-kind schemas (calendar.today, reminders.today, linear.inbox, docs.recent) and their mappers to cards and widgets, test-first.
+
+### Iteration 2 (P1.3)
+
+Shipped: convenience-kind data schemas and `cardFromFeed`, mapping calendar.today, reminders.today, linear.inbox, and docs.recent to default list cards, plus pass-through of generic `card` feeds and a skip-able error for unknown kinds. Times are kept as ISO `time` trailings so the renderer formats them, keeping mappers deterministic and i18n-correct. Meeting events get a validated join action; inbox rows get an open action; overdue reminders and urgent inbox rows get urgent badges.
+
+Verified: 12 new tests (33 total) green, covering each kind, missing required fields (start, url), empty days, malformed cards, and unknown kinds. Lint and typecheck clean.
+
+Next: P1.4 time engine (world-clock time, day/night, date offset, timeline overlap) with injectable now, pure and deterministic.
