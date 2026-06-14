@@ -23,6 +23,17 @@ public struct IngestHandler {
         case denied
         case invalidToken
         case writeFailed(String)
+
+        /// A stable wire code returned to the provider in a refused response.
+        public var code: String {
+            switch self {
+            case .unknownProvider: return "unknown_provider"
+            case .notApproved: return "not_approved"
+            case .denied: return "denied"
+            case .invalidToken: return "invalid_token"
+            case .writeFailed: return "write_failed"
+            }
+        }
     }
 
     /// Register or refresh a provider. New providers start pending (no token

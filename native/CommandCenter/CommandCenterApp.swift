@@ -1,4 +1,5 @@
 import AppKit
+import CommandCenterCore
 import SwiftUI
 
 /// The Command Center menu-bar app. A status item shows a themed popover; the
@@ -21,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let popover = NSPopover()
     private let routeHandler = RouteHandler()
     private let calendarProvider = EventKitCalendarProvider()
+    private var ingestEndpoint: IngestEndpoint?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         popover.behavior = .transient
@@ -44,6 +46,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Publish Apple-calendar events if access is already granted; never prompts here.
         calendarProvider.refreshIfAuthorized()
+
+        // Start the loopback ingest endpoint when the shared container is
+        // available (signed builds with the App Group). Inert in unsigned dev.
+        if let container = CommandCenterContainer.url() {
+            let endpoint = IngestEndpoint(containerURL: container)
+            endpoint.start()
+            ingestEndpoint = endpoint
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {

@@ -63,7 +63,7 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 ## Phase 5: open provider platform
 
 - [x] P5.2a Ingest core logic (CommandCenterCore, testable): capability-token issuance/validation/revocation, a registration model (pending consent -> approved), and an IngestHandler that processes typed ingest requests (register, publish, revoke) — validating tokens and writing feeds via FeedPublisher into an injected container. Security tests: publish without a valid token refused, revoked token stops working, registration needs consent. Identity = loopback + consent tokens (lessons).
-- [ ] P5.1 Local ingest endpoint TRANSPORT (app, thin): loopback NWListener HTTP + WebSocket wired to the IngestHandler, default port + Bonjour discovery. Compile-verify unsigned; do not bind real ports in unit tests.
+- [x] P5.1 Local ingest endpoint TRANSPORT (app, thin): loopback NWListener HTTP + WebSocket wired to the IngestHandler, default port + Bonjour discovery. Compile-verify unsigned; do not bind real ports in unit tests.
 - [ ] P5.3 CommandCenterKit SDK: register, publish, openStream, transport auto-select, token storage. Tests.
 - [ ] P5.4 Full widget vocabulary including charts and tables in renderers.
 - [ ] P5.5 Providers screen: approval, status, revocation.
@@ -110,6 +110,14 @@ Shipped: the ingest core in CommandCenterCore. ProviderRegistration + Registrati
 Verified: 9 new swift tests (60 total) green: pending start, idempotent register, publish refused before approval / with wrong token / for unknown / revoked / denied providers, approved publish writes a FeedStore-readable feed, and a restart test asserting the token still works AND the raw token never appears in the persisted file. Changed publish to return IngestError? (Void Result is not Equatable). Unsigned native build + dashboard gates green.
 
 Next: P5.1 the loopback NWListener transport (thin, wired to IngestHandler), then the CommandCenterKit SDK. Possible later hardening noted: move token hashes to the Keychain rather than the container file.
+
+### Iteration 23 (P5.1)
+
+Shipped: the ingest transport, split wire-protocol (pure) from socket (thin). In CommandCenterCore: IngestRequest (register/publish, typed Codable enum that throws on unknown type), IngestResponse, and handleIngestMessage(Data, using: IngestHandler) -> Data that decodes, dispatches, and encodes a response (registered+status / accepted / refused-with-code); IngestError gained a stable wire code. In the app target: IngestEndpoint, an NWListener on 127.0.0.1 (loopback-only) with 4-byte length-prefixed framing, a 1 MB cap, and per-connection receive->handle->send->close; started at launch only when the App Group container exists (inert in unsigned dev, not dead code). Tokens are never echoed in a response.
+
+Verified: 6 new swift tests (66 total): register->pending, malformed->invalid_request, unknown type refused, publish-before-approval->not_approved, approved publish over the protocol writes a FeedStore-readable feed, and a response never echoes a token. Unsigned native build (NWListener compiles) + dashboard green.
+
+Next: P5.3 CommandCenterKit SDK (a separate SwiftPM package: register/publish/openStream, transport auto-select file-drop vs endpoint, token storage in Keychain), then P5.5 providers screen (approve/deny/revoke + token delivery UX). Self-review for new debt is due around now per the mandate.
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 
