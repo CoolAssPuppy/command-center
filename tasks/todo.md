@@ -18,8 +18,8 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done.
 
 Foundation, no native code. Renders the widget vocabulary and the first theme against mock data.
 
-- [ ] P1.1 Scaffold `dashboard/`: npm, strict TS, Vite, Vitest, jsdom, Testing Library DOM, ESLint, Zod. Scripts: test, lint, build, dev.
-- [ ] P1.2 Core domain types and Zod schemas: FeedEnvelope, Status, Glance, Card, Action, and the Widget union (metric, list, table, chart, timeline, progress, text). Validation tests with factory functions.
+- [x] P1.1 Scaffold `dashboard/`: npm, strict TS, Vite, Vitest, jsdom, Testing Library DOM, ESLint, Zod. Scripts: test, lint, build, dev.
+- [x] P1.2 Core domain types and Zod schemas: FeedEnvelope, Status, Glance, Card, Action, and the Widget union (metric, list, table, chart, timeline, progress, text). Validation tests with factory functions.
 - [ ] P1.3 Convenience-kind schemas and mappers to cards/widgets: calendar.today, reminders.today, linear.inbox, docs.recent. Tests.
 - [ ] P1.4 Time engine: world-clock current time, day/night, date offset, timeline overlap, all with injectable now. Pure, deterministic tests.
 - [ ] P1.5 Weather client: Open-Meteo fetch and parse, MSW-mocked behavior tests.
@@ -83,3 +83,11 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 ## Review log
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
+
+### Iteration 1 (P1.1, P1.2)
+
+Shipped: dashboard project scaffold (strict TS, Vite, Vitest, ESLint type-checked, Zod) and the full core domain model: primitives (Tone, Trend, Status, Glance), actions (ActionRef, ManifestAction), the seven-type widget vocabulary plus Card, and the FeedEnvelope with version-aware parsing and freshness. Strict tsconfig: noUncheckedIndexedAccess, exactOptionalPropertyTypes, no `any`.
+
+Verified: 21 tests green across feed, widgets, actions, including rejection of out-of-vocabulary widgets, missing glance, future schema versions, and bad dates. Lint and typecheck clean. Production audit 0 vulnerabilities (dev-only advisories noted).
+
+Next: P1.3 convenience-kind schemas (calendar.today, reminders.today, linear.inbox, docs.recent) and their mappers to cards and widgets, test-first.
