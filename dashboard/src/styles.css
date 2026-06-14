@@ -66,9 +66,9 @@ body {
 .cc-weather,
 .cc-worldclock {
   background: var(--cc-color-surface, #121826);
-  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--cc-card-radius, 16px);
   padding: var(--cc-card-padding, 16px);
+  box-shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.5);
 }
 
 .cc-weather {
@@ -149,10 +149,9 @@ body {
 
 .cc-card {
   background: var(--cc-color-surface, #121826);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-left: 3px solid var(--cc-card-accent, var(--cc-color-accent, #7c8cff));
   border-radius: var(--cc-card-radius, 16px);
   padding: var(--cc-card-padding, 16px);
+  box-shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   gap: 12px;
