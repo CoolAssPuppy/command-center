@@ -25,7 +25,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.5 Weather client: Open-Meteo fetch and parse, injected-fetch behavior tests.
 - [x] P1.6 Dashboard composition: from a getDashboard payload, compose ordered cards and resolve states ok, stale, needs_auth, error, absent. Tests.
 - [x] P1.7 Attention and layout model, basic: ordering and glance-versus-full decisions. Tests.
-- [ ] P1.8 Security utilities: text-only rendering helper, action URL validation against host allowlist, CSP string. Tests cover injection attempts.
+- [x] P1.8 Security utilities: text-only rendering helper, action URL validation against host allowlist, CSP string. Tests cover injection attempts.
 - [ ] P1.9 Default widget renderers, vanilla DOM into a host node, one per widget type. Testing Library behavior tests.
 - [ ] P1.10 Theme token layer and the first theme tokens (Aurora). Token application. Tests.
 - [ ] P1.11 Dashboard shell: header with time, date, greeting; responsive grid; instant paint from cache; all card states. Integration tests.
@@ -131,3 +131,11 @@ Shipped: the attention model in src/dashboard/attention.ts. planLayout annotates
 Verified: 6 new tests (74 total) green, covering budget cutoff, urgent promotion past budget, empty/error never full, needs_auth full, all-urgent overflow, and order preservation. Lint and typecheck clean.
 
 Next: P1.8 security utilities (text-only render helper, action-URL validation against a scheme and host allowlist, CSP string), test-first, with injection attempts in the tests.
+
+### Iteration 7 (P1.8)
+
+Shipped: the security utilities in src/security. url.ts resolves a manifest action plus a widget action-ref into a single validated URL: params are URL-encoded so they cannot break out, dangerous schemes (javascript, data, file, vbscript, blob, about) are always blocked, and the final scheme must be allowlisted, so a malicious param can never change the scheme and a dangerous template scheme is rejected. dom.ts gives setText and textEl, the only way renderers emit feed text, always as inert text, never innerHTML. csp.ts builds the new tab CSP, scripts self-only with no inline or eval, connect limited to the weather host.
+
+Verified: 16 new tests (90 total) green, including javascript:/data:/file: rejection, scheme-change-by-param attempts, XSS strings rendered inert, and CSP shape. tsc caught a closure-narrowing bug (a guard collapsed to never); fixed by pre-scanning placeholders and logged as a lesson. Lint and typecheck clean.
+
+Next: P1.9 default widget renderers (vanilla DOM, one per widget type) with Testing Library behavior tests, using the security helpers exclusively.

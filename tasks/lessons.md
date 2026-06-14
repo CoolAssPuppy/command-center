@@ -10,6 +10,7 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 ## Testing
 
 - Compute expected numeric values (time-zone offsets, dates) independently before writing the assertion. A red test caught a hand-done offset arithmetic slip in P1.4; the code was correct. Trust the red, then verify which side is wrong.
+- Under strict TS plus type-checked ESLint, do not assign a closure-captured variable to drive later control flow. The compiler cannot see the assignment, narrows the variable to its initial type, and a later guard collapses to `never` (hit in P1.8 fillTemplate). Pre-scan or compute the value before the callback instead.
 
 ## Architecture invariants to never violate
 
