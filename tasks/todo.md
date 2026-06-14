@@ -21,7 +21,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.1 Scaffold `dashboard/`: npm, strict TS, Vite, Vitest, jsdom, Testing Library DOM, ESLint, Zod. Scripts: test, lint, build, dev.
 - [x] P1.2 Core domain types and Zod schemas: FeedEnvelope, Status, Glance, Card, Action, and the Widget union (metric, list, table, chart, timeline, progress, text). Validation tests with factory functions.
 - [x] P1.3 Convenience-kind schemas and mappers to cards/widgets: calendar.today, reminders.today, linear.inbox, docs.recent. Tests.
-- [ ] P1.4 Time engine: world-clock current time, day/night, date offset, timeline overlap, all with injectable now. Pure, deterministic tests.
+- [x] P1.4 Time engine: world-clock current time, day/night, date offset, timeline overlap, all with injectable now. Pure, deterministic tests.
 - [ ] P1.5 Weather client: Open-Meteo fetch and parse, MSW-mocked behavior tests.
 - [ ] P1.6 Dashboard composition: from a getDashboard payload, compose ordered cards and resolve states ok, stale, needs_auth, error, absent. Tests.
 - [ ] P1.7 Attention and layout model, basic: ordering and glance-versus-full decisions. Tests.
@@ -99,3 +99,11 @@ Shipped: convenience-kind data schemas and `cardFromFeed`, mapping calendar.toda
 Verified: 12 new tests (33 total) green, covering each kind, missing required fields (start, url), empty days, malformed cards, and unknown kinds. Lint and typecheck clean.
 
 Next: P1.4 time engine (world-clock time, day/night, date offset, timeline overlap) with injectable now, pure and deterministic.
+
+### Iteration 3 (P1.4)
+
+Shipped: the time engine in src/time/clock.ts. Every function takes an explicit instant, so it is pure and deterministic and reads no system clock. Built on a single Intl.DateTimeFormat parts extractor: zonedTime, tzOffsetMinutes, relativeOffsetMinutes (the world-clock timeline alignment value), dateOffsetDays (date-line crossing), dayNight with configurable sunrise and sunset bands, formatClock, and cityClock composing the per-city view.
+
+Verified: 13 new tests (46 total) green, including a half-hour zone (Kolkata), summer-time offsets, a date-line crossing in both directions, and day/night band edges. A bad test expectation (offset arithmetic) was caught by the red test and corrected; the implementation was right. Lint and typecheck clean.
+
+Next: P1.5 weather client (Open-Meteo fetch and parse) with mocked-fetch behavior tests.
