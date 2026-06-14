@@ -12,6 +12,7 @@ mcp.json
 # Dependencies and build artifacts
 node_modules/
 dist/
+dist-extension/
 build/
 coverage/
 .vite/

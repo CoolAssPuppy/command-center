@@ -190,6 +190,17 @@ A 3-agent duplication audit (Swift, TS, library boundaries) confirmed the codeba
 
 Verified: full sweep green after every change. Core 75 tests (+ new IngestWire round-trip/bounds tests), Kit 6, sample 2, dashboard 151 + lint + build + size (22.9 KB gzip, budget 90), unsigned native xcodebuild SUCCEEDED. No behavior changed; the unbounded-read path is now closed.
 
+### Iteration 31 (P2.4 + P2.8) — dashboard renders in a Safari new tab
+
+Wired the two pieces that were blocking the new-tab loop, so the dashboard now actually renders inside the Safari extension (mock data while unsigned).
+
+- P2.4 native bridge: `src/bridge/native.ts` — `createNativeBridge` sends `{type:"getDashboard"}` via `browser/chrome.runtime.sendNativeMessage` (the exact message the existing SafariWebExtensionHandler switches on) and returns the unknown payload for downstream validation; `getExtensionRuntime` detects the extension runtime (injectable scope for tests). main.ts now `selectBridge()`s: a `VITE_BRIDGE=mock` build forces fixtures; otherwise native inside the extension, mock in plain-browser dev. No token ever crosses this bridge.
+- P2.8 bundle into the extension: a separate `vite.extension.config.ts` (relative base, flat unhashed assets, no sourcemap, output to dist-extension) keeps the gated default build untouched. `scripts/copy-extension.mjs` syncs the bundle into the appex Resources (index.html -> newtab.html; flat index.js/index.css beside it), preserving the hand-authored manifest.json + background.js. New npm scripts: `build:extension` (native bridge, for the signed path) and `build:extension:demo` (mock, for the unsigned visual test). Added open-meteo to manifest host_permissions so weather loads on the extension page.
+
+Verified: dashboard 154 tests (+3 native-bridge), lint, default build + size (23.0 KB gzip) all green. Generated the demo bundle and confirmed it lands in the built `.appex` Resources (index.js/css + newtab.html with relative `./` refs, CSP preserved). xcodegen + unsigned xcodebuild SUCCEEDED.
+
+To see it: build `CommandCenter.app` in Xcode and run; Safari > Settings > Extensions, enable "Allow unsigned extensions" via the Develop menu, toggle Command Center on; a new tab renders the full dashboard against the mock fixtures. Live calendar data still needs signing (App Group) plus a plain `build:extension` (native bridge); the unsigned demo path is mock-only by design.
+
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 
 ### Iteration 1 (P1.1, P1.2)
