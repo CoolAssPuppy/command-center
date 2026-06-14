@@ -85,7 +85,7 @@ Series data. The provider picks a subtype; the theme draws it.
   } }
 ```
 
-Subtypes every theme renders: `line`, `area`, `bar`, `sparkline`, `donut`, `gauge`. `xType` is `time`, `category`, or `number`. Color comes from the theme by default; a provider may suggest a series color with `hints`, which the theme is free to honor or override.
+Subtypes every theme renders: `line`, `area`, `bar`, `sparkline`, `donut`, `gauge`. `xType` is `time`, `category`, or `number`. Color comes from the theme by default; a provider may suggest a series color with the series `colorHex` field, which the theme is free to honor or override. (A general `hints` mechanism is planned but not yet in the schema.)
 
 ### timeline
 
@@ -126,7 +126,7 @@ Widgets do not open things directly. They reference an action declared in the pr
 ]
 ```
 
-A widget item carries `"action": { "ref": "open", "params": { "url": "..." } }`. The platform fills the template or route, validates the scheme and host against the allowlist, and only then navigates. A provider can never cause an arbitrary URL to open. See [10-security.md](10-security.md).
+A widget item carries `"action": { "ref": "open", "params": { "url": "..." } }`. The platform fills the template or route, validates the URL, and only then navigates. In defense in depth, the dashboard enforces the scheme allowlist (dangerous schemes blocked) and the native app enforces the host allowlist (a `commandcenter://join` target must be a known meeting host). A provider can never cause an arbitrary URL to open. See [10-security.md](10-security.md).
 
 ## Hints, not commands
 

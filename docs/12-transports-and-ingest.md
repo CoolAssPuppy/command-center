@@ -117,5 +117,7 @@ A remote endpoint in the cloud would also accept data from anyone and sidestep s
 
 ## What this changes elsewhere
 
-- Discovery in [03-provider-contract.md](03-provider-contract.md) now spans two roots, the App Group container for the first-party suite and the well-known Application Support directory for the open platform, plus live providers held in memory from the endpoint. The discovery loop is otherwise unchanged.
+- Discovery in [03-provider-contract.md](03-provider-contract.md) will span two roots, the App Group container for the first-party suite and the well-known Application Support directory for the open platform, plus live providers held in memory from the endpoint. The discovery loop is otherwise unchanged.
+
+Implementation status: as of now the native FeedStore scans one injected container root (the App Group path) and validates the feed envelope only; widget `data` is forwarded opaquely and validated by the dashboard. Transport 1 (the well-known Application Support directory) and Transport 2 (the loopback endpoint) are specified here but not yet implemented, and are tracked in the roadmap.
 - The trust model in [10-security.md](10-security.md) gains the registration consent flow and token revocation.

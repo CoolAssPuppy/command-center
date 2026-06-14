@@ -47,7 +47,7 @@ Linear Bar embeds a Linear client secret and uses a Cloudflare worker for exchan
 The `commandcenter://` scheme is an entry point any app can call, so validate every parameter.
 
 - `join`: require a `url` that parses and whose host is on the meeting allowlist. Reject `file://`, `javascript:`, and unknown schemes. Decode once, validate, then open.
-- `openProvider`: require a known `providerId` that is actually installed, and a `url` whose host matches that provider's expected domain.
+- `openProvider`: require a known `providerId`; the native handler resolves it to the installed provider's bundle id and launches that app (it ignores a missing/unknown provider). Any optional `url` must be a non-dangerous scheme. Per-provider host-domain matching of the url is a planned hardening.
 - Drop anything that fails validation silently. Do not surface attacker-controlled strings in alerts.
 
 ## Content security policy

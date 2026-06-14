@@ -157,8 +157,8 @@ The browser picker should reuse the same `MeetAppType` list Meeting Notifier alr
 
 ## Apple calendar and reminders provider
 
-If enabled, the app reads Apple calendars and reminders with EventKit and writes them as `calendar.today` and `reminders.today` feeds under provider id `command-center-apple`. This makes Apple events appear through the same contract as Google and Microsoft, so the dashboard has one rendering path. Refresh on a timer and on `EKEventStoreChanged` notifications, and write atomically.
+If enabled, the app reads Apple calendars and reminders with EventKit and writes them as `calendar.today` and `reminders.today` feeds under provider id `command-center-apple`. This makes Apple events appear through the same contract as Google and Microsoft, so the dashboard has one rendering path. Refresh on a timer and on `EKEventStoreChanged` notifications, and write atomically. Implementation status: the `calendar.today` producer is implemented (published off the main thread via `FeedPublisher`); the `reminders.today` producer is planned and reuses the same publisher.
 
 ## Settings ownership
 
-The app is the only writer of `CommandCenter/settings.json` and the only writer to iCloud key-value store. The extension and dashboard read settings, they do not write them. When the user changes a setting in the dashboard, the dashboard sends a `commandcenter://settings` deep link or a native message that the app turns into a settings write. Keeping one writer avoids conflicts. Details in [08-settings-sync.md](08-settings-sync.md).
+The app is the only writer of `CommandCenter/settings.json` and the only writer to iCloud key-value store. The extension and dashboard read settings, they do not write them. Settings are edited in the native settings window today (via `SettingsStore`); dashboard-initiated settings write-back (the `commandcenter://settings` deep link path) is planned, not yet wired. Keeping one writer avoids conflicts. Details in [08-settings-sync.md](08-settings-sync.md).

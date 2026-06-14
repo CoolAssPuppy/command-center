@@ -41,5 +41,5 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 - Providers declare, themes render. No provider ships HTML, CSS, JS, or pixels. No theme fetches data or holds a token.
 - No OAuth token or client secret ever crosses an app boundary or enters the shared container or the endpoint.
 - All feed text is rendered as text, never as HTML. No innerHTML with provider content.
-- Every action URL is validated against a scheme and host allowlist before opening.
+- Every action URL is validated before opening, defense in depth: the dashboard enforces the scheme allowlist (dangerous schemes blocked, feed image URLs https-only), and the native app enforces the host allowlist (a commandcenter://join target must be a known meeting host). The dangerous-scheme list and the meeting-host list are security-critical; the meeting hosts live in one Swift source (MeetingHosts), and the dangerous-scheme lists in TS and Swift must be kept in sync by hand (cannot share a literal across languages).
 - Every feed carries a required glance line.
