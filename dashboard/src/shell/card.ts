@@ -1,5 +1,6 @@
 import type { PlacedCard } from "../dashboard/attention";
 import { applyTone, el } from "../render/helpers";
+import { appendIcon } from "../render/icons";
 import { renderWidget } from "../render/index";
 import type { RenderContext } from "../render/context";
 import type { RenderThemeRenderers } from "../render/themeRenderers";
@@ -30,8 +31,7 @@ function renderHeader(card: PlacedCard): HTMLElement {
   const header = el("div", "cc-card__header");
   if (card.icon !== undefined) {
     const icon = el("span", "cc-card__icon");
-    icon.setAttribute("data-icon", card.icon);
-    header.appendChild(icon);
+    if (appendIcon(icon, card.icon)) header.appendChild(icon);
   }
   header.appendChild(el("span", "cc-card__name", card.displayName));
 

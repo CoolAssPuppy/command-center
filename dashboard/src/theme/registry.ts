@@ -1,4 +1,5 @@
 import { aurora } from "./aurora";
+import { mineral } from "./mineral";
 import { mono } from "./mono";
 import { paper } from "./paper";
 import type { Theme } from "./tokens";
@@ -8,9 +9,9 @@ import type { Theme } from "./tokens";
  * settings.appearance.theme by id, falling back to the default. Third-party
  * themes (a future registry) would join SHIPPED_THEMES.
  */
-export const SHIPPED_THEMES: Theme[] = [aurora, paper, mono];
+export const SHIPPED_THEMES: Theme[] = [mineral, aurora, paper, mono];
 
-export const DEFAULT_THEME = aurora;
+export const DEFAULT_THEME = mineral;
 
 export function themeById(
   id: string | undefined,

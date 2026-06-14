@@ -17,7 +17,7 @@ const makeCity = (overrides?: Partial<City>): City => ({
   lat: 35.6762,
   lon: 139.6503,
   workingHours: { start: 9, end: 18 },
-  skyline: "M0,55 L300,55",
+  photo: "cities/tokyo.jpg",
   ...overrides,
 });
 
@@ -40,7 +40,7 @@ describe("renderCityRow", () => {
 
     expect(getByText(root, "Tokyo")).toBeInTheDocument();
     expect(getByText(root, "Lisbon")).toBeInTheDocument();
-    expect(root.querySelectorAll(".cc-city__skyline-path")).toHaveLength(2);
+    expect(root.querySelectorAll(".cc-city__photo")).toHaveLength(2);
   });
 
   it("marks the daylight state for the background to style", () => {

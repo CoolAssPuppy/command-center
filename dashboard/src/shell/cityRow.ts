@@ -1,20 +1,22 @@
 import type { City } from "../cities/cities";
-import { el, svgEl } from "../render/helpers";
-import { formatClock } from "../time/clock";
-import { daylightState } from "../time/solar";
+import { el } from "../render/helpers";
+import { formatClock, zonedTime } from "../time/clock";
+import { daylightState, phaseLabel } from "../time/solar";
 import type { Weather } from "../weather/openMeteo";
 
 /**
- * The hero row: one block per city showing its skyline, local time, and current
- * weather over a background that reflects the live daylight state. Daylight is a
- * deterministic solar calc, so each block paints immediately; weather fills in
- * when its async fetch resolves, keyed by city id.
+ * The hero row: one square per city showing its desaturated skyline, local time,
+ * and current weather. The daylight state (a deterministic solar calc) tints the
+ * scrim so the row reads as a gradient of the day; weather fills in when its
+ * async fetch resolves, keyed by city id.
  */
 export interface CityRowModel {
   now: Date;
   cities: readonly City[];
   weatherByCity?: Record<string, Weather>;
 }
+
+const ASSET_BASE = import.meta.env.BASE_URL;
 
 export function renderCityRow(host: HTMLElement, model: CityRowModel): HTMLElement {
   const root = el("div", "cc-cityrow");
@@ -29,24 +31,28 @@ function renderCity(now: Date, city: City, weather: Weather | undefined): HTMLEl
   const card = el("div", "cc-city");
   card.setAttribute("data-daylight", daylightState(now, city.lat, city.lon));
 
-  const svg = svgEl("svg", {
-    class: "cc-city__skyline",
-    viewBox: "0 0 300 64",
-    preserveAspectRatio: "none",
-    "aria-hidden": "true",
-  });
-  svg.appendChild(svgEl("path", { d: city.skyline, class: "cc-city__skyline-path" }));
-  card.appendChild(svg);
+  const photo = el("img", "cc-city__photo");
+  photo.setAttribute("src", `${ASSET_BASE}${city.photo}`);
+  photo.setAttribute("alt", "");
+  photo.setAttribute("loading", "lazy");
+  card.appendChild(photo);
+
+  card.appendChild(el("div", "cc-city__scrim"));
 
   const body = el("div", "cc-city__body");
+
+  const eyebrow = el("div", "cc-city__eyebrow");
+  eyebrow.appendChild(el("span", "cc-city__dot"));
+  eyebrow.appendChild(
+    el("span", "cc-city__phase", phaseLabel(zonedTime(now, city.timeZone).hour)),
+  );
+  body.appendChild(eyebrow);
+
   body.appendChild(el("div", "cc-city__name", city.label));
   body.appendChild(el("div", "cc-city__time", formatClock(now, city.timeZone)));
 
   const meta = el("div", "cc-city__meta");
   if (weather !== undefined) {
-    const icon = el("span", "cc-city__weather-icon");
-    icon.setAttribute("data-icon", weather.icon);
-    meta.appendChild(icon);
     meta.appendChild(
       el("span", "cc-city__temp", `${String(Math.round(weather.temperature))}°`),
     );

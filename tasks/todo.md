@@ -11,8 +11,8 @@ User direction: the dashboard styling is placeholder-grade; redesign it, and wir
 Visual redesign (dashboard, unblocked, build first):
 - [x] R1 Theme palette: primary, secondary, 3 accents (+ existing font). Update the 3 themes, css vars, schema, tests.
 - [x] R2 City hero row: New York, Lisbon, Singapore, Tokyo, Sydney. Per city: skyline outline in faint accent, big bold time + current weather in the foreground, card background gradient reflecting the live daylight state (solar-elevation calc, deterministic). Per-city weather via Open-Meteo.
-- [ ] R3 24-hour overlap timeline: a 24h line per city marking working hours + the current-time cursor, to eyeball a shared meeting window.
-- [ ] R4 Layout: 1/3-1/3-1/3 columns. Col1 Calendar then Reminders; Col2 Notion recent docs; Col3 Linear inbox.
+- [x] R3 24-hour overlap timeline: a 24h line per city marking working hours + the current-time cursor, to eyeball a shared meeting window.
+- [x] R4 Layout: 1/3-1/3-1/3 columns. Col1 Calendar then Reminders; Col2 Notion recent docs; Col3 Linear inbox.
 
 OAuth + data layer (user-gated on console setup):
 - [ ] O1 Hosted token broker (Cloudflare Worker): holds Google/Microsoft/Notion/Linear secrets, does the code-for-token exchange + refresh; app stores only user tokens in Keychain.
@@ -237,6 +237,20 @@ Shipped the loud-complaint fix: a real hero row replacing the placeholder weathe
 Verified: 157 dashboard tests green (added solar + cityRow suites, updated run/dashboard suites for the new shape), lint clean, build + size (24.0 KB gzip, budget 90). Rendered the dev server headless and screenshotted it: the five cities show local time, live temps, skylines, and morning/evening daylight tints; sent the image to the user. The native pre-build phase regenerates this bundle, so it shows in the Safari new tab too.
 
 Next: R3 the 24-hour overlap timeline (working hours + current-time cursor per city), R4 the 1/3-1/3-1/3 columns (Calendar+Reminders / Notion / Linear). Then the OAuth broker + providers (O1-O4).
+
+### Iteration 34 (R3 + R4 + Mineral redesign) — the professional editorial look
+
+After a design review (the cartoon SVG look was rejected), the whole design was redrawn in Paper (the design tool) in a "mineral" direction and then implemented faithfully in code.
+
+- Mineral theme (new default): limestone ground, slate ink, a single oxidized-copper accent, rust only for overdue/at-risk. Self-hosted Archivo (via @fontsource-variable, bundled, no external/CSP dependency).
+- Hero: the five city squares now use real desaturated black-and-white skyline photos (sourced from Unsplash, greyscaled with ImageMagick, served from public/cities and bundled into the extension), with a daylight-tinted scrim, a time-of-day eyebrow (Pre-dawn..Night via a new solar phaseLabel), the local time, and weather.
+- R3 timeline: the 24h meeting-window strip (per-city working bands, the verdigris best-overlap window and now-line, axis), restyled editorial.
+- R4 columns: 1/3-1/3-1/3 with the cards rendered as editorial lists on the surface (no boxes, hairline rows) — Calendar (time pulled into a left lane) + Reminders (checkbox rows, OVERDUE in rust), Notion recent docs, Linear inbox (URGENT in rust). Brand icons (official Notion + Linear marks, drawn calendar + reminders glyphs) added to each section header, built as SVG DOM (no innerHTML).
+- Masthead restructured (eyebrow + greeting left, local time + date right), header now shows the viewer's real local time.
+
+Verified: 162 dashboard tests, lint, build, size (25.9 KB gzip, budget 90); rendered the dev server headless and confirmed it matches the Paper mock (hero photos, timeline, columns, brand icons); fixed the extension copy script for the new image subfolder + fonts and confirmed the unsigned native build bundles the full design into the .appex. User approved the Paper design before implementation.
+
+Next: the OAuth broker + providers (O1-O4) when the user is ready to wire real data.
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 

@@ -1,3 +1,4 @@
+import "@fontsource-variable/archivo";
 import "./styles.css";
 
 import { runDashboard } from "./app/run";

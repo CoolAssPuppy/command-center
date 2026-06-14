@@ -22,20 +22,35 @@ function formatDate(now: Date, timeZone: string): string {
   }).format(now);
 }
 
+/** A readable place name from an IANA zone, e.g. "America/New_York" -> "New York". */
+function zoneLabel(timeZone: string): string {
+  const tail = timeZone.split("/").pop() ?? timeZone;
+  return tail.replace(/_/g, " ");
+}
+
 export function renderHeader(host: HTMLElement, model: HeaderModel): HTMLElement {
   const root = el("div", "cc-header");
 
-  const clock = el("div", "cc-header__clock");
-  clock.appendChild(el("span", "cc-header__time", formatClock(model.now, model.timeZone)));
-  clock.appendChild(el("span", "cc-header__date", formatDate(model.now, model.timeZone)));
-  root.appendChild(clock);
-
+  const left = el("div", "cc-header__left");
+  left.appendChild(el("div", "cc-header__eyebrow", "COMMAND CENTER"));
   const { hour } = zonedTime(model.now, model.timeZone);
   const greeting =
     model.name !== undefined && model.name.length > 0
-      ? `${greetingFor(hour)}, ${model.name}`
-      : greetingFor(hour);
-  root.appendChild(el("div", "cc-header__greeting", greeting));
+      ? `${greetingFor(hour)}, ${model.name}.`
+      : `${greetingFor(hour)}.`;
+  left.appendChild(el("div", "cc-header__greeting", greeting));
+  root.appendChild(left);
+
+  const right = el("div", "cc-header__right");
+  right.appendChild(el("span", "cc-header__time", formatClock(model.now, model.timeZone)));
+  right.appendChild(
+    el(
+      "span",
+      "cc-header__date",
+      `${formatDate(model.now, model.timeZone)}  ·  ${zoneLabel(model.timeZone)}`,
+    ),
+  );
+  root.appendChild(right);
 
   host.appendChild(root);
   return root;

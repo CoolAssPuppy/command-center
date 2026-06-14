@@ -48,7 +48,7 @@ describe("runDashboard", () => {
 
     await runDashboard(deps);
 
-    expect(getByText(deps.mount, "Good morning, Prashant")).toBeInTheDocument();
+    expect(getByText(deps.mount, "Good morning, Prashant.")).toBeInTheDocument();
     expect(getByText(deps.mount, "Linear")).toBeInTheDocument();
     // The hero row shows each city's temperature; every city uses the mock here.
     expect(getAllByText(deps.mount, "63°").length).toBe(CITIES.length);

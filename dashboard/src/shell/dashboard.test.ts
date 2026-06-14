@@ -49,7 +49,7 @@ describe("renderDashboard", () => {
   it("renders the header greeting, the city hero row with weather, and provider cards", () => {
     const { root } = renderFixture();
 
-    expect(getByText(root, "Good morning, Prashant")).toBeInTheDocument();
+    expect(getByText(root, "Good morning, Prashant.")).toBeInTheDocument();
     // New York appears in both the hero row and the overlap timeline.
     expect(getAllByText(root, "New York").length).toBeGreaterThanOrEqual(1);
     expect(getAllByText(root, "63°").length).toBe(CITIES.length);

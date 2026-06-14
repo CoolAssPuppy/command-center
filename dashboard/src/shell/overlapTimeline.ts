@@ -25,7 +25,16 @@ export function renderOverlapTimeline(
   model: OverlapTimelineModel,
 ): HTMLElement {
   const root = el("div", "cc-timeline-panel");
-  root.appendChild(el("div", "cc-timeline-panel__title", "Find a meeting window"));
+  const head = el("div", "cc-timeline-panel__head");
+  head.appendChild(el("div", "cc-timeline-panel__title", "Meeting window"));
+  head.appendChild(
+    el(
+      "div",
+      "cc-timeline-panel__hint",
+      "Working hours across all five cities, on your local clock",
+    ),
+  );
+  root.appendChild(head);
 
   const chart = el("div", "cc-overlap");
 

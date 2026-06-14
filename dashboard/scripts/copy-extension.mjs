@@ -8,6 +8,7 @@
 // untouched. Run via "npm run build:extension" / "build:extension:demo".
 import {
   copyFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -43,12 +44,15 @@ for (const name of readdirSync(appDir)) {
   if (!KEEP.has(name)) rmSync(join(appDir, name), { recursive: true, force: true });
 }
 
-// The extension build emits a flat directory, so a shallow copy is enough and
-// keeps newtab.html / index.js together in app/.
+// Copy the built bundle. index.html becomes newtab.html; everything else
+// (the js/css/font assets and the cities/ image folder) is copied recursively.
 for (const name of readdirSync(dist)) {
   const from = join(dist, name);
-  const to = name === "index.html" ? join(appDir, "newtab.html") : join(appDir, name);
-  copyFileSync(from, to);
+  if (name === "index.html") {
+    copyFileSync(from, join(appDir, "newtab.html"));
+  } else {
+    cpSync(from, join(appDir, name), { recursive: true });
+  }
 }
 
 console.log("Embedded the dashboard bundle in the Safari extension (Resources/app).");

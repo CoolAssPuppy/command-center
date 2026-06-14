@@ -11,7 +11,7 @@ const makeCity = (overrides?: Partial<City>): City => ({
   lat: 0,
   lon: 0,
   workingHours: { start: 9, end: 18 },
-  skyline: "",
+  photo: "",
   ...overrides,
 });
 

@@ -17,7 +17,7 @@ describe("renderHeader", () => {
     // 17:00 UTC is 10:00 in Los Angeles, the morning
     renderHeader(root, { now: new Date("2026-06-14T17:00:00Z"), timeZone: LA, name: "Prashant" });
 
-    expect(getByText(root, "Good morning, Prashant")).toBeInTheDocument();
+    expect(getByText(root, "Good morning, Prashant.")).toBeInTheDocument();
   });
 
   it("shifts the greeting to evening later in the day", () => {
@@ -25,7 +25,7 @@ describe("renderHeader", () => {
     // 04:00 UTC is 21:00 the previous day in Los Angeles, the evening
     renderHeader(root, { now: new Date("2026-06-15T04:00:00Z"), timeZone: LA });
 
-    expect(getByText(root, "Good evening")).toBeInTheDocument();
+    expect(getByText(root, "Good evening.")).toBeInTheDocument();
   });
 
   it("shows a time and a date", () => {
