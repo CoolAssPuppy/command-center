@@ -30,7 +30,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.10 Theme token layer and the first theme tokens (Aurora). Token application. Tests.
 - [x] P1.11 Dashboard shell: header with time, date, greeting; responsive grid; instant paint from cache; all card states. Integration tests.
 - [x] P1.12 Mock native bridge and mock feed fixtures for local dev and the demo page.
-- [ ] P1.13 Performance pass: bundle budget check, reduced-motion support, first-paint measurement harness.
+- [x] P1.13 Performance pass: bundle budget check, reduced-motion support, first-paint measurement harness.
 - [ ] P1.14 Phase 1 demo: index.html renders the full dashboard from mocks. Manual verification screenshot.
 
 ## Phase 2: native shell and the bridge
@@ -171,3 +171,11 @@ Shipped: the DashboardBridge interface (getDashboard returns unknown, always val
 Verified: 9 new tests (135 total) green: the fixture parses, exercises every required kind and the needs_auth status, carries a glance on every feed, and buildDashboardModel surfaces the needs_auth card and the chart-bearing generic card, with an error path for bad input. Lint, typecheck, and build pass.
 
 Next: P1.13 performance pass (bundle budget check, reduced-motion support, first-paint measurement harness).
+
+### Iteration 12 (P1.13)
+
+Shipped: the perf module (src/perf). prefersReducedMotion reads the media query (injectable, safe when unavailable, returns false rather than throwing); measureFirstPaint times a render callback against the 100ms budget with an injectable clock; budget helpers and a 90KB gzip ceiling. Added scripts/check-bundle.mjs and an npm "size" script that gzips dist and fails if over budget; current bundle is 0.5KB gzipped with huge headroom (the full app pulls in more once main wires it). Reduced motion flows through applyTokens (motion speed 0) and the RenderContext.
+
+Verified: 8 new tests (143 total) green, including the reduced-motion guard, the paint timer within and over budget, and the byte helpers. Fixed a jsdom crash where the default matcher assumed window.matchMedia exists; guarded it. Added scripts/ to eslint ignores (node tooling, not in the TS program). Lint, typecheck, build, and size all pass.
+
+Next: P1.14 the viewable demo: CSS for the Aurora look and a main.ts that wires the mock bridge, reduced motion, first-paint measurement, weather fetch, and instant paint from cache, then a manual verification screenshot. This completes Phase 1.

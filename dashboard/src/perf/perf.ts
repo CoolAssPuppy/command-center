@@ -1,0 +1,56 @@
+/**
+ * Performance helpers. A new tab page must paint fast, so the dashboard times
+ * its first paint and respects reduced motion. The budgets here are also
+ * enforced at build time by scripts/check-bundle.mjs. See docs/07-dashboard-ui.md.
+ */
+
+/** Target for first paint from cache, in milliseconds. */
+export const FIRST_PAINT_BUDGET_MS = 100;
+
+/** Budget for the gzipped JS bundle, enforced by the size script. */
+export const BUNDLE_GZIP_BUDGET_BYTES = 90 * 1024;
+
+export type MediaMatcher = (query: string) => { matches: boolean };
+
+function defaultMatcher(): MediaMatcher | undefined {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return undefined;
+  }
+  return window.matchMedia.bind(window);
+}
+
+/** Whether the user asked for reduced motion. False when it cannot be read. */
+export function prefersReducedMotion(
+  matcher: MediaMatcher | undefined = defaultMatcher(),
+): boolean {
+  if (matcher === undefined) return false;
+  try {
+    return matcher("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+}
+
+export interface PaintMeasurement {
+  elapsedMs: number;
+  withinBudget: boolean;
+}
+
+/** Time a render callback and report whether it met the first-paint budget. */
+export function measureFirstPaint(
+  render: () => void,
+  clock: () => number = () => performance.now(),
+): PaintMeasurement {
+  const start = clock();
+  render();
+  const elapsedMs = clock() - start;
+  return { elapsedMs, withinBudget: elapsedMs <= FIRST_PAINT_BUDGET_MS };
+}
+
+export function isWithinBudget(value: number, budget: number): boolean {
+  return value <= budget;
+}
+
+export function formatBytes(bytes: number): string {
+  return `${(bytes / 1024).toFixed(1)} KB`;
+}
