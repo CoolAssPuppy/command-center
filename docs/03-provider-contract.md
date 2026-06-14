@@ -119,7 +119,9 @@ Feeds are read by other processes while the owner writes them. Writes must be at
 
 ## Discovery
 
-Command Center discovers providers by scanning the container, not by hardcoding a list.
+Command Center discovers providers by scanning the container, not by hardcoding a list. It scans more than one root: the App Group container for the first-party suite, and the well-known Application Support directory that open (file-drop) providers write to, as defined in [12-transports-and-ingest.md](12-transports-and-ingest.md). A providerId found in more than one root is deduped, with the App Group root taking precedence.
+
+For each root:
 
 1. List `Providers/*/manifest.json`.
 2. For each manifest, confirm the owning app is actually installed using `NSWorkspace.shared.urlForApplication(withBundleIdentifier:)` against `manifest.bundleId`. Both satellite apps already use this exact call, so the pattern is proven. If the app is not installed, ignore the provider. This handles the case where an app was removed but left files behind.

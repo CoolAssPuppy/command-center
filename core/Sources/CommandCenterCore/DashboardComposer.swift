@@ -6,16 +6,16 @@ import Foundation
 /// container and answering the dashboard. It only assembles finished, display
 /// data: no token, no secret, ever crosses this boundary.
 public struct DashboardComposer {
-    private let feedStore: FeedStore
+    private let source: ProviderSource
 
-    public init(feedStore: FeedStore) {
-        self.feedStore = feedStore
+    public init(source: ProviderSource) {
+        self.source = source
     }
 
     public func compose(generatedAt: String) -> DashboardPayload {
         DashboardPayload(
-            settings: feedStore.loadSettings(),
-            providers: feedStore.loadProviders(),
+            settings: source.loadSettings(),
+            providers: source.loadProviders(),
             generatedAt: generatedAt
         )
     }

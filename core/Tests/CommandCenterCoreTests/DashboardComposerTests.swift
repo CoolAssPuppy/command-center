@@ -37,7 +37,7 @@ final class DashboardComposerTests: XCTestCase {
 
     private func composer(installed: Set<String>) -> DashboardComposer {
         DashboardComposer(
-            feedStore: FeedStore(containerURL: container, locator: StubLocator(installed: installed))
+            source: FeedStore(containerURL: container, locator: StubLocator(installed: installed))
         )
     }
 

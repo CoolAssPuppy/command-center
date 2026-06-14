@@ -14,12 +14,10 @@ public struct FileDropTransport: IngestTransport {
         self.fileManager = fileManager
     }
 
-    /// The default well-known container: ~/Library/Application Support/Command Center.
+    /// The default well-known container, defined once in CommandCenterCore so the
+    /// SDK and the app agree on the path.
     public static func wellKnownContainerURL(fileManager: FileManager = .default) -> URL {
-        let base = fileManager
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first ?? fileManager.temporaryDirectory
-        return base.appendingPathComponent("Command Center", isDirectory: true)
+        CommandCenterContainer.wellKnownDirectoryURL(fileManager: fileManager)
     }
 
     private func publisher(for providerId: String) -> FeedPublisher {

@@ -28,13 +28,16 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     }
 
     private func dashboardResponse() -> Any {
-        guard let container = CommandCenterContainer.url() else {
-            return ["providers": []]
-        }
-        let composer = DashboardComposer(
-            feedStore: FeedStore(containerURL: container, locator: WorkspaceProviderLocator())
-        )
-        let json = composer.composeJSON(generatedAt: ISO8601DateFormatter().string(from: Date()))
+        // Discover providers across both roots: the App Group container (the
+        // first-party suite) and the well-known directory the file-drop SDK
+        // writes to. App Group wins on a providerId collision.
+        var roots: [URL] = []
+        if let group = CommandCenterContainer.url() { roots.append(group) }
+        roots.append(CommandCenterContainer.wellKnownDirectoryURL())
+
+        let source = MultiRootFeedStore(containerURLs: roots, locator: WorkspaceProviderLocator())
+        let composer = DashboardComposer(source: source)
+        let json = composer.composeJSON(generatedAt: ISO8601.formatter.string(from: Date()))
         return (try? JSONSerialization.jsonObject(with: json)) ?? ["providers": []]
     }
 }

@@ -12,4 +12,14 @@ public enum CommandCenterContainer {
     public static func url(fileManager: FileManager = .default) -> URL? {
         fileManager.containerURL(forSecurityApplicationGroupIdentifier: groupId)
     }
+
+    /// The well-known directory the file-drop transport writes to, for open
+    /// (non-suite) providers. Single source of truth for both the SDK and the
+    /// app's discovery. See docs/12-transports-and-ingest.md.
+    public static func wellKnownDirectoryURL(fileManager: FileManager = .default) -> URL {
+        let base = fileManager
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first ?? fileManager.temporaryDirectory
+        return base.appendingPathComponent("Command Center", isDirectory: true)
+    }
 }

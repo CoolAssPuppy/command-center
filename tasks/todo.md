@@ -62,6 +62,9 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 
 ## Phase 5: open provider platform
 
+- [x] P5.4d FeedStore multi-root discovery: scan the App Group container AND the well-known Application Support dir (file-drop), dedupe by providerId (earlier root wins), via a MultiRootFeedStore composed on FeedStore + a ProviderSource protocol. Wire the extension handler to both roots. Update docs/12/03.
+- [ ] P5.5 Providers consent screen (app UI): list registrations (RegistrationStore), approve (IngestHandler.approve -> show token for delivery)/deny/revoke, status. Match the suite theme via the ported ThemeStore. Compile-verify unsigned.
+
 - [x] P5.2a Ingest core logic (CommandCenterCore, testable): capability-token issuance/validation/revocation, a registration model (pending consent -> approved), and an IngestHandler that processes typed ingest requests (register, publish, revoke) — validating tokens and writing feeds via FeedPublisher into an injected container. Security tests: publish without a valid token refused, revoked token stops working, registration needs consent. Identity = loopback + consent tokens (lessons).
 - [x] P5.1 Local ingest endpoint TRANSPORT (app, thin): loopback NWListener HTTP + WebSocket wired to the IngestHandler, default port + Bonjour discovery. Compile-verify unsigned; do not bind real ports in unit tests.
 - [x] P5.3 CommandCenterKit SDK: register, publish, two transports (file-drop + endpoint), token storage. Tests. (openStream/live-publish deferred to a later iteration.)
@@ -126,6 +129,14 @@ Shipped: the CommandCenterKit SwiftPM package (packages/CommandCenterKit), a pat
 Verified: 6 Kit swift tests (file-drop register+publish -> FeedStore-readable provider; endpoint encodes the right register/publish request incl. the stored token; publish without a token throws notApproved; a refused response surfaces). Core 66 + unsigned native build + dashboard all green.
 
 Next: P5.5 providers screen (approve/deny/revoke + token-delivery UX, matching the suite theme) and the second discovery root (FeedStore scanning the well-known dir). openStream/live WebSocket publishing also deferred.
+
+### Iteration 25 (P5.4d)
+
+Shipped: multi-root provider discovery. ProviderSource protocol (FeedStore and MultiRootFeedStore both conform); MultiRootFeedStore composes per-root FeedStores, unions providers, dedupes by providerId with earlier roots winning, and takes settings from the first root that has them. DashboardComposer now takes a ProviderSource (was a concrete FeedStore). The well-known directory path moved to CommandCenterContainer.wellKnownDirectoryURL as the single source (the SDK's FileDropTransport now delegates to it). The extension handler discovers across both roots (App Group first, then the well-known dir). Docs 12 and 03 updated: Transport 1 (file-drop) and Transport 2 (endpoint) are now implemented; discovery spans two roots.
+
+Verified: 3 new core swift tests (69 total): unions providers across roots, earlier-root-wins on a providerId collision, settings from the first root that has them. Kit 6, unsigned native build, dashboard all green.
+
+Next: P5.5 the providers consent screen UI (approve/deny/revoke + token delivery), matching the suite theme.
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 
