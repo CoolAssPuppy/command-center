@@ -43,6 +43,8 @@ targets:
         LSUIElement: true
         NSPrincipalClass: NSApplication
         LSApplicationCategoryType: "public.app-category.productivity"
+        NSCalendarsUsageDescription: "Command Center shows your events on the new tab page."
+        NSCalendarsFullAccessUsageDescription: "Command Center shows your events on the new tab page."
         CFBundleURLTypes:
           - CFBundleURLName: com.strategicnerds.commandcenter
             CFBundleURLSchemes:

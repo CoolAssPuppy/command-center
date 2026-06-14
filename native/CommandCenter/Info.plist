@@ -35,6 +35,10 @@
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Command Center shows your events on the new tab page.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Command Center shows your events on the new tab page.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

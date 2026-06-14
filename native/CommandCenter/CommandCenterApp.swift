@@ -15,10 +15,12 @@ struct CommandCenterApp: App {
     }
 }
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
     private let routeHandler = RouteHandler()
+    private let calendarProvider = EventKitCalendarProvider()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         popover.behavior = .transient
@@ -38,6 +40,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.action = #selector(togglePopover)
         item.button?.target = self
         statusItem = item
+
+        // Publish Apple-calendar events if access is already granted; never prompts here.
+        calendarProvider.refreshIfAuthorized()
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
