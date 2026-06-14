@@ -1,0 +1,358 @@
+/* Aurora look for the Command Center dashboard. All colors and sizes come from
+   the theme tokens applied as --cc-* custom properties on the root, so a theme
+   change restyles everything without touching this file. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--cc-font-family, system-ui, sans-serif);
+  color: var(--cc-color-text, #e6eaf2);
+  background: var(--cc-bg, #0b0f1a);
+  -webkit-font-smoothing: antialiased;
+}
+
+.cc-dashboard {
+  min-height: 100vh;
+  padding: clamp(20px, 4vw, 56px);
+  background: var(--cc-bg, #0b0f1a);
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Header ------------------------------------------------------------------ */
+
+.cc-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cc-header__time {
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 600;
+  font-variant-numeric: var(--cc-numeric, tabular-nums);
+  margin-right: 14px;
+}
+
+.cc-header__date {
+  color: var(--cc-color-muted, #9aa4b2);
+  font-size: 16px;
+}
+
+.cc-header__greeting {
+  font-size: 18px;
+  color: var(--cc-color-muted, #9aa4b2);
+}
+
+/* Rail: weather and world clock ------------------------------------------ */
+
+.cc-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.cc-weather,
+.cc-worldclock {
+  background: var(--cc-color-surface, #121826);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--cc-card-radius, 16px);
+  padding: var(--cc-card-padding, 16px);
+}
+
+.cc-weather {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cc-weather__temp {
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-weather__condition,
+.cc-weather__range {
+  color: var(--cc-color-muted, #9aa4b2);
+  font-size: 14px;
+}
+
+.cc-weather[data-loading="true"] .cc-weather__skeleton {
+  display: block;
+  width: 120px;
+  height: 24px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cc-worldclock {
+  flex: 1;
+  min-width: 220px;
+}
+
+.cc-worldclock__title {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cc-color-muted, #9aa4b2);
+  margin-bottom: 8px;
+}
+
+.cc-worldclock__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.cc-worldclock__city {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-worldclock__city[data-daynight="night"] {
+  color: var(--cc-color-muted, #9aa4b2);
+}
+
+.cc-worldclock__time {
+  margin-left: auto;
+}
+
+.cc-worldclock__offset {
+  font-size: 12px;
+  color: var(--cc-color-muted, #9aa4b2);
+}
+
+/* Card grid --------------------------------------------------------------- */
+
+.cc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.cc-card {
+  background: var(--cc-color-surface, #121826);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 3px solid var(--cc-card-accent, var(--cc-color-accent, #7c8cff));
+  border-radius: var(--cc-card-radius, 16px);
+  padding: var(--cc-card-padding, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cc-card[data-presentation="glance"] {
+  padding-block: 12px;
+}
+
+.cc-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cc-card__name {
+  font-weight: 600;
+}
+
+.cc-card__glance {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cc-card__glance-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-card__glance-label {
+  color: var(--cc-color-muted, #9aa4b2);
+  font-size: 13px;
+}
+
+.cc-card__glance[data-tone="urgent"] .cc-card__glance-value {
+  color: var(--cc-color-urgent, #f87171);
+}
+
+.cc-card__glance[data-tone="positive"] .cc-card__glance-value {
+  color: var(--cc-color-positive, #34d399);
+}
+
+.cc-card__age,
+.cc-card__notice {
+  color: var(--cc-color-muted, #9aa4b2);
+  font-size: 13px;
+}
+
+.cc-card__reconnect {
+  align-self: flex-start;
+  background: var(--cc-color-accent, #7c8cff);
+  color: #0b0f1a;
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Widgets ----------------------------------------------------------------- */
+
+.cc-widget__title {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cc-color-muted, #9aa4b2);
+  margin-bottom: 6px;
+}
+
+.cc-metric__value {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-metric[data-tone="urgent"] .cc-metric__value {
+  color: var(--cc-color-urgent, #f87171);
+}
+
+.cc-metric[data-tone="positive"] .cc-metric__value {
+  color: var(--cc-color-positive, #34d399);
+}
+
+.cc-list__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.cc-list__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+button.cc-list__row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cc-list__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cc-list__title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cc-list__subtitle {
+  color: var(--cc-color-muted, #9aa4b2);
+  font-size: 13px;
+}
+
+.cc-avatar,
+.cc-dot,
+.cc-icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cc-time,
+.cc-trailing-text {
+  margin-left: auto;
+  color: var(--cc-color-muted, #9aa4b2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-badge {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cc-badge[data-tone="urgent"] {
+  background: color-mix(in srgb, var(--cc-color-urgent, #f87171) 22%, transparent);
+  color: var(--cc-color-urgent, #f87171);
+}
+
+.cc-badge[data-tone="positive"] {
+  background: color-mix(in srgb, var(--cc-color-positive, #34d399) 22%, transparent);
+  color: var(--cc-color-positive, #34d399);
+}
+
+.cc-chart__svg {
+  width: 100%;
+  height: 56px;
+}
+
+.cc-chart__line {
+  fill: none;
+  stroke: var(--cc-color-accent, #7c8cff);
+  stroke-width: 1.5;
+}
+
+.cc-chart__point {
+  fill: var(--cc-color-accent, #7c8cff);
+}
+
+.cc-chart__bar {
+  fill: var(--cc-color-accent, #7c8cff);
+}
+
+.cc-progress__track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.cc-progress__fill {
+  height: 100%;
+  background: var(--cc-color-accent, #7c8cff);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

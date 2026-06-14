@@ -31,7 +31,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.11 Dashboard shell: header with time, date, greeting; responsive grid; instant paint from cache; all card states. Integration tests.
 - [x] P1.12 Mock native bridge and mock feed fixtures for local dev and the demo page.
 - [x] P1.13 Performance pass: bundle budget check, reduced-motion support, first-paint measurement harness.
-- [ ] P1.14 Phase 1 demo: index.html renders the full dashboard from mocks. Manual verification screenshot.
+- [x] P1.14 Phase 1 demo: index.html renders the full dashboard from mocks. Verified with a live screenshot.
 
 ## Phase 2: native shell and the bridge
 
@@ -179,3 +179,11 @@ Shipped: the perf module (src/perf). prefersReducedMotion reads the media query 
 Verified: 8 new tests (143 total) green, including the reduced-motion guard, the paint timer within and over budget, and the byte helpers. Fixed a jsdom crash where the default matcher assumed window.matchMedia exists; guarded it. Added scripts/ to eslint ignores (node tooling, not in the TS program). Lint, typecheck, build, and size all pass.
 
 Next: P1.14 the viewable demo: CSS for the Aurora look and a main.ts that wires the mock bridge, reduced motion, first-paint measurement, weather fetch, and instant paint from cache, then a manual verification screenshot. This completes Phase 1.
+
+### Iteration 13 (P1.14) — Phase 1 complete
+
+Shipped: the viewable demo. runDashboard (src/app/run.ts) is the testable app orchestration: instant paint from cache, then live bridge data which it caches, then a weather fetch and repaint, all injectable. main.ts wires it to the mock bridge with real Date, navigation, reduced-motion, and first-paint timing. styles.css implements the Aurora look entirely off the --cc-* tokens, so a theme swap restyles everything. Added vite-env.d.ts for CSS imports.
+
+Verified: 4 new tests (147 total) green, including a full end-to-end render (cache then bridge then weather, clickable navigation) and the cache-fallback-on-bridge-failure path. Built and served via vite preview, then loaded in a real browser: the dashboard renders the header greeting, world clock (SF/London/Bengaluru), the calendar card with two clickable meeting rows, the Linear inbox, the DeployBot chart card, and the Notion reconnect card. Screenshot delivered to the user. Bundle 22.4KB gzipped (budget 90KB). Lint, typecheck, build, and size all pass. Only console noise was a harmless favicon 404.
+
+PHASE 1 DONE. Phase 2 (native macOS app, Safari extension, EventKit, native bridge) begins Swift/Xcode work that needs user decisions before proceeding: Developer ID vs Mac App Store distribution (affects sandbox, entitlements, and the Apple-Notes-adjacent scope), and the endpoint identity approach for later phases. Loop paused here pending those decisions.
