@@ -70,4 +70,12 @@ describe("renderDashboard", () => {
     expect(root.classList.contains("cc-dashboard")).toBe(true);
     expect(root.style.getPropertyValue("--cc-color-bg").length).toBeGreaterThan(0);
   });
+
+  it("applies the theme named in settings.appearance.theme", () => {
+    const root = host();
+    const themed: Settings = { ...settings, appearance: { theme: "com.strategicnerds.mono" } };
+    renderDashboard(root, { now: NOW, settings: themed, cards: [], weather }, { navigate: vi.fn(), timeZone: LA });
+
+    expect(root.style.getPropertyValue("--cc-color-bg")).toBe("#0A0A0A");
+  });
 });

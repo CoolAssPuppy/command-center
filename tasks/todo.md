@@ -74,8 +74,8 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 
 ## Phase 6: open presentation layer
 
-- [ ] P6.1 Two-tier theme system, token and render themes, shadow-root isolation, no-network theme context.
-- [ ] P6.2 Ship Aurora, Paper, Mono.
+- [x] P6.2 Ship Aurora, Paper, Mono (token themes) + registry + settings-driven selection.
+- [ ] P6.1 Render-theme tier (custom JS renderers, shadow-root isolation, no-network theme context) — FOLLOWING iteration.
 - [ ] P6.3 Theme guideline and a sample theme of each tier.
 
 ## Phase 7: polish and ship
@@ -145,6 +145,18 @@ Shipped: the providers consent screen. Pure core: ProviderRow + providerRows(fro
 Verified: 2 new core swift tests (71 total): mapping sorts case-insensitively and carries consent/ids. Kit 6, unsigned native build, dashboard green. Fixed a try?-flattening double-bind (logged).
 
 The open platform is now functionally complete end to end (unsigned): a third-party app uses CommandCenterKit to register/publish (file-drop or endpoint), the user approves it here and delivers the token, and the dashboard discovers and renders the feed across both roots. Remaining Phase 5: openStream/live WebSocket publishing (deferred). Phase 6 (themes for the dashboard) and Phase 7 (ship) remain, plus the signed/Safari and other-app tasks that need the user.
+
+### Iteration 27 (P6.2)
+
+Shipped: the dashboard's token themes. Added Paper (light editorial serif) and Mono (dense monospaced) alongside Aurora, a theme registry (SHIPPED_THEMES, DEFAULT_THEME, themeById(id, fallback)), and settings-driven selection: renderDashboard now resolves the theme from settings.appearance.theme (a themeId) and applies it, defaulting to Aurora; added appearance.theme to the settings schema. The dashboard's web themes stay separate from the native app themes.
+
+Verified: 6 new dashboard tests (148 total): each shipped theme validates against ThemeTokensSchema with a unique id, registry lookup + fallback, and an integration test that settings.appearance.theme = mono applies mono's bg var to the root. Lint, build, size all green.
+
+Self-review done (was due): the Phase 5 + theme code is clean; the real duplications were already factored as I went (writeJSONAtomically, hexString, AppContainer, MeetingHosts, ProviderSource, the well-known path). No new debt.
+
+NOTE on the render-theme tier (P6.1): deferred for the user's review. It executes third-party JavaScript in the new tab page; its security guarantees (shadow-root isolation, no-network theme CSP) cannot be fully verified in jsdom and warrant the user weighing in on the security model before building. Token themes already deliver the user-facing theming.
+
+Next: P5.6 a sample provider using CommandCenterKit + a public "build a provider" doc (fully verifiable, showcases the platform).
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 

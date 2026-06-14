@@ -2,7 +2,7 @@ import type { PlacedCard } from "../dashboard/attention";
 import type { Settings } from "../dashboard/payload";
 import { defaultRenderContext } from "../render/context";
 import { el } from "../render/helpers";
-import { aurora } from "../theme/aurora";
+import { themeById } from "../theme/registry";
 import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
 import { renderCard, type CardDeps } from "./card";
@@ -39,7 +39,7 @@ export function renderDashboard(
   model: DashboardModel,
   deps: DashboardDeps,
 ): HTMLElement {
-  const theme = deps.theme ?? aurora;
+  const theme = deps.theme ?? themeById(model.settings.appearance?.theme);
   const reducedMotion = deps.reducedMotion ?? false;
   applyTokens(root, theme.tokens, { reducedMotion });
   root.replaceChildren();

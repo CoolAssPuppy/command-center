@@ -43,6 +43,8 @@ export const SettingsSchema = z
   .object({
     schemaVersion: z.number().int().positive().optional(),
     profile: z.object({ name: z.string() }).optional(),
+    // The dashboard's web theme, by themeId. Distinct from the native app theme.
+    appearance: z.object({ theme: z.string().optional() }).passthrough().optional(),
     layout: z
       .object({
         cardOrder: z.array(z.string()).optional(),
