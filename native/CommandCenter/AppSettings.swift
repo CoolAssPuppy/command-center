@@ -23,7 +23,7 @@ final class AppSettings: ObservableObject {
     private var document: JSONValue
 
     private init() {
-        store = SettingsStore(containerURL: AppSettings.containerURL())
+        store = SettingsStore(containerURL: AppContainer.url())
         let loaded = store.read() ?? defaultSettingsDocument()
         document = loaded
 
@@ -59,17 +59,5 @@ final class AppSettings: ObservableObject {
         } catch {
             NSLog("CommandCenter: failed to save settings: \(error)")
         }
-    }
-
-    /// The suite container if the App Group is active, else a dev fallback in
-    /// Application Support (unsigned builds have no App Group container).
-    private static func containerURL() -> URL {
-        if let group = CommandCenterContainer.url() { return group }
-        let base = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first ?? FileManager.default.temporaryDirectory
-        let dir = base.appendingPathComponent("CommandCenterDev", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
     }
 }

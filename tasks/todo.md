@@ -63,7 +63,7 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 ## Phase 5: open provider platform
 
 - [x] P5.4d FeedStore multi-root discovery: scan the App Group container AND the well-known Application Support dir (file-drop), dedupe by providerId (earlier root wins), via a MultiRootFeedStore composed on FeedStore + a ProviderSource protocol. Wire the extension handler to both roots. Update docs/12/03.
-- [ ] P5.5 Providers consent screen (app UI): list registrations (RegistrationStore), approve (IngestHandler.approve -> show token for delivery)/deny/revoke, status. Match the suite theme via the ported ThemeStore. Compile-verify unsigned.
+- [x] P5.5 Providers consent screen (app UI): list registrations (RegistrationStore), approve (IngestHandler.approve -> show token for delivery)/deny/revoke, status. Match the suite theme via the ported ThemeStore. Compile-verify unsigned.
 
 - [x] P5.2a Ingest core logic (CommandCenterCore, testable): capability-token issuance/validation/revocation, a registration model (pending consent -> approved), and an IngestHandler that processes typed ingest requests (register, publish, revoke) — validating tokens and writing feeds via FeedPublisher into an injected container. Security tests: publish without a valid token refused, revoked token stops working, registration needs consent. Identity = loopback + consent tokens (lessons).
 - [x] P5.1 Local ingest endpoint TRANSPORT (app, thin): loopback NWListener HTTP + WebSocket wired to the IngestHandler, default port + Bonjour discovery. Compile-verify unsigned; do not bind real ports in unit tests.
@@ -137,6 +137,14 @@ Shipped: multi-root provider discovery. ProviderSource protocol (FeedStore and M
 Verified: 3 new core swift tests (69 total): unions providers across roots, earlier-root-wins on a providerId collision, settings from the first root that has them. Kit 6, unsigned native build, dashboard all green.
 
 Next: P5.5 the providers consent screen UI (approve/deny/revoke + token delivery), matching the suite theme.
+
+### Iteration 26 (P5.5)
+
+Shipped: the providers consent screen. Pure core: ProviderRow + providerRows(from:) maps registrations to sorted display rows (tested). App: ProvidersModel (loads rows from RegistrationStore, routes Approve/Deny/Revoke to IngestHandler, holds the one-time token in memory only) and ProvidersCard, a themed SwiftUI card added to SettingsView listing each app with its consent state and actions, plus a token-delivery row after approval (monospaced, copy to pasteboard, shown once, never persisted/logged). Quality: extracted AppContainer.url() as the single dev/App-Group container resolver, and refactored AppSettings to use it (removed the duplicated fallback logic).
+
+Verified: 2 new core swift tests (71 total): mapping sorts case-insensitively and carries consent/ids. Kit 6, unsigned native build, dashboard green. Fixed a try?-flattening double-bind (logged).
+
+The open platform is now functionally complete end to end (unsigned): a third-party app uses CommandCenterKit to register/publish (file-drop or endpoint), the user approves it here and delivers the token, and the dashboard discovers and renders the feed across both roots. Remaining Phase 5: openStream/live WebSocket publishing (deferred). Phase 6 (themes for the dashboard) and Phase 7 (ship) remain, plus the signed/Safari and other-app tasks that need the user.
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 

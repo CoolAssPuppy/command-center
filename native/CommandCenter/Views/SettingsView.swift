@@ -25,6 +25,7 @@ struct SettingsView: View {
                 browserCard
                 weatherCard
                 citiesCard
+                ProvidersCard()
             }
             .padding(AppSpacing.xl)
             .frame(maxWidth: .infinity, alignment: .leading)
