@@ -29,7 +29,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.9 Default widget renderers, vanilla DOM into a host node, one per widget type. Testing Library behavior tests.
 - [x] P1.10 Theme token layer and the first theme tokens (Aurora). Token application. Tests.
 - [x] P1.11 Dashboard shell: header with time, date, greeting; responsive grid; instant paint from cache; all card states. Integration tests.
-- [ ] P1.12 Mock native bridge and mock feed fixtures for local dev and the demo page.
+- [x] P1.12 Mock native bridge and mock feed fixtures for local dev and the demo page.
 - [ ] P1.13 Performance pass: bundle budget check, reduced-motion support, first-paint measurement harness.
 - [ ] P1.14 Phase 1 demo: index.html renders the full dashboard from mocks. Manual verification screenshot.
 
@@ -163,3 +163,11 @@ Shipped: the dashboard shell in src/shell. renderDashboard applies theme tokens,
 Verified: 18 new tests (126 total) green: header greeting/time/date, world clock day-night and date offset, weather skeleton vs present, every card state, reconnect navigation, the cache round-trip and corrupt-cache fallback, and a full renderDashboard integration test that clicks an inbox row and asserts the resolved linearbar:// navigation. Two issues caught before completion: the needs_auth reconnect originally reused a param-requiring action (would never fire), redesigned to openProvider; and a ComposedCard-vs-PlacedCard factory type mismatch, fixed with makePlacedCard. Lint, typecheck, and build pass.
 
 Next: P1.12 mock native bridge and mock feed fixtures, so the dashboard runs end to end against realistic data for local dev and the demo.
+
+### Iteration 11 (P1.12)
+
+Shipped: the DashboardBridge interface (getDashboard returns unknown, always validated), a createMockBridge, and a realistic mockDashboardPayload exercising the full variety: a calendar list card with meet/zoom join actions, an urgent linear inbox, a generic card-kind provider carrying a metric plus a bar chart, and a needs_auth Notion provider. Settings include three world-clock cities and a weather location. Web links use a commandcenter://open route rather than a raw https template, since the action resolver URL-encodes params (an encoded https value is not a navigable URL); the native app decodes and opens. Added buildDashboardModel (parse, compose, plan) as the single call the shell makes from bytes to cards.
+
+Verified: 9 new tests (135 total) green: the fixture parses, exercises every required kind and the needs_auth status, carries a glance on every feed, and buildDashboardModel surfaces the needs_auth card and the chart-bearing generic card, with an error path for bad input. Lint, typecheck, and build pass.
+
+Next: P1.13 performance pass (bundle budget check, reduced-motion support, first-paint measurement harness).

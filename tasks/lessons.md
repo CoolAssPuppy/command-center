@@ -14,6 +14,7 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 - In DOM render tests, attach the host node to document.body (and clear it in afterEach with replaceChildren, never innerHTML). getByText throws on miss so it already proves existence, but toBeInTheDocument additionally requires the node be attached to the document; a detached host fails it (hit in P1.9).
 - Keep a buildable entry (index.html + src/main.ts) so `npm run build` stays green every iteration; vite needs an HTML entry even while the real shell is unwritten.
 - A needs_auth reconnect must not reuse an action that requires a feed-supplied param (like open?url={url}); with no url it silently never fires. Launch the provider via a parameterless commandcenter://openProvider route instead. Design-review actions for their required params before wiring a button to them.
+- To open a plain web link, use a commandcenter://open route with the url as a param, not a urlTemplate of `{url}`. The action resolver URL-encodes every param so it cannot break out, and an encoded https value (https%3A%2F%2F...) is not a navigable URL. The native app decodes the route param and opens it in the browser.
 
 ## Architecture invariants to never violate
 
