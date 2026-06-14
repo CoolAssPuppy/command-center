@@ -1,9 +1,10 @@
+import type { ComposedCard } from "../dashboard/compose";
 import type {
   DashboardPayload,
   Manifest,
   ProviderEntry,
 } from "../dashboard/payload";
-import { makeFeedEnvelope, makeGlance } from "./factories";
+import { makeCard, makeFeedEnvelope, makeGlance } from "./factories";
 import { makeLinearInbox } from "./kind-factories";
 
 export function makeManifest(overrides: Partial<Manifest> = {}): Manifest {
@@ -41,6 +42,24 @@ export function makeProviderEntry(
         data: makeLinearInbox(),
       }),
     ],
+    ...overrides,
+  };
+}
+
+export function makeComposedCard(
+  overrides: Partial<ComposedCard> = {},
+): ComposedCard {
+  return {
+    providerId: "linear-bar",
+    displayName: "Linear",
+    kind: "linear.inbox",
+    state: "ready",
+    status: "ok",
+    glance: makeGlance({ tone: "neutral" }),
+    fresh: true,
+    ageSeconds: 10,
+    card: makeCard(),
+    actions: [],
     ...overrides,
   };
 }

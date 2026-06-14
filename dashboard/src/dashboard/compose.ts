@@ -6,7 +6,7 @@ import {
   type ParseResult,
 } from "../domain/feed";
 import { CONVENIENCE_KINDS, cardFromFeed } from "../domain/kinds";
-import type { Status } from "../domain/primitives";
+import type { Glance, Status } from "../domain/primitives";
 import type { Card } from "../domain/widgets";
 import {
   DashboardPayloadSchema,
@@ -30,6 +30,8 @@ export interface ComposedCard {
   kind: string;
   state: CardState;
   status: Status;
+  /** The required feed glance, always present even when there is no card body. */
+  glance: Glance;
   /** Whether the data is within its ttl. Drives the "updated Nm ago" note. */
   fresh: boolean;
   ageSeconds: number | null;
@@ -60,6 +62,7 @@ function composeFeed(
     displayName: manifest.displayName,
     kind: feed.kind,
     status: feed.status,
+    glance: feed.glance,
     state: "error",
     fresh: false,
     ageSeconds: ageSecondsOf(feed, now),

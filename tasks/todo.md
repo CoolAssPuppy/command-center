@@ -24,7 +24,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.4 Time engine: world-clock current time, day/night, date offset, timeline overlap, all with injectable now. Pure, deterministic tests.
 - [x] P1.5 Weather client: Open-Meteo fetch and parse, injected-fetch behavior tests.
 - [x] P1.6 Dashboard composition: from a getDashboard payload, compose ordered cards and resolve states ok, stale, needs_auth, error, absent. Tests.
-- [ ] P1.7 Attention and layout model, basic: ordering and glance-versus-full decisions. Tests.
+- [x] P1.7 Attention and layout model, basic: ordering and glance-versus-full decisions. Tests.
 - [ ] P1.8 Security utilities: text-only rendering helper, action URL validation against host allowlist, CSP string. Tests cover injection attempts.
 - [ ] P1.9 Default widget renderers, vanilla DOM into a host node, one per widget type. Testing Library behavior tests.
 - [ ] P1.10 Theme token layer and the first theme tokens (Aurora). Token application. Tests.
@@ -123,3 +123,11 @@ Shipped: the getDashboard payload schemas (Manifest, ProviderEntry, Settings, Da
 Verified: 13 new tests (68 total) green across every state, freshness past ttl, ordering, hidden, and payload parse rejection. Lint and typecheck clean.
 
 Next: P1.7 attention and layout model (glance-versus-full decisions when many providers exist), test-first.
+
+### Iteration 6 (P1.7)
+
+Shipped: the attention model in src/dashboard/attention.ts. planLayout annotates each composed card as full or glance under a maxFull budget. Empty and error cards never consume a full slot; urgent cards (with a body) are promoted to full even past budget; remaining slots go to ready and needs_auth cards in order, so reconnect prompts surface and user ordering is respected. Also added the required feed glance to ComposedCard so glance-only and needs_auth cards always have a glance line to show.
+
+Verified: 6 new tests (74 total) green, covering budget cutoff, urgent promotion past budget, empty/error never full, needs_auth full, all-urgent overflow, and order preservation. Lint and typecheck clean.
+
+Next: P1.8 security utilities (text-only render helper, action-URL validation against a scheme and host allowlist, CSP string), test-first, with injection attempts in the tests.
