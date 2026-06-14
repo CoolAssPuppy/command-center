@@ -22,7 +22,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.2 Core domain types and Zod schemas: FeedEnvelope, Status, Glance, Card, Action, and the Widget union (metric, list, table, chart, timeline, progress, text). Validation tests with factory functions.
 - [x] P1.3 Convenience-kind schemas and mappers to cards/widgets: calendar.today, reminders.today, linear.inbox, docs.recent. Tests.
 - [x] P1.4 Time engine: world-clock current time, day/night, date offset, timeline overlap, all with injectable now. Pure, deterministic tests.
-- [ ] P1.5 Weather client: Open-Meteo fetch and parse, MSW-mocked behavior tests.
+- [x] P1.5 Weather client: Open-Meteo fetch and parse, injected-fetch behavior tests.
 - [ ] P1.6 Dashboard composition: from a getDashboard payload, compose ordered cards and resolve states ok, stale, needs_auth, error, absent. Tests.
 - [ ] P1.7 Attention and layout model, basic: ordering and glance-versus-full decisions. Tests.
 - [ ] P1.8 Security utilities: text-only rendering helper, action URL validation against host allowlist, CSP string. Tests cover injection attempts.
@@ -107,3 +107,11 @@ Shipped: the time engine in src/time/clock.ts. Every function takes an explicit 
 Verified: 13 new tests (46 total) green, including a half-hour zone (Kolkata), summer-time offsets, a date-line crossing in both directions, and day/night band edges. A bad test expectation (offset arithmetic) was caught by the red test and corrected; the implementation was right. Lint and typecheck clean.
 
 Next: P1.5 weather client (Open-Meteo fetch and parse) with mocked-fetch behavior tests.
+
+### Iteration 4 (P1.5)
+
+Shipped: the Open-Meteo weather client in src/weather. fetch is injected, so it is tested with no network and no global coupling. It talks to exactly one host (no key, no token), validates the response with Zod, maps WMO codes to a condition and icon with a safe fallback, and returns a ParseResult so a bad body never yields a partial model. Network throws and non-ok statuses become error results.
+
+Verified: 9 new tests (55 total) green, covering success, host targeting, HTTP error, malformed body, network throw, and a response with no daily block. tsc caught an untyped vi.fn mock (empty-tuple call args); fixed by typing the stub parameter. Lint and typecheck clean.
+
+Next: P1.6 dashboard composition (compose ordered cards from a getDashboard payload, resolve states ok/stale/needs_auth/error/absent), test-first.
