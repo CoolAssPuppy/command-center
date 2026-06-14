@@ -40,12 +40,20 @@ final class EventKitCalendarProvider {
             events: inputs,
             day: dayFormatter.string(from: startOfDay),
             timeZone: TimeZone.current.identifier,
-            updatedAt: ISO8601DateFormatter().string(from: Date())
+            updatedAt: ISO8601.formatter.string(from: Date())
         )
+        let manifest = appleCalendarManifest()
 
-        let publisher = FeedPublisher(providerId: appleCalendarProviderId, containerURL: container)
-        try? publisher.writeManifest(appleCalendarManifest())
-        try? publisher.writeFeed(envelope, to: "calendar/today.json")
+        // Keep file I/O off the main thread; envelope/manifest are Sendable.
+        Task.detached(priority: .utility) {
+            let publisher = FeedPublisher(providerId: appleCalendarProviderId, containerURL: container)
+            do {
+                try publisher.writeManifest(manifest)
+                try publisher.writeFeed(envelope, to: "calendar/today.json")
+            } catch {
+                NSLog("CommandCenter: calendar publish failed: \(error)")
+            }
+        }
     }
 
     private static func toInput(_ event: EKEvent) -> CalendarEventInput {

@@ -1,10 +1,6 @@
 import XCTest
 @testable import CommandCenterCore
 
-private struct CalendarStubLocator: ProviderLocator {
-    func isInstalled(bundleId: String) -> Bool { true }
-}
-
 final class CalendarFeedTests: XCTestCase {
     private let start = Date(timeIntervalSince1970: 1_800_000_000)
     private let end = Date(timeIntervalSince1970: 1_800_001_800)
@@ -66,10 +62,7 @@ final class CalendarFeedTests: XCTestCase {
     }
 
     func testPublishesThroughTheContainerAndFeedStoreReadsItBack() throws {
-        let container = FileManager.default.temporaryDirectory
-            .appendingPathComponent("cc-publish-\(UUID().uuidString)", isDirectory: true)
-        defer { try? FileManager.default.removeItem(at: container) }
-
+        let container = try makeTempContainer()
         let publisher = FeedPublisher(providerId: appleCalendarProviderId, containerURL: container)
         try publisher.writeManifest(appleCalendarManifest())
         try publisher.writeFeed(
@@ -80,7 +73,7 @@ final class CalendarFeedTests: XCTestCase {
             to: "calendar/today.json"
         )
 
-        let providers = FeedStore(containerURL: container, locator: CalendarStubLocator()).loadProviders()
+        let providers = FeedStore(containerURL: container, locator: AllInstalledLocator()).loadProviders()
         XCTAssertEqual(providers.count, 1)
         XCTAssertEqual(providers.first?.feeds.first?.kind, "calendar.today")
     }

@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentViewController = NSHostingController(
             rootView: MenuBarPopover(
                 openSettings: { [weak self] in self?.openSettings() },
+                connectCalendar: { [weak self] in self?.calendarProvider.requestAccessThenRefresh() },
                 quit: { NSApp.terminate(nil) }
             )
         )

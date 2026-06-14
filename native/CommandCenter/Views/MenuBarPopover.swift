@@ -10,6 +10,7 @@ import SwiftUI
 struct MenuBarPopover: View {
     @ObservedObject private var themeStore = ThemeStore.shared
     let openSettings: () -> Void
+    let connectCalendar: () -> Void
     let quit: () -> Void
 
     var body: some View {
@@ -52,6 +53,16 @@ struct MenuBarPopover: View {
                 .font(.system(size: 12))
                 .foregroundStyle(theme.muted)
                 .padding(.top, AppSpacing.xs)
+            Button(action: connectCalendar) {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "calendar.badge.plus").font(.system(size: 12, weight: .medium))
+                    Text("Connect Apple Calendar").font(.system(size: 12.5, weight: .medium))
+                }
+                .foregroundStyle(theme.primary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, AppSpacing.xs)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, AppSpacing.lg)

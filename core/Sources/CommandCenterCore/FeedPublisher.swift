@@ -29,8 +29,14 @@ public struct FeedPublisher {
         try write(envelope, to: relativePath)
     }
 
+    enum PublishError: Error { case pathEscapesProviderFolder }
+
     private func write(_ value: JSONValue, to relativePath: String) throws -> URL {
-        let url = providerDirectory.appendingPathComponent(relativePath)
+        // Refuse a path that escapes the provider folder, symmetric with the
+        // read side in FeedStore.
+        guard let url = containedURL(base: providerDirectory, relativePath: relativePath) else {
+            throw PublishError.pathEscapesProviderFolder
+        }
         try fileManager.createDirectory(
             at: url.deletingLastPathComponent(),
             withIntermediateDirectories: true

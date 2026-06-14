@@ -22,6 +22,11 @@ public func decodeFeedEnvelope(_ data: Data) -> Result<FeedEnvelope, FeedDecodeE
     if envelope.schemaVersion > currentSchemaVersion {
         return .failure(.unsupportedSchemaVersion(envelope.schemaVersion))
     }
+    // Parity with the dashboard's Zod schema: positive version, non-empty
+    // providerId/kind, non-empty glance value.
+    if envelope.schemaVersion <= 0 || envelope.providerId.isEmpty || envelope.kind.isEmpty {
+        return .failure(.malformed("providerId, kind, and a positive schemaVersion are required"))
+    }
     if envelope.glance.value.isEmpty {
         return .failure(.invalidGlance)
     }

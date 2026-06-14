@@ -1,31 +1,15 @@
 import XCTest
 @testable import CommandCenterCore
 
-private struct StubLocator: ProviderLocator {
-    let installed: Set<String>
-    func isInstalled(bundleId: String) -> Bool { installed.contains(bundleId) }
-}
-
 final class FeedStoreTests: XCTestCase {
     private var container: URL!
 
     override func setUpWithError() throws {
-        container = FileManager.default.temporaryDirectory
-            .appendingPathComponent("cc-feedstore-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: container, withIntermediateDirectories: true)
-    }
-
-    override func tearDownWithError() throws {
-        try? FileManager.default.removeItem(at: container)
+        container = try makeTempContainer()
     }
 
     private func write(_ contents: String, to relativePath: String) throws {
-        let url = container.appendingPathComponent(relativePath)
-        try FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        try Data(contents.utf8).write(to: url)
+        try write(contents, to: relativePath, in: container)
     }
 
     private func manifest(providerId: String, bundleId: String, feedPath: String = "feed.json") -> String {
@@ -96,6 +80,21 @@ final class FeedStoreTests: XCTestCase {
         let providers = store(installed: ["com.sn.Evil"]).loadProviders()
         XCTAssertEqual(providers.count, 1)
         XCTAssertEqual(providers.first?.feeds.count, 0, "traversal must be refused")
+    }
+
+    func testRefusesAFeedThatIsASymlinkOutsideTheProviderFolder() throws {
+        try write(
+            manifest(providerId: "evil", bundleId: "com.sn.Evil", feedPath: "linked.json"),
+            to: "Providers/evil/manifest.json"
+        )
+        try write(feed, to: "secret.json") // outside the provider folder
+        try FileManager.default.createSymbolicLink(
+            at: container.appendingPathComponent("Providers/evil/linked.json"),
+            withDestinationURL: container.appendingPathComponent("secret.json")
+        )
+
+        let providers = store(installed: ["com.sn.Evil"]).loadProviders()
+        XCTAssertEqual(providers.first?.feeds.count, 0, "symlink escape must be refused")
     }
 
     func testLoadsSettingsWhenPresentAndNilWhenNot() throws {

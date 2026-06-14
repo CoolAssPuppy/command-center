@@ -37,13 +37,10 @@ public enum BrowserChoice: String, CaseIterable, Equatable {
     }
 }
 
+// This list mirrors DANGEROUS_SCHEMES in the dashboard's security/url.ts. The
+// two cannot share a literal across languages; keep them in sync by hand.
 private let dangerousSchemes: Set<String> = [
     "javascript", "data", "file", "blob", "about", "vbscript",
-]
-
-private let meetingBaseHosts = [
-    "meet.google.com", "zoom.us", "zoom.com",
-    "teams.microsoft.com", "teams.live.com", "webex.com",
 ]
 
 private func isDangerous(_ url: URL) -> Bool {
@@ -53,11 +50,6 @@ private func isDangerous(_ url: URL) -> Bool {
 
 private func isHTTPS(_ url: URL) -> Bool {
     url.scheme?.lowercased() == "https"
-}
-
-private func isMeetingHost(_ host: String?) -> Bool {
-    guard let host = host?.lowercased() else { return false }
-    return meetingBaseHosts.contains { host == $0 || host.hasSuffix("." + $0) }
 }
 
 private func param(_ name: String, in items: [URLQueryItem]) -> String? {
@@ -78,7 +70,7 @@ public func parseRoute(_ url: URL) -> CommandCenterRoute? {
     case "join":
         guard let raw = param("url", in: items),
               let target = URL(string: raw),
-              isHTTPS(target), isMeetingHost(target.host) else {
+              isHTTPS(target), MeetingHosts.isMeetingHost(target.host) else {
             return nil
         }
         let platform = param("platform", in: items).flatMap(MeetingPlatform.init(rawValue:))

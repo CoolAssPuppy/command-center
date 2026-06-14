@@ -1,11 +1,6 @@
 import XCTest
 @testable import CommandCenterCore
 
-private struct StubLocator: ProviderLocator {
-    let installed: Set<String>
-    func isInstalled(bundleId: String) -> Bool { installed.contains(bundleId) }
-}
-
 final class ProviderDetectionTests: XCTestCase {
     private let payloadJson = """
     {

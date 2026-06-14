@@ -1,21 +1,11 @@
 import XCTest
 @testable import CommandCenterCore
 
-private struct SettingsStubLocator: ProviderLocator {
-    func isInstalled(bundleId: String) -> Bool { true }
-}
-
 final class SettingsStoreTests: XCTestCase {
     private var container: URL!
 
     override func setUpWithError() throws {
-        container = FileManager.default.temporaryDirectory
-            .appendingPathComponent("cc-settings-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: container, withIntermediateDirectories: true)
-    }
-
-    override func tearDownWithError() throws {
-        try? FileManager.default.removeItem(at: container)
+        container = try makeTempContainer()
     }
 
     private func store() -> SettingsStore {
@@ -44,7 +34,7 @@ final class SettingsStoreTests: XCTestCase {
     func testFeedStoreReadsWhatSettingsStoreWrites() throws {
         try store().write(defaultSettingsDocument())
 
-        let viaFeedStore = FeedStore(containerURL: container, locator: SettingsStubLocator()).loadSettings()
+        let viaFeedStore = FeedStore(containerURL: container, locator: AllInstalledLocator()).loadSettings()
         XCTAssertEqual(
             viaFeedStore?.objectValue?["browserRouting"]?.objectValue?["meet"]?.stringValue,
             "com.google.Chrome"

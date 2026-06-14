@@ -1,31 +1,15 @@
 import XCTest
 @testable import CommandCenterCore
 
-private struct ComposerStubLocator: ProviderLocator {
-    let installed: Set<String>
-    func isInstalled(bundleId: String) -> Bool { installed.contains(bundleId) }
-}
-
 final class DashboardComposerTests: XCTestCase {
     private var container: URL!
 
     override func setUpWithError() throws {
-        container = FileManager.default.temporaryDirectory
-            .appendingPathComponent("cc-composer-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: container, withIntermediateDirectories: true)
-    }
-
-    override func tearDownWithError() throws {
-        try? FileManager.default.removeItem(at: container)
+        container = try makeTempContainer()
     }
 
     private func write(_ contents: String, to relativePath: String) throws {
-        let url = container.appendingPathComponent(relativePath)
-        try FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        try Data(contents.utf8).write(to: url)
+        try write(contents, to: relativePath, in: container)
     }
 
     private func seedProviderAndSettings() throws {
@@ -53,7 +37,7 @@ final class DashboardComposerTests: XCTestCase {
 
     private func composer(installed: Set<String>) -> DashboardComposer {
         DashboardComposer(
-            feedStore: FeedStore(containerURL: container, locator: ComposerStubLocator(installed: installed))
+            feedStore: FeedStore(containerURL: container, locator: StubLocator(installed: installed))
         )
     }
 

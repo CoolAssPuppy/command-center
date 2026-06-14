@@ -53,25 +53,9 @@ public struct DetectedMeeting: Equatable {
     public let platform: String
 }
 
-private let meetingHostPlatforms: [(suffix: String, platform: String)] = [
-    ("meet.google.com", "meet"),
-    ("zoom.us", "zoom"),
-    ("zoom.com", "zoom"),
-    ("teams.microsoft.com", "teams"),
-    ("teams.live.com", "teams"),
-    ("webex.com", "webex"),
-]
-
-private func classify(host: String) -> String? {
-    let lowered = host.lowercased()
-    for entry in meetingHostPlatforms where lowered == entry.suffix || lowered.hasSuffix("." + entry.suffix) {
-        return entry.platform
-    }
-    return nil
-}
-
 private func meetingFromURLString(_ raw: String) -> DetectedMeeting? {
-    guard let url = URL(string: raw), let host = url.host, let platform = classify(host: host) else {
+    guard let url = URL(string: raw),
+          let platform = MeetingHosts.platform(forHost: url.host) else {
         return nil
     }
     return DetectedMeeting(url: raw, platform: platform)
@@ -83,7 +67,7 @@ private func meetingInText(_ text: String?) -> DetectedMeeting? {
     let range = NSRange(text.startIndex..., in: text)
     var found: DetectedMeeting?
     detector?.enumerateMatches(in: text, options: [], range: range) { match, _, stop in
-        if let url = match?.url, let host = url.host, let platform = classify(host: host) {
+        if let url = match?.url, let platform = MeetingHosts.platform(forHost: url.host) {
             found = DetectedMeeting(url: url.absoluteString, platform: platform)
             stop.pointee = true
         }
@@ -100,7 +84,7 @@ public func detectMeeting(in event: CalendarEventInput) -> DetectedMeeting? {
 }
 
 private func isoString(_ date: Date) -> String {
-    ISO8601DateFormatter().string(from: date)
+    ISO8601.formatter.string(from: date)
 }
 
 private func clockString(_ date: Date, timeZone: String) -> String {

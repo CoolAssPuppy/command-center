@@ -54,7 +54,11 @@ final class AppSettings: ObservableObject {
         root["worldClock"] = .object(worldClock)
 
         document = .object(root)
-        try? store.write(document)
+        do {
+            try store.write(document)
+        } catch {
+            NSLog("CommandCenter: failed to save settings: \(error)")
+        }
     }
 
     /// The suite container if the App Group is active, else a dev fallback in

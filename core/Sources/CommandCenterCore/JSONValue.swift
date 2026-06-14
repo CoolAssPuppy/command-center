@@ -4,7 +4,7 @@ import Foundation
 /// `data` and `settings` as JSONValue and forwards them to the dashboard
 /// unchanged, so the widget vocabulary is validated in one place (the
 /// dashboard) and never duplicated across languages.
-public enum JSONValue: Codable, Equatable {
+public enum JSONValue: Codable, Equatable, Sendable {
     case string(String)
     case number(Double)
     case bool(Bool)

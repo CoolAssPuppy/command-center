@@ -26,9 +26,29 @@ struct RouteHandler {
             open(target, bundleId: resolveBrowserBundleId(platform: platform, routing: currentRouting()))
         case let .open(target):
             open(target, bundleId: nil)
-        case let .openProvider(_, target):
-            if let target { open(target, bundleId: nil) }
+        case let .openProvider(providerId, target):
+            launchProvider(providerId: providerId, fallback: target)
         }
+    }
+
+    /// Launch the provider's own app (used by the reconnect prompt). The route
+    /// carries a providerId but usually no url, so resolve the bundle id from
+    /// the installed provider's manifest and launch it; fall back to the url.
+    private func launchProvider(providerId: String, fallback: URL?) {
+        if let bundleId = providerBundleId(providerId),
+           let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
+            NSWorkspace.shared.openApplication(at: appURL, configuration: NSWorkspace.OpenConfiguration())
+        } else if let fallback {
+            open(fallback, bundleId: nil)
+        }
+    }
+
+    private func providerBundleId(_ providerId: String) -> String? {
+        guard let container = CommandCenterContainer.url() else { return nil }
+        return FeedStore(containerURL: container, locator: WorkspaceProviderLocator())
+            .loadProviders()
+            .first { $0.manifest.providerId == providerId }?
+            .manifest.bundleId
     }
 
     private func open(_ url: URL, bundleId: String?) {

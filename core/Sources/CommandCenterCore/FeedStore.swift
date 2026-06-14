@@ -78,7 +78,7 @@ public struct FeedStore {
         var feeds: [FeedEnvelope] = []
         for feed in manifest.feeds {
             guard let path = feed.path,
-                  let url = safeURL(forRelativePath: path, in: directory),
+                  let url = containedURL(base: directory, relativePath: path),
                   let data = try? Data(contentsOf: url) else {
                 continue
             }
@@ -87,15 +87,5 @@ public struct FeedStore {
             }
         }
         return feeds
-    }
-
-    /// Resolve a manifest-supplied relative path, refusing any path that escapes
-    /// the provider folder (for example "../" traversal). The path is provider
-    /// controlled, so it is never trusted to stay in bounds.
-    private func safeURL(forRelativePath path: String, in directory: URL) -> URL? {
-        let base = directory.standardizedFileURL
-        let candidate = base.appendingPathComponent(path).standardizedFileURL
-        let basePrefix = base.path.hasSuffix("/") ? base.path : base.path + "/"
-        return candidate.path.hasPrefix(basePrefix) ? candidate : nil
     }
 }
