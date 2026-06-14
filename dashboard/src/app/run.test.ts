@@ -1,7 +1,8 @@
-import { fireEvent, getByRole, getByText } from "@testing-library/dom";
+import { fireEvent, getAllByText, getByRole, getByText } from "@testing-library/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createMockBridge, mockDashboardPayload } from "../bridge/mock";
+import { CITIES } from "../cities/cities";
 import type { ParseResult } from "../domain/feed";
 import type { Weather } from "../weather/openMeteo";
 import { runDashboard, type RunDeps } from "./run";
@@ -49,7 +50,8 @@ describe("runDashboard", () => {
 
     expect(getByText(deps.mount, "Good morning, Prashant")).toBeInTheDocument();
     expect(getByText(deps.mount, "Linear")).toBeInTheDocument();
-    expect(getByText(deps.mount, "63°F")).toBeInTheDocument();
+    // The hero row shows each city's temperature; every city uses the mock here.
+    expect(getAllByText(deps.mount, "63°").length).toBe(CITIES.length);
     expect(saveCache).toHaveBeenCalledOnce();
   });
 
@@ -77,7 +79,7 @@ describe("runDashboard", () => {
     expect(saveCache).not.toHaveBeenCalled(); // bridge failed, nothing to cache
   });
 
-  it("skips the weather fetch when no location is configured", async () => {
+  it("fetches weather once per city for the hero row", async () => {
     const fetchWeather = vi.fn(() =>
       Promise.resolve<ParseResult<Weather>>({ ok: true, value: weather }),
     );
@@ -86,6 +88,12 @@ describe("runDashboard", () => {
 
     await runDashboard(baseDeps({ bridge: createMockBridge(payload), fetchWeather }));
 
-    expect(fetchWeather).not.toHaveBeenCalled();
+    // Cities are fixed, so weather is always fetched, defaulting units when the
+    // payload omits a weather config.
+    expect(fetchWeather).toHaveBeenCalledTimes(CITIES.length);
+    expect(fetchWeather).toHaveBeenCalledWith(
+      expect.objectContaining({ label: CITIES[0]?.label }),
+      "fahrenheit",
+    );
   });
 });

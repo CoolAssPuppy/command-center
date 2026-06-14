@@ -21,6 +21,11 @@ export const paper: Theme = {
       accent: "#2A6F97",
       positive: "#1E7D4F",
       urgent: "#B4231F",
+      primary: "#2A6F97",
+      secondary: "#B5651D",
+      accent1: "#4C8FB8",
+      accent2: "#D99058",
+      accent3: "#7A9E7E",
     },
     type: {
       fontFamily: "'Iowan Old Style', Georgia, 'Times New Roman', serif",

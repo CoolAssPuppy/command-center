@@ -55,87 +55,141 @@ body {
   color: var(--cc-color-muted, #9aa4b2);
 }
 
-/* Rail: weather and world clock ------------------------------------------ */
+/* City hero row ----------------------------------------------------------- */
 
-.cc-rail {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+.cc-cityrow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
 }
 
-.cc-weather,
-.cc-worldclock {
-  background: var(--cc-color-surface, #121826);
+@media (max-width: 900px) {
+  .cc-cityrow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .cc-cityrow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cc-city {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 132px;
   border-radius: var(--cc-card-radius, 16px);
   padding: var(--cc-card-padding, 16px);
-  box-shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.5);
-}
-
-.cc-weather {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  justify-content: flex-end;
+  box-shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.5);
+  background: var(--cc-color-surface, #121826);
 }
 
-.cc-weather__temp {
-  font-size: 24px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+/* Daylight backgrounds blend the theme palette, so changing theme restyles the
+   whole row and each block reads as morning, midday, evening, or night. */
+.cc-city[data-daylight="day"] {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--cc-color-accent-1) 38%, var(--cc-color-surface)) 0%,
+    var(--cc-color-surface) 78%
+  );
 }
 
-.cc-weather__condition,
-.cc-weather__range {
-  color: var(--cc-color-muted, #9aa4b2);
-  font-size: 14px;
+.cc-city[data-daylight="dawn"] {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--cc-color-accent-2) 44%, var(--cc-color-surface)) 0%,
+    color-mix(in srgb, var(--cc-color-accent-3) 22%, var(--cc-color-surface)) 55%,
+    var(--cc-color-surface) 100%
+  );
 }
 
-.cc-weather[data-loading="true"] .cc-weather__skeleton {
-  display: block;
-  width: 120px;
-  height: 24px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+.cc-city[data-daylight="dusk"] {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--cc-color-accent-3) 42%, var(--cc-color-surface)) 0%,
+    color-mix(in srgb, var(--cc-color-secondary) 26%, var(--cc-color-surface)) 60%,
+    var(--cc-color-bg) 100%
+  );
 }
 
-.cc-worldclock {
-  flex: 1;
-  min-width: 220px;
+.cc-city[data-daylight="night"] {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--cc-color-secondary) 16%, var(--cc-color-bg)) 0%,
+    var(--cc-color-bg) 85%
+  );
 }
 
-.cc-worldclock__title {
+.cc-city__skyline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 64px;
+  z-index: -1;
+}
+
+.cc-city__skyline-path {
+  fill: none;
+  stroke: var(--cc-color-accent-1, #38bdf8);
+  stroke-width: 1.5;
+  opacity: 0.28;
+  vector-effect: non-scaling-stroke;
+}
+
+.cc-city[data-daylight="night"] .cc-city__skyline-path {
+  stroke: var(--cc-color-accent-3, #f472b6);
+  opacity: 0.34;
+}
+
+.cc-city__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cc-city__name {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--cc-color-muted, #9aa4b2);
-  margin-bottom: 8px;
 }
 
-.cc-worldclock__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 6px;
+.cc-city__time {
+  font-family: var(--cc-font-family, system-ui, sans-serif);
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--cc-color-text, #e6eaf2);
+  font-variant-numeric: var(--cc-numeric, tabular-nums);
 }
 
-.cc-worldclock__city {
+.cc-city__meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  min-height: 18px;
+  color: var(--cc-color-muted, #9aa4b2);
+  font-size: 13px;
+}
+
+.cc-city__temp {
+  color: var(--cc-color-text, #e6eaf2);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.cc-worldclock__city[data-daynight="night"] {
-  color: var(--cc-color-muted, #9aa4b2);
-}
-
-.cc-worldclock__time {
-  margin-left: auto;
-}
-
-.cc-worldclock__offset {
-  font-size: 12px;
-  color: var(--cc-color-muted, #9aa4b2);
+.cc-city__weather-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cc-color-accent-1, #38bdf8) 60%, transparent);
 }
 
 /* Card grid --------------------------------------------------------------- */

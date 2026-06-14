@@ -21,6 +21,11 @@ export const mono: Theme = {
       accent: "#5EE6A8",
       positive: "#5EE6A8",
       urgent: "#FF6B6B",
+      primary: "#5EE6A8",
+      secondary: "#E8E8E8",
+      accent1: "#5EE6A8",
+      accent2: "#FFB454",
+      accent3: "#6AA6FF",
     },
     type: {
       fontFamily: "'SF Mono', ui-monospace, 'JetBrains Mono', monospace",

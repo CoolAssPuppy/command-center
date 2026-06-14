@@ -1,8 +1,9 @@
-import { fireEvent, getByRole, getByText } from "@testing-library/dom";
+import { fireEvent, getAllByText, getByRole, getByText } from "@testing-library/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { host } from "../test/dom";
 
+import { CITIES } from "../cities/cities";
 import { planLayout } from "../dashboard/attention";
 import { composeDashboard } from "../dashboard/compose";
 import type { Settings } from "../dashboard/payload";
@@ -32,21 +33,25 @@ const weather: Weather = {
   icon: "cloud",
 };
 
+const weatherByCity: Record<string, Weather> = Object.fromEntries(
+  CITIES.map((city) => [city.id, weather]),
+);
+
 function renderFixture(navigate = vi.fn()): { root: HTMLElement; navigate: typeof navigate } {
   const payload = makeDashboardPayload({ settings });
   const cards = planLayout(composeDashboard(payload, NOW));
   const root = host();
-  renderDashboard(root, { now: NOW, settings, cards, weather }, { navigate, timeZone: LA });
+  renderDashboard(root, { now: NOW, settings, cards, weatherByCity }, { navigate, timeZone: LA });
   return { root, navigate };
 }
 
 describe("renderDashboard", () => {
-  it("renders the header greeting, weather, world clock, and provider cards", () => {
+  it("renders the header greeting, the city hero row with weather, and provider cards", () => {
     const { root } = renderFixture();
 
     expect(getByText(root, "Good morning, Prashant")).toBeInTheDocument();
-    expect(getByText(root, "63°F")).toBeInTheDocument();
-    expect(getByText(root, "San Francisco")).toBeInTheDocument();
+    expect(getByText(root, "New York")).toBeInTheDocument();
+    expect(getAllByText(root, "63°").length).toBe(CITIES.length);
     expect(getByText(root, "Linear")).toBeInTheDocument();
   });
 
@@ -70,7 +75,7 @@ describe("renderDashboard", () => {
   it("applies the theme named in settings.appearance.theme", () => {
     const root = host();
     const themed: Settings = { ...settings, appearance: { theme: "com.strategicnerds.mono" } };
-    renderDashboard(root, { now: NOW, settings: themed, cards: [], weather }, { navigate: vi.fn(), timeZone: LA });
+    renderDashboard(root, { now: NOW, settings: themed, cards: [], weatherByCity }, { navigate: vi.fn(), timeZone: LA });
 
     expect(root.style.getPropertyValue("--cc-color-bg")).toBe("#0A0A0A");
   });

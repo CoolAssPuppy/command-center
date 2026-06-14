@@ -1,3 +1,4 @@
+import { CITIES } from "../cities/cities";
 import type { PlacedCard } from "../dashboard/attention";
 import type { Settings } from "../dashboard/payload";
 import { defaultRenderContext } from "../render/context";
@@ -6,15 +7,15 @@ import { themeById } from "../theme/registry";
 import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
 import { renderCard, type CardDeps } from "./card";
+import { renderCityRow, type CityRowModel } from "./cityRow";
 import { renderHeader, type HeaderModel } from "./header";
-import { renderWeather } from "./weather";
-import { renderWorldClock } from "./worldclock";
 
 export interface DashboardModel {
   now: Date;
   settings: Settings;
   cards: PlacedCard[];
-  weather?: Weather;
+  /** Current weather per city id for the hero row, filled in as fetches land. */
+  weatherByCity?: Record<string, Weather>;
 }
 
 export interface DashboardDeps {
@@ -55,14 +56,11 @@ export function renderDashboard(
   }
   renderHeader(root, headerModel);
 
-  const rail = el("div", "cc-rail");
-  renderWeather(rail, model.weather);
-  renderWorldClock(rail, {
-    now: model.now,
-    baseTimeZone: timeZone,
-    cities: model.settings.worldClock?.cities ?? [],
-  });
-  root.appendChild(rail);
+  const cityRowModel: CityRowModel = { now: model.now, cities: CITIES };
+  if (model.weatherByCity !== undefined) {
+    cityRowModel.weatherByCity = model.weatherByCity;
+  }
+  renderCityRow(root, cityRowModel);
 
   const cardDeps: CardDeps = {
     navigate: deps.navigate,

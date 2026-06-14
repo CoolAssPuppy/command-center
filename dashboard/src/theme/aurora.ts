@@ -22,6 +22,11 @@ export const aurora: Theme = {
       accent: "#7C8CFF",
       positive: "#34D399",
       urgent: "#F87171",
+      primary: "#7C8CFF",
+      secondary: "#A78BFA",
+      accent1: "#38BDF8",
+      accent2: "#FB923C",
+      accent3: "#F472B6",
     },
     type: {
       fontFamily: "Inter, system-ui, -apple-system, sans-serif",

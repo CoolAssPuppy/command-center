@@ -4,6 +4,22 @@ This is the loop's worklist. Every task is implemented test-first. A task is onl
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done.
 
+## Active epic: dashboard redesign + real data (started 2026-06-14)
+
+User direction: the dashboard styling is placeholder-grade; redesign it, and wire real data via OAuth. Decisions locked: Reminders = Apple EventKit (no OAuth); OAuth secrets = hosted token broker; reuse the existing Google/Linear/Notion OAuth apps; calendar supports multiple sources (Apple + Google + Microsoft).
+
+Visual redesign (dashboard, unblocked, build first):
+- [x] R1 Theme palette: primary, secondary, 3 accents (+ existing font). Update the 3 themes, css vars, schema, tests.
+- [x] R2 City hero row: New York, Lisbon, Singapore, Tokyo, Sydney. Per city: skyline outline in faint accent, big bold time + current weather in the foreground, card background gradient reflecting the live daylight state (solar-elevation calc, deterministic). Per-city weather via Open-Meteo.
+- [ ] R3 24-hour overlap timeline: a 24h line per city marking working hours + the current-time cursor, to eyeball a shared meeting window.
+- [ ] R4 Layout: 1/3-1/3-1/3 columns. Col1 Calendar then Reminders; Col2 Notion recent docs; Col3 Linear inbox.
+
+OAuth + data layer (user-gated on console setup):
+- [ ] O1 Hosted token broker (Cloudflare Worker): holds Google/Microsoft/Notion/Linear secrets, does the code-for-token exchange + refresh; app stores only user tokens in Keychain.
+- [ ] O2 Native OAuth flow (loopback redirect -> broker), Keychain storage, no token into the container.
+- [ ] O3 Providers publishing display-only feeds: Google Calendar, Microsoft Calendar, Notion recent docs, Linear inbox, Apple Reminders (EventKit). Multi-calendar "Add Calendar".
+- [ ] O4 Provider setup doc: exact console steps (redirect URIs, scopes) for reusing each existing OAuth app.
+
 ## Gates applied to every task
 
 - Tests written before implementation (TDD).
@@ -211,6 +227,16 @@ Two things: the new tab page now regenerates on every native build, and there is
 Verified: a clean build (app/ holding only .gitkeep, dist-extension deleted) ran the pre-build phase, regenerated the bundle, and the folder reference placed `app/{newtab.html,index.js,index.css}` into the built .appex with manifest pointing at `app/newtab.html` and relative refs intact. Unsigned native xcodebuild SUCCEEDED. Dashboard 154 tests + lint green. release.sh / build-dmg.sh / embed-dashboard.sh pass `bash -n`. release.sh is authored, not run: it needs signing + notary + Doppler/R2, which are the user's to drive.
 
 Next (user-gated): enable App Groups + iCloud KVS on the App ID, run release.sh for a real notarized DMG. Then the live-data Safari loop (signed App Group). Sparkle/auto-update can be added later.
+
+### Iteration 33 (R1 + R2) — dashboard redesign: palette + city hero row
+
+Shipped the loud-complaint fix: a real hero row replacing the placeholder weather/world-clock rail.
+- R1 theme palette: added primary, secondary, accent1/2/3 to the token schema and css vars (--cc-color-primary/secondary/accent-1..3); filled them for Aurora, Paper, Mono. Existing tokens untouched.
+- R2 city hero row: cities.ts (New York, Lisbon, Singapore, Tokyo, Sydney with tz, lat/lon, working hours, a stylized stroked-skyline SVG path); solar.ts (deterministic solar-elevation -> day/dawn/dusk/night, no network); cityRow.ts renders each city as a card with the skyline outline (faint accent), big bold time in the theme font, current weather, and a daylight-state background gradient built from the theme accents via color-mix. run.ts now fetches Open-Meteo weather per city (parallel) and fills it in progressively; daylight paints instantly from the solar calc. Removed the now-dead weather.ts/worldclock.ts shell components.
+
+Verified: 157 dashboard tests green (added solar + cityRow suites, updated run/dashboard suites for the new shape), lint clean, build + size (24.0 KB gzip, budget 90). Rendered the dev server headless and screenshotted it: the five cities show local time, live temps, skylines, and morning/evening daylight tints; sent the image to the user. The native pre-build phase regenerates this bundle, so it shows in the Safari new tab too.
+
+Next: R3 the 24-hour overlap timeline (working hours + current-time cursor per city), R4 the 1/3-1/3-1/3 columns (Calendar+Reminders / Notion / Linear). Then the OAuth broker + providers (O1-O4).
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 

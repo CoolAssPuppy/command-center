@@ -1,4 +1,5 @@
 import type { DashboardBridge } from "../bridge/types";
+import { CITIES } from "../cities/cities";
 import { buildDashboardModel, type DashboardData } from "../dashboard/model";
 import { prefersReducedMotion } from "../perf/perf";
 import {
@@ -53,7 +54,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     ((location, units) => openMeteoFetch(location, units, { fetch: (url) => fetch(url) }));
 
   let data: DashboardData | undefined;
-  let weather: Weather | undefined;
+  const weatherByCity: Record<string, Weather> = {};
 
   const paint = (): void => {
     if (data === undefined) return;
@@ -62,7 +63,9 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       settings: data.settings ?? {},
       cards: data.cards,
     };
-    if (weather !== undefined) model.weather = weather;
+    if (Object.keys(weatherByCity).length > 0) {
+      model.weatherByCity = { ...weatherByCity };
+    }
 
     const renderDeps: DashboardDeps = { navigate: deps.navigate, reducedMotion };
     if (deps.timeZone !== undefined) renderDeps.timeZone = deps.timeZone;
@@ -96,13 +99,23 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     }
   }
 
-  // 3. Weather, then repaint.
-  const weatherConfig = data?.settings?.weather;
-  if (weatherConfig !== undefined) {
-    const result = await fetchWeather(weatherConfig.location, weatherConfig.units);
+  // 3. Weather per city for the hero row, then repaint once results land.
+  const units: WeatherUnits = data?.settings?.weather?.units ?? "fahrenheit";
+  const results = await Promise.all(
+    CITIES.map(async (city) => {
+      const result = await fetchWeather(
+        { label: city.label, lat: city.lat, lon: city.lon },
+        units,
+      );
+      return { id: city.id, result };
+    }),
+  );
+  let changed = false;
+  for (const { id, result } of results) {
     if (result.ok) {
-      weather = result.value;
-      paint();
+      weatherByCity[id] = result.value;
+      changed = true;
     }
   }
+  if (changed) paint();
 }

@@ -18,6 +18,13 @@ export const ThemeTokensSchema = z.object({
     accent: z.string(),
     positive: z.string(),
     urgent: z.string(),
+    // The brand palette the redesign paints with: a primary and secondary, plus
+    // three accents used for skylines, daylight gradients, and chart series.
+    primary: z.string(),
+    secondary: z.string(),
+    accent1: z.string(),
+    accent2: z.string(),
+    accent3: z.string(),
   }),
   type: z.object({
     fontFamily: z.string(),
@@ -66,6 +73,11 @@ export function tokensToCssVars(tokens: ThemeTokens): Record<string, string> {
     "--cc-color-accent": tokens.color.accent,
     "--cc-color-positive": tokens.color.positive,
     "--cc-color-urgent": tokens.color.urgent,
+    "--cc-color-primary": tokens.color.primary,
+    "--cc-color-secondary": tokens.color.secondary,
+    "--cc-color-accent-1": tokens.color.accent1,
+    "--cc-color-accent-2": tokens.color.accent2,
+    "--cc-color-accent-3": tokens.color.accent3,
     "--cc-font-family": tokens.type.fontFamily,
     "--cc-font-scale": String(tokens.type.scale),
     "--cc-numeric": tokens.type.numericTabular ? "tabular-nums" : "normal",
