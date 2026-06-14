@@ -64,6 +64,12 @@ public struct IngestResponse: Codable, Equatable {
     public let status: String?
     public let error: String?
 
+    public init(ok: Bool, status: String?, error: String?) {
+        self.ok = ok
+        self.status = status
+        self.error = error
+    }
+
     static func accepted() -> IngestResponse { IngestResponse(ok: true, status: nil, error: nil) }
     static func registered(_ status: String) -> IngestResponse {
         IngestResponse(ok: true, status: status, error: nil)

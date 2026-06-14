@@ -64,7 +64,7 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 
 - [x] P5.2a Ingest core logic (CommandCenterCore, testable): capability-token issuance/validation/revocation, a registration model (pending consent -> approved), and an IngestHandler that processes typed ingest requests (register, publish, revoke) — validating tokens and writing feeds via FeedPublisher into an injected container. Security tests: publish without a valid token refused, revoked token stops working, registration needs consent. Identity = loopback + consent tokens (lessons).
 - [x] P5.1 Local ingest endpoint TRANSPORT (app, thin): loopback NWListener HTTP + WebSocket wired to the IngestHandler, default port + Bonjour discovery. Compile-verify unsigned; do not bind real ports in unit tests.
-- [ ] P5.3 CommandCenterKit SDK: register, publish, openStream, transport auto-select, token storage. Tests.
+- [x] P5.3 CommandCenterKit SDK: register, publish, two transports (file-drop + endpoint), token storage. Tests. (openStream/live-publish deferred to a later iteration.)
 - [ ] P5.4 Full widget vocabulary including charts and tables in renderers.
 - [ ] P5.5 Providers screen: approval, status, revocation.
 - [ ] P5.6 Sample provider app and public protocol docs.
@@ -118,6 +118,14 @@ Shipped: the ingest transport, split wire-protocol (pure) from socket (thin). In
 Verified: 6 new swift tests (66 total): register->pending, malformed->invalid_request, unknown type refused, publish-before-approval->not_approved, approved publish over the protocol writes a FeedStore-readable feed, and a response never echoes a token. Unsigned native build (NWListener compiles) + dashboard green.
 
 Next: P5.3 CommandCenterKit SDK (a separate SwiftPM package: register/publish/openStream, transport auto-select file-drop vs endpoint, token storage in Keychain), then P5.5 providers screen (approve/deny/revoke + token delivery UX). Self-review for new debt is due around now per the mandate.
+
+### Iteration 24 (P5.3)
+
+Shipped: the CommandCenterKit SwiftPM package (packages/CommandCenterKit), a path dependency on CommandCenterCore so it reuses JSONValue, IngestRequest/Response, and FeedPublisher (single source of truth, no duplication). Public API CommandCenter(providerId:displayName:bundleId:transport:) with register(manifest:) and publish(_:to:); one IngestTransport protocol with two implementations: FileDropTransport (writes via the core FeedPublisher into the well-known dir, for Developer ID apps) and EndpointTransport (encodes IngestRequest, sends via an injected IngestSocketClient, reads the token from an injected TokenStore). Thin concrete pieces: LoopbackSocketClient (NWConnection, length-framed, async) and KeychainTokenStore (SecItem), plus InMemoryTokenStore for tests. Token is a secret: Keychain-stored, never logged. Made IngestResponse's init public so SDK consumers can construct responses.
+
+Verified: 6 Kit swift tests (file-drop register+publish -> FeedStore-readable provider; endpoint encodes the right register/publish request incl. the stored token; publish without a token throws notApproved; a refused response surfaces). Core 66 + unsigned native build + dashboard all green.
+
+Next: P5.5 providers screen (approve/deny/revoke + token-delivery UX, matching the suite theme) and the second discovery root (FeedStore scanning the well-known dir). openStream/live WebSocket publishing also deferred.
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 
