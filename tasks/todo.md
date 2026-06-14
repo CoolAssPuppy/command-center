@@ -44,7 +44,7 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 - [x] P2.3 SafariWebExtensionHandler getDashboard and getSettings, composing providers plus settings.
 - [ ] P2.4 Swap dashboard from mock JSON to sendNativeMessage, with graceful fallback.
 - [ ] P2.5 commandcenter:// URL scheme, Router, host-allowlist validation, browser routing reusing MeetAppType.
-- [ ] P2.6 Settings: iCloud key-value store writer, settings.json mirror, Darwin-notification refresh.
+- [ ] P2.6 Settings: settings.json App Group mirror writer (testable in core) and the menu-bar + settings-window UI. The native UI MUST match Sync Bar / Meeting Notifier: port their design system (AppRadius/AppSpacing, ThemePalette, AppTheme + ThemeStore, DesignComponents, MenuBarPopover/SettingsView styling) into the CommandCenter app target. Defer the iCloud KVS part of sync until the iCloud entitlement is registered (P2.1b).
 - [ ] P2.7 Apple EventKit provider, optional, publishing calendar.today and reminders.today.
 - [ ] P2.8 Safari extension manifest with newtab override, minimal background, CSP. Cold-start test.
 

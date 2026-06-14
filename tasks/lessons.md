@@ -31,6 +31,7 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 ## Design
 
 - No decorative borders or accent stripes on cards (user called the edge lines "AI slop"). Surfaces float on the background with soft elevation (a soft shadow), not hairline borders or a colored left bar. Keep theme CSS clean: fill plus shadow, no busy edges.
+- The NATIVE macOS app chrome (menu-bar popover, settings window, any sheets) must MATCH Sync Bar and Meeting Notifier, including their themes. Reuse their SwiftUI design system rather than inventing one: port the token enums AppRadius/AppSpacing (meeting-notifier/.../Views/Theme.swift), the ThemePalette struct + AppTheme enum (system + named themes) + ThemeStore (sync-bar/Source/Models/ThemeStore.swift), and the component styling from sync-bar/Source/Views/Design/DesignComponents.swift, MenuBarPopover.swift, and SettingsView.swift. Put the ported design system in the CommandCenter app target (do NOT modify the other apps). This applies ONLY to the native app UI; the dashboard (web new-tab page) keeps its own pluggable web themes (Aurora, etc.) — do not cross-apply.
 
 ## Architecture invariants to never violate
 
