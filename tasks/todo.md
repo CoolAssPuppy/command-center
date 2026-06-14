@@ -23,7 +23,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.3 Convenience-kind schemas and mappers to cards/widgets: calendar.today, reminders.today, linear.inbox, docs.recent. Tests.
 - [x] P1.4 Time engine: world-clock current time, day/night, date offset, timeline overlap, all with injectable now. Pure, deterministic tests.
 - [x] P1.5 Weather client: Open-Meteo fetch and parse, injected-fetch behavior tests.
-- [ ] P1.6 Dashboard composition: from a getDashboard payload, compose ordered cards and resolve states ok, stale, needs_auth, error, absent. Tests.
+- [x] P1.6 Dashboard composition: from a getDashboard payload, compose ordered cards and resolve states ok, stale, needs_auth, error, absent. Tests.
 - [ ] P1.7 Attention and layout model, basic: ordering and glance-versus-full decisions. Tests.
 - [ ] P1.8 Security utilities: text-only rendering helper, action URL validation against host allowlist, CSP string. Tests cover injection attempts.
 - [ ] P1.9 Default widget renderers, vanilla DOM into a host node, one per widget type. Testing Library behavior tests.
@@ -115,3 +115,11 @@ Shipped: the Open-Meteo weather client in src/weather. fetch is injected, so it 
 Verified: 9 new tests (55 total) green, covering success, host targeting, HTTP error, malformed body, network throw, and a response with no daily block. tsc caught an untyped vi.fn mock (empty-tuple call args); fixed by typing the stub parameter. Lint and typecheck clean.
 
 Next: P1.6 dashboard composition (compose ordered cards from a getDashboard payload, resolve states ok/stale/needs_auth/error/absent), test-first.
+
+### Iteration 5 (P1.6)
+
+Shipped: the getDashboard payload schemas (Manifest, ProviderEntry, Settings, DashboardPayload) and composeDashboard, which flattens providers x feeds into ordered ComposedCards. State resolution: disabled is dropped, unknown kinds are silently skipped (one bad provider cannot break the page), needs_auth and error map to their states, malformed known-kind feeds and future schema versions become error (never half-rendered), empty days become empty, and ok/stale drive a fresh flag plus ageSeconds for the "updated Nm ago" note. Ordering honors settings.layout.cardOrder with a stable index tiebreak and drops hidden entries. No fetching, no tokens; composition only shapes finished feeds.
+
+Verified: 13 new tests (68 total) green across every state, freshness past ttl, ordering, hidden, and payload parse rejection. Lint and typecheck clean.
+
+Next: P1.7 attention and layout model (glance-versus-full decisions when many providers exist), test-first.
