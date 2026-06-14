@@ -70,7 +70,7 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 - [x] P5.3 CommandCenterKit SDK: register, publish, two transports (file-drop + endpoint), token storage. Tests. (openStream/live-publish deferred to a later iteration.)
 - [ ] P5.4 Full widget vocabulary including charts and tables in renderers.
 - [ ] P5.5 Providers screen: approval, status, revocation.
-- [ ] P5.6 Sample provider app and public protocol docs.
+- [x] P5.6 Sample provider app and public protocol docs.
 
 ## Phase 6: open presentation layer
 
@@ -157,6 +157,18 @@ Self-review done (was due): the Phase 5 + theme code is clean; the real duplicat
 NOTE on the render-theme tier (P6.1): deferred for the user's review. It executes third-party JavaScript in the new tab page; its security guarantees (shadow-root isolation, no-network theme CSP) cannot be fully verified in jsdom and warrant the user weighing in on the security model before building. Token themes already deliver the user-facing theming.
 
 Next: P5.6 a sample provider using CommandCenterKit + a public "build a provider" doc (fully verifiable, showcases the platform).
+
+### Iteration 28 (P5.6) — autonomous backlog exhausted; loop paused for the user
+
+Shipped: examples/sample-provider, a SwiftPM package (library + executable + tests) depending on CommandCenterKit and CommandCenterCore. SampleProvider builds a DeployBot manifest + a metric-card feed (sub-expression JSON to keep the type checker fast) and publishes via CommandCenter + FileDropTransport. The executable takes an optional output dir (default the well-known dir). Plus docs/15-building-a-provider.md (accurate to the SDK API: register/publish, file-drop vs endpoint, the consent/token flow, the glance + display-data-only rules), linked from docs/README.
+
+Verified: sample package builds (incl. executable) and 2 tests pass (publish -> FeedStore-readable provider; feed decodes as a valid envelope). RAN the executable against a temp dir: it wrote Providers/com.example.deploybot/{manifest,deploys}.json. Full sweep green: core 71, Kit 6, sample 2, dashboard 148, unsigned native build.
+
+LOOP PAUSED. The cleanly-autonomous, unsigned, this-repo backlog is exhausted. Everything remaining needs the user:
+- Signing + capability registration -> run in Safari, finish P2.4 (native-messaging swap) + P2.8 (manifest cold-start). Needs iCloud/App Group capabilities on the Apple account (or -allowProvisioningUpdates approval).
+- Phase 3-4: make Linear Bar + Meeting Notifier publish feeds (modifies the other apps).
+- Phase 7: release pipeline (notarization, fresh Sparkle key, R2).
+Deferred for a user decision: the render-theme tier (P6.1, executes third-party JS; security can't be fully verified in jsdom) and openStream/live WebSocket publishing (optional).
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 

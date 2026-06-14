@@ -27,6 +27,7 @@ Read them in order if you are building from scratch. Each file is self-contained
 | [12-transports-and-ingest.md](12-transports-and-ingest.md) | How any app plugs in: file drop, the local endpoint, the SDK |
 | [13-representation-model.md](13-representation-model.md) | The widget vocabulary providers declare and themes render |
 | [14-themes.md](14-themes.md) | Pluggable themes: tiers, tokens, render API, trust, shipped themes |
+| [15-building-a-provider.md](15-building-a-provider.md) | Third-party guide: publish to Command Center with CommandCenterKit (see `examples/sample-provider`) |
 
 ## The one-paragraph version
 
