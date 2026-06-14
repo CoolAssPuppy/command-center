@@ -36,3 +36,6 @@ Thumbs.db
 
 # Playwright MCP scratch
 .playwright-mcp/
+
+# XcodeGen output (project.yml is the source of truth)
+native/*.xcodeproj/

@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Command Center",
+  "version": "0.1",
+  "description": "A glanceable new tab dashboard.",
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["nativeMessaging"]
+}
