@@ -37,9 +37,9 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 
 Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test logic unsigned; signing and notarization wait for the release task and the user's certificate. Lead with the distribution-agnostic SwiftPM core, which needs no signing.
 
-- [ ] P2.0 SwiftPM core package `CommandCenterCore`: Codable manifest/feed/widget models mirroring the TS contract, feed-envelope decoding with schemaVersion guard, and provider-installed detection via NSWorkspace (injectable for tests). `swift test`. Distribution-agnostic, no signing.
-- [ ] P2.1 Scaffold `app/` and `extension/` with XcodeGen project.yml, Developer ID entitlements (App Group, ubiquity-kvstore, no sandbox), Info.plist, referencing CommandCenterCore.
-- [ ] P2.2 FeedStore: App Group container discovery using CommandCenterCore decoders and the NSWorkspace install check. swift-test.
+- [x] P2.0 SwiftPM core package `CommandCenterCore`: Codable manifest/feed models mirroring the TS contract (feed `data` kept as opaque JSONValue and forwarded; the dashboard stays the single widget validator), feed-envelope decoding with schemaVersion + glance guard, and provider-installed detection via NSWorkspace (injectable for tests). `swift test`. Distribution-agnostic, no signing.
+- [ ] P2.2 FeedStore directory scanner in CommandCenterCore: given an injected container base URL, list Providers/<id>/manifest.json, decode each manifest and its feeds, drop unreadable feeds, filter to installed providers, and compose a DashboardData-like result. Signing-free; swift-test with temp directories. (Moved before Xcode scaffolding so it needs no Team ID.)
+- [ ] P2.1 Scaffold `app/` and `extension/` with XcodeGen project.yml, Developer ID entitlements (App Group, ubiquity-kvstore, no sandbox), Info.plist, referencing CommandCenterCore. NEEDS the user's Team ID for the App Group identifier and a signing identity to build the app target; author the config then attempt an unsigned/automatic build, and STOP to ask if it cannot build without a provisioning profile.
 - [ ] P2.3 SafariWebExtensionHandler getDashboard and getSettings, composing providers plus settings.
 - [ ] P2.4 Swap dashboard from mock JSON to sendNativeMessage, with graceful fallback.
 - [ ] P2.5 commandcenter:// URL scheme, Router, host-allowlist validation, browser routing reusing MeetAppType.
@@ -190,3 +190,13 @@ Shipped: the viewable demo. runDashboard (src/app/run.ts) is the testable app or
 Verified: 4 new tests (147 total) green, including a full end-to-end render (cache then bridge then weather, clickable navigation) and the cache-fallback-on-bridge-failure path. Built and served via vite preview, then loaded in a real browser: the dashboard renders the header greeting, world clock (SF/London/Bengaluru), the calendar card with two clickable meeting rows, the Linear inbox, the DeployBot chart card, and the Notion reconnect card. Screenshot delivered to the user. Bundle 22.4KB gzipped (budget 90KB). Lint, typecheck, build, and size all pass. Only console noise was a harmless favicon 404.
 
 PHASE 1 DONE. Phase 2 (native macOS app, Safari extension, EventKit, native bridge) begins Swift/Xcode work that needs user decisions before proceeding: Developer ID vs Mac App Store distribution (affects sandbox, entitlements, and the Apple-Notes-adjacent scope), and the endpoint identity approach for later phases. Loop paused here pending those decisions.
+
+### Iteration 14 (P2.0) — Phase 2 begins
+
+Decisions applied: Developer ID, non-sandboxed (lessons). Shipped the CommandCenterCore SwiftPM package: JSONValue (lossless any-JSON, so feed data and settings forward to the dashboard unchanged and the widget vocabulary is never duplicated in Swift), the contract models (Tone/Trend/FeedStatus/Glance, Manifest, FeedEnvelope, ProviderEntry, DashboardPayload), decodeFeedEnvelope with a schemaVersion + non-empty-glance guard, decodeDashboardPayload, and injectable ProviderLocator provider-installed detection (WorkspaceProviderLocator over NSWorkspace).
+
+Verified: 10 swift tests green via `swift build` + `swift test` (no signing): status mapping (needs_auth), opaque data round-trip, future-version refusal, empty-glance rejection, malformed JSON, JSONValue round-trip and bool-vs-number, and provider filtering. SourceKit showed stale cross-file errors that swift build resolved.
+
+Design decision recorded: native forwards feed `data` as opaque JSON; the dashboard is the single widget validator (avoids two-language drift).
+
+Next: P2.2 FeedStore directory scanner (signing-free, temp-dir tests), then P2.1 Xcode scaffolding which will pause for the user's Team ID and signing identity.
