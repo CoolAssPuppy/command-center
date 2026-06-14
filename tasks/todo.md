@@ -35,8 +35,11 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 
 ## Phase 2: native shell and the bridge
 
-- [ ] P2.1 Scaffold `app/` and `extension/` with XcodeGen project.yml, entitlements, Info.plist, shared Swift package.
-- [ ] P2.2 FeedStore: App Group discovery, manifest and feed decode, NSWorkspace install check. swift-test.
+Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test logic unsigned; signing and notarization wait for the release task and the user's certificate. Lead with the distribution-agnostic SwiftPM core, which needs no signing.
+
+- [ ] P2.0 SwiftPM core package `CommandCenterCore`: Codable manifest/feed/widget models mirroring the TS contract, feed-envelope decoding with schemaVersion guard, and provider-installed detection via NSWorkspace (injectable for tests). `swift test`. Distribution-agnostic, no signing.
+- [ ] P2.1 Scaffold `app/` and `extension/` with XcodeGen project.yml, Developer ID entitlements (App Group, ubiquity-kvstore, no sandbox), Info.plist, referencing CommandCenterCore.
+- [ ] P2.2 FeedStore: App Group container discovery using CommandCenterCore decoders and the NSWorkspace install check. swift-test.
 - [ ] P2.3 SafariWebExtensionHandler getDashboard and getSettings, composing providers plus settings.
 - [ ] P2.4 Swap dashboard from mock JSON to sendNativeMessage, with graceful fallback.
 - [ ] P2.5 commandcenter:// URL scheme, Router, host-allowlist validation, browser routing reusing MeetAppType.

@@ -16,6 +16,14 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 - A needs_auth reconnect must not reuse an action that requires a feed-supplied param (like open?url={url}); with no url it silently never fires. Launch the provider via a parameterless commandcenter://openProvider route instead. Design-review actions for their required params before wiring a button to them.
 - To open a plain web link, use a commandcenter://open route with the url as a param, not a urlTemplate of `{url}`. The action resolver URL-encodes every param so it cannot break out, and an encoded https value (https%3A%2F%2F...) is not a navigable URL. The native app decodes the route param and opens it in the browser.
 
+## Decisions
+
+- Distribution: Developer ID, side-loaded and notarized, like Linear Bar and Meeting Notifier. The app is NOT sandboxed. Entitlements: App Group group.com.strategicnerds.suite, ubiquity-kvstore. Code-signing and notarization need the user's Developer ID certificate, so defer them to the release task; build and test logic unsigned until then.
+
+## Design
+
+- No decorative borders or accent stripes on cards (user called the edge lines "AI slop"). Surfaces float on the background with soft elevation (a soft shadow), not hairline borders or a colored left bar. Keep theme CSS clean: fill plus shadow, no busy edges.
+
 ## Architecture invariants to never violate
 
 - Providers declare, themes render. No provider ships HTML, CSS, JS, or pixels. No theme fetches data or holds a token.
