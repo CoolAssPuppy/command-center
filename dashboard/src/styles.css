@@ -192,13 +192,122 @@ body {
   background: color-mix(in srgb, var(--cc-color-accent-1, #38bdf8) 60%, transparent);
 }
 
-/* Card grid --------------------------------------------------------------- */
+/* Overlap timeline -------------------------------------------------------- */
 
-.cc-grid {
+.cc-timeline-panel {
+  background: var(--cc-color-surface, #121826);
+  border-radius: var(--cc-card-radius, 16px);
+  padding: var(--cc-card-padding, 16px);
+  box-shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.5);
+}
+
+.cc-timeline-panel__title {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cc-color-muted, #9aa4b2);
+  margin-bottom: 14px;
+}
+
+.cc-overlap {
+  position: relative;
+}
+
+.cc-overlap__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: 84px 1fr;
+  align-items: center;
+  row-gap: 7px;
+}
+
+.cc-overlap__label {
+  font-size: 12px;
+  color: var(--cc-color-muted, #9aa4b2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 10px;
+}
+
+.cc-overlap__track {
+  position: relative;
+  height: 14px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--cc-color-muted, #9aa4b2) 14%, transparent);
+}
+
+.cc-overlap__band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--cc-color-accent-1, #38bdf8) 55%, transparent);
+}
+
+/* The overlay starts after the fixed label column so its window highlight and
+   now cursor line up with every row's working bands. */
+.cc-overlap__overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 84px;
+  right: 0;
+  pointer-events: none;
+}
+
+.cc-overlap__window {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--cc-color-positive, #34d399) 15%, transparent);
+  border-inline: 1px solid color-mix(in srgb, var(--cc-color-positive, #34d399) 55%, transparent);
+}
+
+.cc-overlap__now {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 2px;
+  background: var(--cc-color-urgent, #f87171);
+  box-shadow: 0 0 8px var(--cc-color-urgent, #f87171);
+}
+
+.cc-overlap__axis {
+  position: relative;
+  margin-left: 84px;
+  height: 14px;
+  margin-top: 8px;
+}
+
+.cc-overlap__tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--cc-color-muted, #9aa4b2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Columns ----------------------------------------------------------------- */
+
+.cc-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
   align-items: start;
+}
+
+@media (max-width: 900px) {
+  .cc-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cc-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
 }
 
 .cc-card {

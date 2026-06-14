@@ -14,10 +14,10 @@ describe("mockDashboardPayload", () => {
     const statuses = payload.providers.flatMap((p) => p.feeds.map((f) => f.status));
 
     expect(kinds).toContain("calendar.today");
+    expect(kinds).toContain("reminders.today");
+    expect(kinds).toContain("docs.recent");
     expect(kinds).toContain("linear.inbox");
-    expect(kinds).toContain("card");
-    expect(statuses).toContain("needs_auth");
-    expect(payload.settings?.worldClock?.cities.length).toBeGreaterThan(1);
+    expect(statuses).toContain("ok");
   });
 
   it("carries a required glance on every feed", () => {

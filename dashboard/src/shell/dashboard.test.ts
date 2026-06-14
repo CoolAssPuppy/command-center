@@ -50,7 +50,8 @@ describe("renderDashboard", () => {
     const { root } = renderFixture();
 
     expect(getByText(root, "Good morning, Prashant")).toBeInTheDocument();
-    expect(getByText(root, "New York")).toBeInTheDocument();
+    // New York appears in both the hero row and the overlap timeline.
+    expect(getAllByText(root, "New York").length).toBeGreaterThanOrEqual(1);
     expect(getAllByText(root, "63°").length).toBe(CITIES.length);
     expect(getByText(root, "Linear")).toBeInTheDocument();
   });

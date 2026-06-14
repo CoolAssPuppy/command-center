@@ -15,20 +15,84 @@ describe("buildDashboardModel", () => {
     expect(result.value.settings?.profile?.name).toBe("Prashant");
   });
 
-  it("surfaces the needs_auth provider as a needs_auth card", () => {
-    const result = buildDashboardModel(mockDashboardPayload(), NOW);
+  it("surfaces a needs_auth provider as a needs_auth card", () => {
+    const payload = {
+      providers: [
+        {
+          manifest: {
+            schemaVersion: 1,
+            providerId: "notion",
+            displayName: "Notion",
+            bundleId: "com.acme.notion",
+            feeds: [{ kind: "docs.recent" }],
+          },
+          feeds: [
+            {
+              schemaVersion: 1,
+              providerId: "notion",
+              kind: "docs.recent",
+              updatedAt: "2026-06-14T15:04:00Z",
+              status: "needs_auth",
+              glance: { value: "!", label: "reconnect" },
+              data: { items: [] },
+            },
+          ],
+        },
+      ],
+    };
+    const result = buildDashboardModel(payload, NOW);
     if (!result.ok) throw new Error(result.error);
 
     const notion = result.value.cards.find((c) => c.providerId === "notion");
     expect(notion?.state).toBe("needs_auth");
   });
 
-  it("includes the generic card-kind provider with its chart widget", () => {
-    const result = buildDashboardModel(mockDashboardPayload(), NOW);
+  it("includes a generic card-kind provider with its chart widget", () => {
+    const payload = {
+      providers: [
+        {
+          manifest: {
+            schemaVersion: 1,
+            providerId: "metrics",
+            displayName: "Metrics",
+            bundleId: "com.acme.metrics",
+            feeds: [{ kind: "card" }],
+          },
+          feeds: [
+            {
+              schemaVersion: 1,
+              providerId: "metrics",
+              kind: "card",
+              updatedAt: "2026-06-14T15:04:00Z",
+              ttlSeconds: 300,
+              status: "ok",
+              glance: { value: "2", label: "today" },
+              data: {
+                card: {
+                  title: "Metrics",
+                  glance: { value: "2", label: "today" },
+                  widgets: [
+                    {
+                      type: "chart",
+                      data: {
+                        subtype: "bar",
+                        xType: "time",
+                        series: [{ name: "w", points: [{ x: "2026-06-13", y: 1 }] }],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = buildDashboardModel(payload, NOW);
     if (!result.ok) throw new Error(result.error);
 
-    const deploybot = result.value.cards.find((c) => c.providerId === "deploybot");
-    const types = deploybot?.card?.widgets.map((w) => w.type) ?? [];
+    const metrics = result.value.cards.find((c) => c.providerId === "metrics");
+    const types = metrics?.card?.widgets.map((w) => w.type) ?? [];
     expect(types).toContain("chart");
   });
 
