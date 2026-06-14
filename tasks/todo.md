@@ -27,7 +27,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.7 Attention and layout model, basic: ordering and glance-versus-full decisions. Tests.
 - [x] P1.8 Security utilities: text-only rendering helper, action URL validation against host allowlist, CSP string. Tests cover injection attempts.
 - [x] P1.9 Default widget renderers, vanilla DOM into a host node, one per widget type. Testing Library behavior tests.
-- [ ] P1.10 Theme token layer and the first theme tokens (Aurora). Token application. Tests.
+- [x] P1.10 Theme token layer and the first theme tokens (Aurora). Token application. Tests.
 - [ ] P1.11 Dashboard shell: header with time, date, greeting; responsive grid; instant paint from cache; all card states. Integration tests.
 - [ ] P1.12 Mock native bridge and mock feed fixtures for local dev and the demo page.
 - [ ] P1.13 Performance pass: bundle budget check, reduced-motion support, first-paint measurement harness.
@@ -147,3 +147,11 @@ Shipped: the default widget renderers in src/render, one per vocabulary type (me
 Verified: 17 new tests (101 total) green, including XSS strings rendered inert, time formatting via context, click wiring to the action ref (no URL built in the renderer), typed table cells, line-chart point counts, timeline positioning, and progressbar aria. Security hook flagged an innerHTML in test cleanup; switched to replaceChildren. Lint, typecheck, and build all pass.
 
 Next: P1.10 theme token layer and the first theme tokens (Aurora), applying tokens as CSS custom properties, test-first.
+
+### Iteration 9 (P1.10)
+
+Shipped: the theme token layer in src/theme. ThemeTokensSchema and ThemeMeta define the styling contract; tokensToCssVars flattens tokens to --cc-* custom properties (colors, px sizes, tabular-nums flag, motion speed, background); applyTokens sets them on an element and forces motion to zero under reduced motion; tokensToCssText emits a :root block. Added the Aurora theme (dark glass, gradient background) as the first shipped theme's token layer. Tones map to token colors so a data-tone attribute resolves to the theme's color.
+
+Verified: 7 new tests (108 total) green, covering schema validation, the var mapping with units and flags, runtime application, the reduced-motion override, and CSS text output. Lint, typecheck, and build all pass.
+
+Next: P1.11 dashboard shell (header with time/date/greeting, responsive card grid, instant paint from cache, all card states), tying renderers, theme, time, and weather together, with integration tests.
