@@ -85,6 +85,22 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 
 ---
 
+## Standing quality mandate
+
+Every iteration: keep the architecture impeccable, not just green. Before marking a task done, refactor what you touched (no duplication, no dead code, single source of truth, honest docs). Periodically re-audit. The full tech-debt audit (below) set the baseline; do not regress it.
+
+## Tech-debt audit (2026-06-14) — completed
+
+Three parallel specialist audits (dashboard TS, Swift, cross-language contract). Verdict: architecture healthy (no God classes, no oversized files, clean boundaries, provider-declares/theme-renders enforced in code). Fixed:
+- DEFECTS: openProvider/reconnect silent no-op (now resolves providerId -> installed app and launches it); FeedStore traversal guard now resolves symlinks (+ test); feed image URLs validated (https-only) before render; settings/calendar write failures logged not swallowed.
+- SINGLE SOURCE: meeting-host list unified into MeetingHosts (was duplicated across Routing + CalendarFeed); shared ISO8601 formatter; shared path-safety helper used by FeedStore + FeedPublisher; shared Swift test support (removed 5 duplicated locators + temp-dir helpers); shared firstIssue() zod-error helper at all 5 TS parse sites.
+- DEAD CODE: removed textEl, tokensToCssText, formatBytes/isWithinBudget/BUNDLE_GZIP_BUDGET_BYTES (+ tests); SizeSchema now used in CardSchema.
+- PARITY: Swift feed decoding tightened to TS (positive version, non-empty providerId/kind); JSONValue Sendable; EventKit I/O moved off the main thread; browserRouting added to the TS settings schema; table cells routed through setText.
+- DOCS: reconciled the scheme-vs-host validation split, openProvider behavior, unimplemented transports, planned reminders producer and settings write-back, and series colorHex-vs-hints.
+- Verified: 51 swift tests, 142 dashboard tests, lint, unsigned native build, bundle size — all green.
+
+Remaining MINOR/deferred (non-blocking, by design): accountEmail optional field unused by the Apple provider (privacy stance prefers names+counts — consider dropping); manifest schemaVersion not version-guarded (feed envelope is); deriveAllowedSchemes can widen the scheme set from a manifest (documented trust boundary, native re-validates host); JSONValue decodes numbers as Double (no large-int feed fields today).
+
 ## Review log
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
