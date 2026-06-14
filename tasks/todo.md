@@ -62,8 +62,8 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 
 ## Phase 5: open provider platform
 
-- [ ] P5.1 Local ingest endpoint: loopback HTTP plus WebSocket, port and Bonjour discovery.
-- [ ] P5.2 Registration with user consent, capability tokens, revocation. Security tests.
+- [ ] P5.2a Ingest core logic (CommandCenterCore, testable): capability-token issuance/validation/revocation, a registration model (pending consent -> approved), and an IngestHandler that processes typed ingest requests (register, publish, revoke) — validating tokens and writing feeds via FeedPublisher into an injected container. Security tests: publish without a valid token refused, revoked token stops working, registration needs consent. Identity = loopback + consent tokens (lessons).
+- [ ] P5.1 Local ingest endpoint TRANSPORT (app, thin): loopback NWListener HTTP + WebSocket wired to the IngestHandler, default port + Bonjour discovery. Compile-verify unsigned; do not bind real ports in unit tests.
 - [ ] P5.3 CommandCenterKit SDK: register, publish, openStream, transport auto-select, token storage. Tests.
 - [ ] P5.4 Full widget vocabulary including charts and tables in renderers.
 - [ ] P5.5 Providers screen: approval, status, revocation.
