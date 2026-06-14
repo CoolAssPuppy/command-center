@@ -45,7 +45,7 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 - [ ] P2.4 Swap dashboard from mock JSON to sendNativeMessage, with graceful fallback.
 - [x] P2.5 commandcenter:// URL scheme, Router, host-allowlist validation, browser routing reusing MeetAppType.
 - [x] P2.6a Settings writer (core): a SettingsStore that atomically writes/reads CommandCenter/settings.json in an injected container URL, plus a defaultSettingsDocument. Round-trip tested with temp dirs; FeedStore.loadSettings reads what it writes. Defer iCloud KVS sync (entitlement unregistered, P2.1b).
-- [ ] P2.6b Settings UI (app): the menu-bar popover + settings window in SwiftUI, MATCHING Sync Bar / Meeting Notifier. Port their design system (AppRadius/AppSpacing, ThemePalette, AppTheme + ThemeStore, DesignComponents, MenuBarPopover/SettingsView styling) into the CommandCenter app target; read those files first. Compile-verify via unsigned xcodebuild.
+- [x] P2.6b Settings UI (app): the menu-bar popover + settings window in SwiftUI, MATCHING Sync Bar / Meeting Notifier. Port their design system (AppRadius/AppSpacing, ThemePalette, AppTheme + ThemeStore, DesignComponents, MenuBarPopover/SettingsView styling) into the CommandCenter app target; read those files first. Compile-verify via unsigned xcodebuild.
 - [ ] P2.7 Apple EventKit provider, optional, publishing calendar.today and reminders.today.
 - [ ] P2.8 Safari extension manifest with newtab override, minimal background, CSP. Cold-start test.
 
@@ -244,3 +244,11 @@ Shipped: SettingsStore in CommandCenterCore. The app is the sole writer of Comma
 Verified: 6 new swift tests (43 total) green: write/read round-trip, nil before first write, directory creation, FeedStore.loadSettings reads what SettingsStore writes, default document round-trip and shape. Unsigned native build + dashboard gates green. Caught a Swift type-checker timeout on the big nested settings literal; fixed by building it from sub-expressions (logged as a lesson).
 
 Next: P2.6b the menu-bar popover + settings window UI matching Sync Bar / Meeting Notifier (port their design system), then P2.7 EventKit provider mapping.
+
+### Iteration 20 (P2.6b)
+
+Shipped: the native UI matching Sync Bar / Meeting Notifier. Ported their design system into the app target verbatim: ThemePalette, AppTheme (system + 9 named themes: Hoth, Risa, Weasley, Starbuck, Cylon, Vader, Kirk, Hermione, Nerds), all palette definitions, ThemeStore (UserDefaults-persisted, re-publishes on OS light/dark flip), AppRadius/AppSpacing tokens, and the EnvironmentValues.theme. Built Components (SectionLabel, themed Card with soft elevation and NO borders per the design rule, SettingRow), a themed MenuBarPopover (brand header, theme picker, Settings/Quit), and a SettingsView (Appearance theme picker, per-platform browser routing, weather units, world-clock cities add/remove). AppSettings persists the dashboard-facing prefs via the core SettingsStore, with an Application Support dev-container fallback since the App Group is inactive unsigned. The status item shows the popover; the Settings scene hosts SettingsView.
+
+Verified: unsigned native build SUCCEEDED with the full UI; 43 swift tests and dashboard gates green. One real compile fix: ForEach over BrowserChoice needed id: \.self (enum is Hashable, not Identifiable).
+
+Next: P2.7 EventKit provider — pure EKEvent->calendar.today feed mapping in CommandCenterCore (testable), with the permission-gated EventKit reading kept thin in the app.
