@@ -18,7 +18,14 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 
 ## Decisions
 
-- Distribution: Developer ID, side-loaded and notarized, like Linear Bar and Meeting Notifier. The app is NOT sandboxed. Entitlements: App Group group.com.strategicnerds.suite, ubiquity-kvstore. Code-signing and notarization need the user's Developer ID certificate, so defer them to the release task; build and test logic unsigned until then.
+- Distribution: Developer ID, side-loaded and notarized, like Linear Bar and Meeting Notifier. The app is NOT sandboxed. Entitlements: App Group group.com.strategicnerds.suite, ubiquity-kvstore.
+- Apple Team ID: 955GSY56UT. Signing identity: "Developer ID Application: Prashant Sridharan (955GSY56UT)" (Developer ID cert is in the local keychain). Set DEVELOPMENT_TEAM = 955GSY56UT in the Xcode project.
+- Secrets live in Doppler project `command-center` (configs dev/stg/prd, repo `.doppler.yaml` points to dev). It holds APPLE_TEAM_ID, SIGN_IDENTITY, Cloudflare R2 (CLOUDFLARE_*, R2_*), PostHog (POSTHOG_*), notarization app-specific password (SPARKLE_APP_SPECIFIC_PASSWORD), and OAuth client creds (GOOGLE/LINEAR/NOTION CLIENT_ID/SECRET), copied from the sync-bar project. Build/release scripts should pull from Doppler like sync-bar does (doppler secrets get ... --project command-center).
+- SPARKLE_PRIVATE_KEY was deliberately NOT copied from sync-bar: the Sparkle update-signing key must be unique per app for isolation. Generate a fresh EdDSA key for command-center at release time. Spotify/OpenAI keys skipped as out of scope.
+
+## Process
+
+- The Bash tool runs zsh, which does NOT word-split an unquoted `$VAR` in `for x in $VAR` (bash does). Use a literal list in the for statement, or `${=VAR}`, or an array. A copy loop silently iterated once over the whole string before this was caught.
 
 ## Design
 
