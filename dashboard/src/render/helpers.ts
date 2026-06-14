@@ -1,5 +1,7 @@
 import { setText } from "../security/dom";
+import type { ActionRef } from "../domain/actions";
 import type { Tone } from "../domain/primitives";
+import type { RenderContext } from "./context";
 
 /**
  * Small DOM construction helpers shared by the widget renderers. All text goes
@@ -34,4 +36,21 @@ export function applyTone(node: Element, tone: Tone | undefined): void {
 /** Clamp a number into a range. */
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * Wire an optional action onto a node. When present, mark it a button and
+ * invoke the action on click; the platform validates and navigates (a renderer
+ * never resolves or opens a URL itself). The caller picks the button/div tag.
+ */
+export function makeActionable(
+  node: HTMLElement,
+  action: ActionRef | undefined,
+  ctx: RenderContext,
+): void {
+  if (action === undefined) return;
+  node.setAttribute("type", "button");
+  node.addEventListener("click", () => {
+    ctx.invokeAction(action);
+  });
 }

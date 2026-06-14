@@ -16,6 +16,8 @@ import { firstIssue, type FeedEnvelope, type ParseResult } from "./feed";
 
 const MeetingSchema = z.object({
   url: z.string().min(1),
+  // Keep in sync with MeetingPlatform in core/Sources/CommandCenterCore/Routing.swift:
+  // the native router maps these raw values to per-platform browser routing.
   platform: z.enum(["meet", "zoom", "teams", "webex", "other"]),
 });
 

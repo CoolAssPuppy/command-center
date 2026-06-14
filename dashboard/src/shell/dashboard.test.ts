@@ -1,6 +1,8 @@
 import { fireEvent, getByRole, getByText } from "@testing-library/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { host } from "../test/dom";
+
 import { planLayout } from "../dashboard/attention";
 import { composeDashboard } from "../dashboard/compose";
 import type { Settings } from "../dashboard/payload";
@@ -11,12 +13,6 @@ import { renderDashboard } from "./dashboard";
 afterEach(() => {
   document.body.replaceChildren();
 });
-
-function host(): HTMLElement {
-  const node = document.createElement("div");
-  document.body.appendChild(node);
-  return node;
-}
 
 const LA = "America/Los_Angeles";
 // Within the inbox feed's ttl (updatedAt 15:04:05Z); 15:05 UTC is 08:05 in LA.

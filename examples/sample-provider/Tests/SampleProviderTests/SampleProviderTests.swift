@@ -2,10 +2,6 @@ import CommandCenterCore
 import XCTest
 @testable import SampleProvider
 
-private struct AllInstalled: ProviderLocator {
-    func isInstalled(bundleId: String) -> Bool { true }
-}
-
 final class SampleProviderTests: XCTestCase {
     func testPublishesAFeedStoreReadableProvider() async throws {
         let dir = FileManager.default.temporaryDirectory
@@ -15,7 +11,7 @@ final class SampleProviderTests: XCTestCase {
 
         try await SampleProvider.publish(to: dir)
 
-        let providers = FeedStore(containerURL: dir, locator: AllInstalled()).loadProviders()
+        let providers = FeedStore(containerURL: dir, locator: AllInstalledProviderLocator()).loadProviders()
         XCTAssertEqual(providers.count, 1)
         XCTAssertEqual(providers.first?.manifest.providerId, "com.example.deploybot")
 

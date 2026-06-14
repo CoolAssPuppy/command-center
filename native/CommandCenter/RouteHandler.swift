@@ -9,9 +9,8 @@ import Foundation
 struct RouteHandler {
     /// Read the per-platform browser routing from the shared settings.
     private func currentRouting() -> [String: String] {
-        guard let container = CommandCenterContainer.url() else { return [:] }
         let settings = FeedStore(
-            containerURL: container,
+            containerURL: AppContainer.url(),
             locator: WorkspaceProviderLocator()
         ).loadSettings()
         return browserRouting(from: settings)
@@ -44,8 +43,7 @@ struct RouteHandler {
     }
 
     private func providerBundleId(_ providerId: String) -> String? {
-        guard let container = CommandCenterContainer.url() else { return nil }
-        return FeedStore(containerURL: container, locator: WorkspaceProviderLocator())
+        FeedStore(containerURL: AppContainer.url(), locator: WorkspaceProviderLocator())
             .loadProviders()
             .first { $0.manifest.providerId == providerId }?
             .manifest.bundleId

@@ -180,6 +180,16 @@ Verified: 3 new dashboard tests (151 total): themed widget renders into a shadow
 
 Remaining unsigned/optional: openStream/live WebSocket publishing, and the third-party render-theme sandbox (needs user security review). Everything else (signed/Safari, Phase 3-4 other apps, Phase 7 ship) needs the user.
 
+### Iteration 30 (tech-debt audit) — duplication swept into shared libraries
+
+A 3-agent duplication audit (Swift, TS, library boundaries) confirmed the codebase is well-factored; it found one HIGH bug and a handful of small dedups, all now fixed:
+
+- HIGH (a real bug, not just duplication): the 4-byte length-prefix wire framing was implemented twice and had drifted. IngestEndpoint capped reads at 1 MB; LoopbackSocketClient had NO bound (unbounded-read risk). Extracted `IngestWire` in core (single source for defaultPort, loopbackHost, maxMessageBytes, frame(), and a bounded decodeLength()), and refactored both transports onto it. Both ends now share one codec and one cap.
+- MEDIUM: container resolution was inconsistent in unsigned dev. AppSettings/ProvidersModel used AppContainer.url() (dev fallback) while RouteHandler/EventKitCalendarProvider used CommandCenterContainer.url() (nil unsigned -> silent no-op). Funneled the latter two through AppContainer.url(). Added `CommandCenterContainer.applicationSupportBaseURL()` as the single source for the App Support base path (well-known dir + dev fallback both derive from it).
+- Dedups: a public `AllInstalledProviderLocator` in core replaces three private always-true copies across the test targets; a shared `host()` test helper in dashboard/src/test/dom.ts replaces seven identical copies; a `makeActionable(node, action, ctx)` helper in render/helpers.ts replaces the repeated action-wiring block in list.ts and timeline.ts. Added cross-language "keep in sync" comments tying the TS MeetingSchema platform enum to the Swift MeetingPlatform.
+
+Verified: full sweep green after every change. Core 75 tests (+ new IngestWire round-trip/bounds tests), Kit 6, sample 2, dashboard 151 + lint + build + size (22.9 KB gzip, budget 90), unsigned native xcodebuild SUCCEEDED. No behavior changed; the unbounded-read path is now closed.
+
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 
 ### Iteration 1 (P1.1, P1.2)

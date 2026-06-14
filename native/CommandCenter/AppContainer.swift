@@ -8,10 +8,8 @@ import Foundation
 enum AppContainer {
     static func url() -> URL {
         if let group = CommandCenterContainer.url() { return group }
-        let base = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first ?? FileManager.default.temporaryDirectory
-        let dir = base.appendingPathComponent("CommandCenterDev", isDirectory: true)
+        let dir = CommandCenterContainer.applicationSupportBaseURL()
+            .appendingPathComponent("CommandCenterDev", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }

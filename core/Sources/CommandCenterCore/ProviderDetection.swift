@@ -22,6 +22,13 @@ public struct WorkspaceProviderLocator: ProviderLocator {
 }
 #endif
 
+/// A locator that treats every provider as installed. Useful for tests and for
+/// publishing into a container the consumer scans without an installed check.
+public struct AllInstalledProviderLocator: ProviderLocator {
+    public init() {}
+    public func isInstalled(bundleId: String) -> Bool { true }
+}
+
 /// Keep only the providers whose owning app is installed.
 public func installedProviders(
     in payload: DashboardPayload,

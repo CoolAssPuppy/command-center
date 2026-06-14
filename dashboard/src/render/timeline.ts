@@ -1,6 +1,6 @@
 import type { Widget } from "../domain/widgets";
 import type { RenderContext } from "./context";
-import { applyTone, clamp, el } from "./helpers";
+import { applyTone, clamp, el, makeActionable } from "./helpers";
 
 type TimelineWidget = Extract<Widget, { type: "timeline" }>;
 type TimelineItem = TimelineWidget["data"]["items"][number];
@@ -48,13 +48,6 @@ function renderItem(
   node.style.left = `${String(left)}%`;
   node.style.width = `${String(clamp(width, MIN_WIDTH_PERCENT, 100))}%`;
   applyTone(node, item.tone);
-
-  if (item.action) {
-    node.setAttribute("type", "button");
-    const action = item.action;
-    node.addEventListener("click", () => {
-      ctx.invokeAction(action);
-    });
-  }
+  makeActionable(node, item.action, ctx);
   return node;
 }

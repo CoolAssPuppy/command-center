@@ -5,17 +5,13 @@ import XCTest
 /// Shared test helpers, compiled into the test target alongside every test file.
 
 /// A ProviderLocator backed by an explicit installed set. `.all` treats every
-/// provider as installed.
+/// provider as installed (the shared `AllInstalledProviderLocator` from core).
 struct StubLocator: ProviderLocator {
     let installed: Set<String>
     init(installed: Set<String>) { self.installed = installed }
     func isInstalled(bundleId: String) -> Bool { installed.contains(bundleId) }
 
-    static let all = AllInstalledLocator()
-}
-
-struct AllInstalledLocator: ProviderLocator {
-    func isInstalled(bundleId: String) -> Bool { true }
+    static let all = AllInstalledProviderLocator()
 }
 
 extension XCTestCase {

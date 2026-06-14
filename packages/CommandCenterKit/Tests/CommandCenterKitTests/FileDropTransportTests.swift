@@ -2,10 +2,6 @@ import CommandCenterCore
 import XCTest
 @testable import CommandCenterKit
 
-private struct AllInstalled: ProviderLocator {
-    func isInstalled(bundleId: String) -> Bool { true }
-}
-
 final class FileDropTransportTests: XCTestCase {
     private var container: URL!
 
@@ -45,7 +41,7 @@ final class FileDropTransportTests: XCTestCase {
         try await center.register(manifest: manifest)
         try await center.publish(feed, to: "feed.json")
 
-        let providers = FeedStore(containerURL: container, locator: AllInstalled()).loadProviders()
+        let providers = FeedStore(containerURL: container, locator: AllInstalledProviderLocator()).loadProviders()
         XCTAssertEqual(providers.count, 1)
         XCTAssertEqual(providers.first?.feeds.first?.glance.value, "5")
     }

@@ -1,7 +1,7 @@
 import type { ListItem, Widget } from "../domain/widgets";
 import { isSafeUrl } from "../security/url";
 import type { RenderContext } from "./context";
-import { applyTone, el } from "./helpers";
+import { applyTone, el, makeActionable } from "./helpers";
 
 type ListWidget = Extract<Widget, { type: "list" }>;
 
@@ -46,13 +46,7 @@ function renderTrailing(
 
 function renderItem(item: ListItem, ctx: RenderContext): HTMLElement {
   const row = el(item.action ? "button" : "div", "cc-list__row");
-  if (item.action) {
-    row.setAttribute("type", "button");
-    const action = item.action;
-    row.addEventListener("click", () => {
-      ctx.invokeAction(action);
-    });
-  }
+  makeActionable(row, item.action, ctx);
   if (item.leading) row.appendChild(renderLeading(item.leading));
 
   const body = el("span", "cc-list__body");

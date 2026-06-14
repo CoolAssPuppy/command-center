@@ -24,7 +24,7 @@ final class EventKitCalendarProvider {
     }
 
     private func publishToday() {
-        guard let container = CommandCenterContainer.url() else { return }
+        let container = AppContainer.url()
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
         guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return }

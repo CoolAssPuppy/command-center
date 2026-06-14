@@ -1,18 +1,14 @@
 import { fireEvent, getByRole, getByText, queryByRole } from "@testing-library/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { host } from "../test/dom";
+
 import { makePlacedCard } from "../test/dashboard-factories";
 import { renderCard, type CardDeps } from "./card";
 
 afterEach(() => {
   document.body.replaceChildren();
 });
-
-function host(): HTMLElement {
-  const node = document.createElement("div");
-  document.body.appendChild(node);
-  return node;
-}
 
 function deps(overrides: Partial<CardDeps> = {}): CardDeps {
   return {

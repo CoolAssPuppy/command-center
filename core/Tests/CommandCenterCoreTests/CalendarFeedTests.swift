@@ -73,7 +73,7 @@ final class CalendarFeedTests: XCTestCase {
             to: "calendar/today.json"
         )
 
-        let providers = FeedStore(containerURL: container, locator: AllInstalledLocator()).loadProviders()
+        let providers = FeedStore(containerURL: container, locator: AllInstalledProviderLocator()).loadProviders()
         XCTAssertEqual(providers.count, 1)
         XCTAssertEqual(providers.first?.feeds.first?.kind, "calendar.today")
     }

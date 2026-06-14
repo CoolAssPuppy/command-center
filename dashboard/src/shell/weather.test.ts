@@ -1,18 +1,14 @@
 import { getByText } from "@testing-library/dom";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { host } from "../test/dom";
+
 import type { Weather } from "../weather/openMeteo";
 import { renderWeather } from "./weather";
 
 afterEach(() => {
   document.body.replaceChildren();
 });
-
-function host(): HTMLElement {
-  const node = document.createElement("div");
-  document.body.appendChild(node);
-  return node;
-}
 
 const weather: Weather = {
   temperature: 63.4,

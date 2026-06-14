@@ -9,6 +9,8 @@ import Foundation
 
 public let commandCenterScheme = "commandcenter"
 
+/// Keep in sync with the `platform` enum in dashboard/src/domain/kinds.ts: the
+/// dashboard publishes these raw values and this layer routes on them.
 public enum MeetingPlatform: String, Equatable {
     case meet, zoom, teams, webex, other
 }

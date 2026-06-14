@@ -1,15 +1,11 @@
 import { fireEvent, getByRole, getByText, queryByText } from "@testing-library/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { host } from "../test/dom";
+
 import type { Widget } from "../domain/widgets";
 import { defaultRenderContext } from "./context";
 import { renderWidget } from "./index";
-
-function host(): HTMLElement {
-  const node = document.createElement("div");
-  document.body.appendChild(node);
-  return node;
-}
 
 afterEach(() => {
   document.body.replaceChildren();

@@ -8,17 +8,14 @@ import Network
 /// (consent, token validation) live in the dispatcher/IngestHandler; this is
 /// just framing and sockets. It never logs token values.
 final class IngestEndpoint {
-    static let defaultPort: UInt16 = 4849
-    private static let maxMessageBytes = 1 << 20 // 1 MB
-
     private let handler: IngestHandler
     private let port: NWEndpoint.Port
     private let queue = DispatchQueue(label: "com.strategicnerds.commandcenter.ingest")
     private var listener: NWListener?
 
-    init(containerURL: URL, port: UInt16 = IngestEndpoint.defaultPort) {
+    init(containerURL: URL, port: UInt16 = IngestWire.defaultPort) {
         self.handler = IngestHandler(containerURL: containerURL)
-        self.port = NWEndpoint.Port(rawValue: port) ?? NWEndpoint.Port(rawValue: IngestEndpoint.defaultPort)!
+        self.port = NWEndpoint.Port(rawValue: port) ?? NWEndpoint.Port(rawValue: IngestWire.defaultPort)!
     }
 
     func start() {
@@ -40,12 +37,7 @@ final class IngestEndpoint {
 
     private func receiveLength(on connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self] data, _, _, error in
-            guard let self, error == nil, let data, data.count == 4 else {
-                connection.cancel()
-                return
-            }
-            let length = data.reduce(0) { ($0 << 8) | Int($1) }
-            guard length > 0, length <= Self.maxMessageBytes else {
+            guard let self, error == nil, let data, let length = IngestWire.decodeLength(data) else {
                 connection.cancel()
                 return
             }
@@ -65,14 +57,9 @@ final class IngestEndpoint {
     }
 
     private func send(_ payload: Data, on connection: NWConnection) {
-        let count = UInt32(payload.count)
-        var frame = Data([
-            UInt8(count >> 24 & 0xFF),
-            UInt8(count >> 16 & 0xFF),
-            UInt8(count >> 8 & 0xFF),
-            UInt8(count & 0xFF),
-        ])
-        frame.append(payload)
-        connection.send(content: frame, completion: .contentProcessed { _ in connection.cancel() })
+        connection.send(
+            content: IngestWire.frame(payload),
+            completion: .contentProcessed { _ in connection.cancel() }
+        )
     }
 }

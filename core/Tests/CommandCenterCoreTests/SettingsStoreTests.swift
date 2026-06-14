@@ -34,7 +34,7 @@ final class SettingsStoreTests: XCTestCase {
     func testFeedStoreReadsWhatSettingsStoreWrites() throws {
         try store().write(defaultSettingsDocument())
 
-        let viaFeedStore = FeedStore(containerURL: container, locator: AllInstalledLocator()).loadSettings()
+        let viaFeedStore = FeedStore(containerURL: container, locator: AllInstalledProviderLocator()).loadSettings()
         XCTAssertEqual(
             viaFeedStore?.objectValue?["browserRouting"]?.objectValue?["meet"]?.stringValue,
             "com.google.Chrome"
