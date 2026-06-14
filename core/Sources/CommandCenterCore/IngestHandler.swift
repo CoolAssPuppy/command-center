@@ -125,12 +125,16 @@ public struct IngestHandler {
     static func generateToken() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
         for index in bytes.indices { bytes[index] = UInt8.random(in: 0...255) }
-        return bytes.map { String(format: "%02x", $0) }.joined()
+        return bytes.hexString
     }
 
     static func hash(_ token: String) -> String {
-        SHA256.hash(data: Data(token.utf8)).map { String(format: "%02x", $0) }.joined()
+        SHA256.hash(data: Data(token.utf8)).hexString
     }
+}
+
+private extension Sequence where Element == UInt8 {
+    var hexString: String { map { String(format: "%02x", $0) }.joined() }
 }
 
 /// Length-then-content comparison that does not short-circuit on the first
