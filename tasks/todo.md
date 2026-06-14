@@ -26,7 +26,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.6 Dashboard composition: from a getDashboard payload, compose ordered cards and resolve states ok, stale, needs_auth, error, absent. Tests.
 - [x] P1.7 Attention and layout model, basic: ordering and glance-versus-full decisions. Tests.
 - [x] P1.8 Security utilities: text-only rendering helper, action URL validation against host allowlist, CSP string. Tests cover injection attempts.
-- [ ] P1.9 Default widget renderers, vanilla DOM into a host node, one per widget type. Testing Library behavior tests.
+- [x] P1.9 Default widget renderers, vanilla DOM into a host node, one per widget type. Testing Library behavior tests.
 - [ ] P1.10 Theme token layer and the first theme tokens (Aurora). Token application. Tests.
 - [ ] P1.11 Dashboard shell: header with time, date, greeting; responsive grid; instant paint from cache; all card states. Integration tests.
 - [ ] P1.12 Mock native bridge and mock feed fixtures for local dev and the demo page.
@@ -139,3 +139,11 @@ Shipped: the security utilities in src/security. url.ts resolves a manifest acti
 Verified: 16 new tests (90 total) green, including javascript:/data:/file: rejection, scheme-change-by-param attempts, XSS strings rendered inert, and CSP shape. tsc caught a closure-narrowing bug (a guard collapsed to never); fixed by pre-scanning placeholders and logged as a lesson. Lint and typecheck clean.
 
 Next: P1.9 default widget renderers (vanilla DOM, one per widget type) with Testing Library behavior tests, using the security helpers exclusively.
+
+### Iteration 8 (P1.9)
+
+Shipped: the default widget renderers in src/render, one per vocabulary type (metric, list, table, chart, timeline, progress, text) plus a renderWidget dispatch and a RenderContext (formatTime, invokeAction, reducedMotion). All text goes through the security helpers, so feed content is always inert. Renderers never resolve or open URLs: actionable rows and timeline items call ctx.invokeAction with the action ref, leaving validation and navigation to the platform. Charts are dependency-free SVG to respect the first-paint budget; progress is an accessible progressbar; tones become data attributes the theme styles. Added a minimal index.html and main.ts entry so the full build pipeline (tsc plus vite) is green.
+
+Verified: 17 new tests (101 total) green, including XSS strings rendered inert, time formatting via context, click wiring to the action ref (no URL built in the renderer), typed table cells, line-chart point counts, timeline positioning, and progressbar aria. Security hook flagged an innerHTML in test cleanup; switched to replaceChildren. Lint, typecheck, and build all pass.
+
+Next: P1.10 theme token layer and the first theme tokens (Aurora), applying tokens as CSS custom properties, test-first.

@@ -11,6 +11,8 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 
 - Compute expected numeric values (time-zone offsets, dates) independently before writing the assertion. A red test caught a hand-done offset arithmetic slip in P1.4; the code was correct. Trust the red, then verify which side is wrong.
 - Under strict TS plus type-checked ESLint, do not assign a closure-captured variable to drive later control flow. The compiler cannot see the assignment, narrows the variable to its initial type, and a later guard collapses to `never` (hit in P1.8 fillTemplate). Pre-scan or compute the value before the callback instead.
+- In DOM render tests, attach the host node to document.body (and clear it in afterEach with replaceChildren, never innerHTML). getByText throws on miss so it already proves existence, but toBeInTheDocument additionally requires the node be attached to the document; a detached host fails it (hit in P1.9).
+- Keep a buildable entry (index.html + src/main.ts) so `npm run build` stays green every iteration; vite needs an HTML entry even while the real shell is unwritten.
 
 ## Architecture invariants to never violate
 
