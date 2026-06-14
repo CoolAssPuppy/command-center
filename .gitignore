@@ -16,6 +16,10 @@ dist-extension/
 build/
 coverage/
 .vite/
+
+# The dashboard bundle is regenerated into the extension on every native build.
+native/CommandCenterExtension/Resources/app/*
+!native/CommandCenterExtension/Resources/app/.gitkeep
 *.tsbuildinfo
 
 # Swift / Xcode

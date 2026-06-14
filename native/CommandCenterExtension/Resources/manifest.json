@@ -4,7 +4,7 @@
   "version": "0.1",
   "description": "A glanceable new tab dashboard.",
   "chrome_url_overrides": {
-    "newtab": "newtab.html"
+    "newtab": "app/newtab.html"
   },
   "background": {
     "service_worker": "background.js",

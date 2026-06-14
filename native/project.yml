@@ -66,7 +66,17 @@ targets:
     type: app-extension
     platform: macOS
     sources:
-      - path: CommandCenterExtension
+      - path: CommandCenterExtension/SafariWebExtensionHandler.swift
+      - path: CommandCenterExtension/Resources/manifest.json
+      - path: CommandCenterExtension/Resources/background.js
+      # app/ is a folder reference: the dashboard bundle the pre-build phase
+      # regenerates into it is copied (and signed) verbatim at build time.
+      - path: CommandCenterExtension/Resources/app
+        type: folder
+    preBuildScripts:
+      - name: Embed dashboard bundle
+        script: '"$SRCROOT/scripts/embed-dashboard.sh"'
+        basedOnDependencyAnalysis: false
     dependencies:
       - package: CommandCenterCore
         product: CommandCenterCore

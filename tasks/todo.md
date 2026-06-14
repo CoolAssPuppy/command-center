@@ -201,6 +201,17 @@ Verified: dashboard 154 tests (+3 native-bridge), lint, default build + size (23
 
 To see it: build `CommandCenter.app` in Xcode and run; Safari > Settings > Extensions, enable "Allow unsigned extensions" via the Develop menu, toggle Command Center on; a new tab renders the full dashboard against the mock fixtures. Live calendar data still needs signing (App Group) plus a plain `build:extension` (native bridge); the unsigned demo path is mock-only by design.
 
+### Iteration 32 (auto-embed + release.sh) — the dashboard builds itself into the app, and a release pipeline
+
+Two things: the new tab page now regenerates on every native build, and there is a SyncBar-style release script (no Sparkle yet).
+
+- Auto-embed: the dashboard bundle moved to `Resources/app/`, a folder reference in the Xcode project, so whatever is there at build time is bundled and signed. A pre-build Run Script phase (`native/scripts/embed-dashboard.sh`) regenerates it before Copy Resources, choosing the bridge by configuration: Release -> `build:extension` (native handler), Debug -> `build:extension:demo` (mock, so unsigned dev shows data). The script resolves node via Homebrew or nvm (Xcode's minimal PATH) and `npm ci`s on a clean checkout. The generated files are gitignored (only `app/.gitkeep` is tracked); the hand-authored manifest.json + background.js stay put, manifest's newtab now points to `app/newtab.html`. Removed the previously committed generated artifacts.
+- release.sh: mirrors SyncBar's pipeline adapted to the native/ subdir, with Sparkle intentionally omitted. `scripts/release.sh` bumps the version in native/project.yml, regenerates, archives + exports a Developer ID app, notarizes + staples it, builds + notarizes + staples a DMG via `scripts/build-dmg.sh`, and uploads it (versioned + latest alias) to R2 via Doppler creds. Plus `export-options.plist` (developer-id, team 955GSY56UT) and `scripts/README.md`. No appcast, no update signature.
+
+Verified: a clean build (app/ holding only .gitkeep, dist-extension deleted) ran the pre-build phase, regenerated the bundle, and the folder reference placed `app/{newtab.html,index.js,index.css}` into the built .appex with manifest pointing at `app/newtab.html` and relative refs intact. Unsigned native xcodebuild SUCCEEDED. Dashboard 154 tests + lint green. release.sh / build-dmg.sh / embed-dashboard.sh pass `bash -n`. release.sh is authored, not run: it needs signing + notary + Doppler/R2, which are the user's to drive.
+
+Next (user-gated): enable App Groups + iCloud KVS on the App ID, run release.sh for a real notarized DMG. Then the live-data Safari loop (signed App Group). Sparkle/auto-update can be added later.
+
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 
 ### Iteration 1 (P1.1, P1.2)
