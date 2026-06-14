@@ -41,7 +41,7 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 - [x] P2.2 FeedStore directory scanner in CommandCenterCore: given an injected container base URL, list Providers/<id>/manifest.json, decode each manifest and its feeds, drop unreadable feeds, filter to installed providers, and compose a DashboardData-like result. Signing-free; swift-test with temp directories. (Moved before Xcode scaffolding so it needs no Team ID.)
 - [x] P2.1 Scaffold `app/` and `extension/` with XcodeGen project.yml, Developer ID entitlements (App Group, ubiquity-kvstore, no sandbox), Info.plist, referencing CommandCenterCore. Structure verified: unsigned build assembles CommandCenter.app with the embedded extension and resources. Team ID DEVELOPMENT_TEAM = 955GSY56UT.
 - [ ] P2.1b Signed build / capability registration (USER-BLOCKED). Signed build fails: the provisioning profile lacks the iCloud capability and the ubiquity-kvstore entitlement. Resolve by either registering iCloud (KVS) + App Group capabilities for App IDs com.strategicnerds.commandcenter and .Extension in the Apple Developer account, or deferring iCloud settings sync (remove the ubiquity-kvstore entitlement, keep the App Group). Awaiting the user's choice. (see lessons; Developer ID cert in keychain). Author the project, `xcodegen generate`, and attempt `xcodebuild` of the app + extension. If the App Group entitlement or signing blocks a local build (e.g. App Group not registered to the team, or codesign fails), STOP and report the exact error rather than guessing.
-- [ ] P2.3 SafariWebExtensionHandler getDashboard and getSettings, composing providers plus settings.
+- [x] P2.3 SafariWebExtensionHandler getDashboard and getSettings, composing providers plus settings.
 - [ ] P2.4 Swap dashboard from mock JSON to sendNativeMessage, with graceful fallback.
 - [ ] P2.5 commandcenter:// URL scheme, Router, host-allowlist validation, browser routing reusing MeetAppType.
 - [ ] P2.6 Settings: iCloud key-value store writer, settings.json mirror, Darwin-notification refresh.
@@ -219,3 +219,11 @@ Verified: xcodegen generate succeeds; an unsigned build (CODE_SIGNING_ALLOWED=NO
 Blocked: a signed build fails with two exact errors: the Mac Team Provisioning Profile "doesn't include the iCloud capability" and "doesn't include the com.apple.developer.ubiquity-kvstore-identifier entitlement." The App Group did not error (it may auto-manage), but the build stops at iCloud KVS first. This needs an Apple Developer account capability decision, so the loop stopped and asked the user (P2.1b). No -allowProvisioningUpdates was run, since that would create/modify App IDs and capabilities on the user's account.
 
 Next (pending user): resolve P2.1b, then P2.3 SafariWebExtensionHandler + getDashboard bridge.
+
+### Iteration 17 (P2.3)
+
+Shipped: DashboardComposer in CommandCenterCore, which assembles the getDashboard payload (installed providers via FeedStore + opaque settings + a passed-in generatedAt) and serializes it; plus CommandCenterContainer (the App Group id and container URL helper). Wired the thin SafariWebExtensionHandler to answer "getDashboard" by reading the container through a FeedStore and returning the composed JSON; all real logic stays in core, the handler is glue. No token or secret crosses the boundary; only display data.
+
+Verified: 3 new swift tests (20 total) green via swift test (compose providers+settings, composeJSON round-trips through decodeDashboardPayload, empty container yields empty payload). xcodegen generate + unsigned xcodebuild SUCCEEDED with the extension importing CommandCenterCore. Dashboard gates still green.
+
+Next: P2.5 commandcenter:// URL router + browser routing (testable routing logic in core), then P2.6 settings, P2.7 EventKit provider. (P2.4 swap dashboard to native messaging and P2.8 manifest cold-start need a signed/run-in-Safari build, so defer those until signing is resolved.)
