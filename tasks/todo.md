@@ -44,7 +44,8 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 - [x] P2.3 SafariWebExtensionHandler getDashboard and getSettings, composing providers plus settings.
 - [ ] P2.4 Swap dashboard from mock JSON to sendNativeMessage, with graceful fallback.
 - [x] P2.5 commandcenter:// URL scheme, Router, host-allowlist validation, browser routing reusing MeetAppType.
-- [ ] P2.6 Settings: settings.json App Group mirror writer (testable in core) and the menu-bar + settings-window UI. The native UI MUST match Sync Bar / Meeting Notifier: port their design system (AppRadius/AppSpacing, ThemePalette, AppTheme + ThemeStore, DesignComponents, MenuBarPopover/SettingsView styling) into the CommandCenter app target. Defer the iCloud KVS part of sync until the iCloud entitlement is registered (P2.1b).
+- [x] P2.6a Settings writer (core): a SettingsStore that atomically writes/reads CommandCenter/settings.json in an injected container URL, plus a defaultSettingsDocument. Round-trip tested with temp dirs; FeedStore.loadSettings reads what it writes. Defer iCloud KVS sync (entitlement unregistered, P2.1b).
+- [ ] P2.6b Settings UI (app): the menu-bar popover + settings window in SwiftUI, MATCHING Sync Bar / Meeting Notifier. Port their design system (AppRadius/AppSpacing, ThemePalette, AppTheme + ThemeStore, DesignComponents, MenuBarPopover/SettingsView styling) into the CommandCenter app target; read those files first. Compile-verify via unsigned xcodebuild.
 - [ ] P2.7 Apple EventKit provider, optional, publishing calendar.today and reminders.today.
 - [ ] P2.8 Safari extension manifest with newtab override, minimal background, CSP. Cold-start test.
 
@@ -235,3 +236,11 @@ Shipped: the commandcenter:// router in CommandCenterCore. parseRoute turns a UR
 Verified: 17 new swift tests (37 total) green, including malicious-URL attempts (javascript, file, encoded scheme, non-meeting host), zoom subdomains, and browser resolution. xcodegen + unsigned xcodebuild SUCCEEDED. Dashboard gates green.
 
 Next: P2.6 settings (settings.json App Group mirror writer in core, testable; menu-bar + settings UI matching Sync Bar / Meeting Notifier per lessons; defer iCloud KVS). Then P2.7 EventKit provider (pure EKEvent->feed mapping in core).
+
+### Iteration 19 (P2.6a)
+
+Shipped: SettingsStore in CommandCenterCore. The app is the sole writer of CommandCenter/settings.json; it writes atomically (Data.write .atomic) into an injected container URL and reads it back, plus defaultSettingsDocument mirroring docs/08 (theme, world-clock cities, weather, browserRouting). Settings stay opaque JSONValue (no token ever written here).
+
+Verified: 6 new swift tests (43 total) green: write/read round-trip, nil before first write, directory creation, FeedStore.loadSettings reads what SettingsStore writes, default document round-trip and shape. Unsigned native build + dashboard gates green. Caught a Swift type-checker timeout on the big nested settings literal; fixed by building it from sub-expressions (logged as a lesson).
+
+Next: P2.6b the menu-bar popover + settings window UI matching Sync Bar / Meeting Notifier (port their design system), then P2.7 EventKit provider mapping.

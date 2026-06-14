@@ -27,6 +27,7 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 ## Process
 
 - The Bash tool runs zsh, which does NOT word-split an unquoted `$VAR` in `for x in $VAR` (bash does). Use a literal list in the for statement, or `${=VAR}`, or an array. A copy loop silently iterated once over the whole string before this was caught.
+- A large deeply-nested Swift literal (e.g. a JSONValue.object tree) can exceed the type-checker budget ("unable to type-check this expression in reasonable time"). Build it from named sub-expression `let`s instead of one literal. Hit in defaultSettingsDocument (P2.6a).
 
 ## Design
 
