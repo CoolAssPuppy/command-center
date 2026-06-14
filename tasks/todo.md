@@ -43,7 +43,7 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 - [ ] P2.1b Signed build / capability registration (USER-BLOCKED). Signed build fails: the provisioning profile lacks the iCloud capability and the ubiquity-kvstore entitlement. Resolve by either registering iCloud (KVS) + App Group capabilities for App IDs com.strategicnerds.commandcenter and .Extension in the Apple Developer account, or deferring iCloud settings sync (remove the ubiquity-kvstore entitlement, keep the App Group). Awaiting the user's choice. (see lessons; Developer ID cert in keychain). Author the project, `xcodegen generate`, and attempt `xcodebuild` of the app + extension. If the App Group entitlement or signing blocks a local build (e.g. App Group not registered to the team, or codesign fails), STOP and report the exact error rather than guessing.
 - [x] P2.3 SafariWebExtensionHandler getDashboard and getSettings, composing providers plus settings.
 - [ ] P2.4 Swap dashboard from mock JSON to sendNativeMessage, with graceful fallback.
-- [ ] P2.5 commandcenter:// URL scheme, Router, host-allowlist validation, browser routing reusing MeetAppType.
+- [x] P2.5 commandcenter:// URL scheme, Router, host-allowlist validation, browser routing reusing MeetAppType.
 - [ ] P2.6 Settings: settings.json App Group mirror writer (testable in core) and the menu-bar + settings-window UI. The native UI MUST match Sync Bar / Meeting Notifier: port their design system (AppRadius/AppSpacing, ThemePalette, AppTheme + ThemeStore, DesignComponents, MenuBarPopover/SettingsView styling) into the CommandCenter app target. Defer the iCloud KVS part of sync until the iCloud entitlement is registered (P2.1b).
 - [ ] P2.7 Apple EventKit provider, optional, publishing calendar.today and reminders.today.
 - [ ] P2.8 Safari extension manifest with newtab override, minimal background, CSP. Cold-start test.
@@ -227,3 +227,11 @@ Shipped: DashboardComposer in CommandCenterCore, which assembles the getDashboar
 Verified: 3 new swift tests (20 total) green via swift test (compose providers+settings, composeJSON round-trips through decodeDashboardPayload, empty container yields empty payload). xcodegen generate + unsigned xcodebuild SUCCEEDED with the extension importing CommandCenterCore. Dashboard gates still green.
 
 Next: P2.5 commandcenter:// URL router + browser routing (testable routing logic in core), then P2.6 settings, P2.7 EventKit provider. (P2.4 swap dashboard to native messaging and P2.8 manifest cold-start need a signed/run-in-Safari build, so defer those until signing is resolved.)
+
+### Iteration 18 (P2.5)
+
+Shipped: the commandcenter:// router in CommandCenterCore. parseRoute turns a URL into a typed CommandCenterRoute (settings, join, open, openProvider) with native-side re-validation: join targets must be https meeting hosts (suffix-matched, so zoom subdomains pass), open requires https, openProvider refuses dangerous schemes; an encoded javascript:/file: url is refused after decoding. Plus BrowserChoice (bundle ids, mirroring MeetAppType), browserRouting(from: settings), and resolveBrowserBundleId (platform -> bundle id, system = default). The app-side RouteHandler is thin: it reads routing from settings and calls NSWorkspace.open; AppDelegate handles application(_:open:). All decision logic is in core and tested.
+
+Verified: 17 new swift tests (37 total) green, including malicious-URL attempts (javascript, file, encoded scheme, non-meeting host), zoom subdomains, and browser resolution. xcodegen + unsigned xcodebuild SUCCEEDED. Dashboard gates green.
+
+Next: P2.6 settings (settings.json App Group mirror writer in core, testable; menu-bar + settings UI matching Sync Bar / Meeting Notifier per lessons; defer iCloud KVS). Then P2.7 EventKit provider (pure EKEvent->feed mapping in core).

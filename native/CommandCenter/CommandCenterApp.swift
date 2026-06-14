@@ -18,6 +18,7 @@ struct CommandCenterApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
+    private let routeHandler = RouteHandler()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -26,5 +27,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             accessibilityDescription: "Command Center"
         )
         statusItem = item
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            routeHandler.handle(url) { [weak self] in self?.openSettings() }
+        }
+    }
+
+    private func openSettings() {
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 }
