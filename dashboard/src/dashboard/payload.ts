@@ -65,6 +65,8 @@ export const SettingsSchema = z
         units: z.enum(["fahrenheit", "celsius"]),
       })
       .optional(),
+    // platform -> browser bundle id or "system"
+    browserRouting: z.record(z.string(), z.string()).optional(),
   })
   .passthrough();
 export type Settings = z.infer<typeof SettingsSchema>;

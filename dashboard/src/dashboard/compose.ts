@@ -1,6 +1,7 @@
 import type { ManifestAction } from "../domain/actions";
 import {
   CURRENT_SCHEMA_VERSION,
+  firstIssue,
   isFeedFresh,
   type FeedEnvelope,
   type ParseResult,
@@ -138,7 +139,7 @@ export function parseDashboardPayload(
 ): ParseResult<DashboardPayload> {
   const parsed = DashboardPayloadSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "invalid payload" };
+    return { ok: false, error: firstIssue(parsed.error, "invalid payload") };
   }
   return { ok: true, value: parsed.data };
 }

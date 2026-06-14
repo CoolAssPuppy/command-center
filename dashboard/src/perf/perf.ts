@@ -7,9 +7,6 @@
 /** Target for first paint from cache, in milliseconds. */
 export const FIRST_PAINT_BUDGET_MS = 100;
 
-/** Budget for the gzipped JS bundle, enforced by the size script. */
-export const BUNDLE_GZIP_BUDGET_BYTES = 90 * 1024;
-
 export type MediaMatcher = (query: string) => { matches: boolean };
 
 function defaultMatcher(): MediaMatcher | undefined {
@@ -45,12 +42,4 @@ export function measureFirstPaint(
   render();
   const elapsedMs = clock() - start;
   return { elapsedMs, withinBudget: elapsedMs <= FIRST_PAINT_BUDGET_MS };
-}
-
-export function isWithinBudget(value: number, budget: number): boolean {
-  return value <= budget;
-}
-
-export function formatBytes(bytes: number): string {
-  return `${(bytes / 1024).toFixed(1)} KB`;
 }

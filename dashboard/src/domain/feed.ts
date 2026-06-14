@@ -40,10 +40,15 @@ export type ParseResult<T> =
   | { ok: true; value: T }
   | { ok: false; error: string };
 
+/** The first Zod issue message, or a fallback. Shared by all schema parsers. */
+export function firstIssue(error: z.ZodError, fallback: string): string {
+  return error.issues[0]?.message ?? fallback;
+}
+
 export function parseFeedEnvelope(input: unknown): ParseResult<FeedEnvelope> {
   const parsed = FeedEnvelopeSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "invalid feed" };
+    return { ok: false, error: firstIssue(parsed.error, "invalid feed") };
   }
   if (parsed.data.schemaVersion > CURRENT_SCHEMA_VERSION) {
     return {

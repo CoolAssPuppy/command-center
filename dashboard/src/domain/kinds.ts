@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { IsoInstantSchema } from "./primitives";
 import { CardSchema, type Card, type ListItem, type Widget } from "./widgets";
-import type { FeedEnvelope, ParseResult } from "./feed";
+import { firstIssue, type FeedEnvelope, type ParseResult } from "./feed";
 
 /**
  * Convenience kinds are a layer over the representation model. A provider that
@@ -182,7 +182,7 @@ function mapWith<T>(
 ): ParseResult<Card> {
   const parsed = schema.safeParse(envelope.data);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "invalid data" };
+    return { ok: false, error: firstIssue(parsed.error, "invalid data") };
   }
   return { ok: true, value: build(parsed.data) };
 }
@@ -214,7 +214,7 @@ export function cardFromFeed(envelope: FeedEnvelope): ParseResult<Card> {
     case "card": {
       const parsed = CardFeedSchema.safeParse(envelope.data);
       if (!parsed.success) {
-        return { ok: false, error: parsed.error.issues[0]?.message ?? "invalid card" };
+        return { ok: false, error: firstIssue(parsed.error, "invalid card") };
       }
       return { ok: true, value: parsed.data.card };
     }

@@ -1,4 +1,5 @@
 import type { ListItem, Widget } from "../domain/widgets";
+import { isSafeUrl } from "../security/url";
 import type { RenderContext } from "./context";
 import { applyTone, el } from "./helpers";
 
@@ -8,7 +9,8 @@ function renderLeading(leading: NonNullable<ListItem["leading"]>): HTMLElement {
   switch (leading.kind) {
     case "avatar": {
       const img = el("img", "cc-avatar");
-      img.setAttribute("src", leading.url);
+      // Feed-supplied image URL is untrusted: only load https, never data:/http.
+      if (isSafeUrl(leading.url, ["https:"])) img.setAttribute("src", leading.url);
       img.setAttribute("alt", "");
       return img;
     }

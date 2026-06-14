@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { ParseResult } from "../domain/feed";
+import { firstIssue, type ParseResult } from "../domain/feed";
 
 /**
  * The weather client. It is the dashboard's only first-party network call, and
@@ -157,7 +157,7 @@ export async function fetchWeather(
 
   const parsed = ResponseSchema.safeParse(body);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "invalid weather" };
+    return { ok: false, error: firstIssue(parsed.error, "invalid weather") };
   }
 
   const { current, daily } = parsed.data;

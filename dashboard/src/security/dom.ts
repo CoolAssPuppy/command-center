@@ -10,19 +10,3 @@ export function setText<T extends Node>(node: T, text: string): T {
   node.textContent = text;
   return node;
 }
-
-export interface TextElOptions {
-  className?: string;
-}
-
-/** Create an element whose content is inert text. */
-export function textEl(
-  tag: string,
-  text: string,
-  options: TextElOptions = {},
-): HTMLElement {
-  const element = document.createElement(tag);
-  element.textContent = text;
-  if (options.className !== undefined) element.className = options.className;
-  return element;
-}

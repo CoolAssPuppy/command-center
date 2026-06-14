@@ -1,3 +1,4 @@
+import { setText } from "../security/dom";
 import type { Widget } from "../domain/widgets";
 import { applyTone, clamp, el } from "./helpers";
 
@@ -10,11 +11,11 @@ function renderCell(cell: Cell | undefined, column: Column): HTMLElement {
   if (cell === undefined) return td;
 
   if (typeof cell === "string") {
-    td.textContent = cell;
+    setText(td, cell);
     return td;
   }
   if (typeof cell === "number") {
-    td.textContent = column.unit ? `${String(cell)} ${column.unit}` : String(cell);
+    setText(td, column.unit ? `${String(cell)} ${column.unit}` : String(cell));
     return td;
   }
   if ("text" in cell) {

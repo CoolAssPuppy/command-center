@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { aurora } from "./aurora";
-import {
-  applyTokens,
-  ThemeTokensSchema,
-  tokensToCssText,
-  tokensToCssVars,
-} from "./tokens";
+import { applyTokens, ThemeTokensSchema, tokensToCssVars } from "./tokens";
 
 describe("ThemeTokensSchema", () => {
   it("accepts the Aurora tokens", () => {
@@ -61,11 +56,3 @@ describe("applyTokens", () => {
   });
 });
 
-describe("tokensToCssText", () => {
-  it("produces a :root block with the variables", () => {
-    const css = tokensToCssText(aurora.tokens);
-
-    expect(css).toContain(":root");
-    expect(css).toContain(`--cc-color-bg: ${aurora.tokens.color.bg}`);
-  });
-});

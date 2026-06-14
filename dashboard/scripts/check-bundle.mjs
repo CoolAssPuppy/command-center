@@ -1,5 +1,4 @@
-// Enforce the gzipped JS bundle budget after a build. Keep BUDGET_BYTES in sync
-// with BUNDLE_GZIP_BUDGET_BYTES in src/perf/perf.ts. A new tab page must stay
+// Enforce the gzipped JS bundle budget after a build. A new tab page must stay
 // small so it paints instantly. Run: npm run build && npm run size
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";

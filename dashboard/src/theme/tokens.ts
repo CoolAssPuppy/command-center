@@ -90,11 +90,3 @@ export function applyTokens(
     root.style.setProperty(name, value);
   }
 }
-
-/** Render tokens as a :root CSS block, for static inclusion if wanted. */
-export function tokensToCssText(tokens: ThemeTokens): string {
-  const body = Object.entries(tokensToCssVars(tokens))
-    .map(([name, value]) => `  ${name}: ${value};`)
-    .join("\n");
-  return `:root {\n${body}\n}`;
-}

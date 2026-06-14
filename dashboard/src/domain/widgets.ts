@@ -4,6 +4,7 @@ import { ActionRefSchema } from "./actions";
 import {
   GlanceSchema,
   IsoInstantSchema,
+  SizeSchema,
   ToneSchema,
   TrendSchema,
 } from "./primitives";
@@ -170,7 +171,7 @@ export const CardSchema = z.object({
   icon: z.string().optional(),
   accentColorHex: z.string().optional(),
   glance: GlanceSchema,
-  preferredSize: z.enum(["small", "medium", "large"]).optional(),
+  preferredSize: SizeSchema.optional(),
   widgets: z.array(WidgetSchema),
 });
 export type Card = z.infer<typeof CardSchema>;

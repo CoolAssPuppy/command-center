@@ -2,8 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   FIRST_PAINT_BUDGET_MS,
-  formatBytes,
-  isWithinBudget,
   measureFirstPaint,
   prefersReducedMotion,
 } from "./perf";
@@ -49,16 +47,5 @@ describe("measureFirstPaint", () => {
       .mockReturnValueOnce(FIRST_PAINT_BUDGET_MS + 50);
 
     expect(measureFirstPaint(() => undefined, clock).withinBudget).toBe(false);
-  });
-});
-
-describe("budget helpers", () => {
-  it("treats a value at the budget as within it", () => {
-    expect(isWithinBudget(100, 100)).toBe(true);
-    expect(isWithinBudget(101, 100)).toBe(false);
-  });
-
-  it("formats bytes as kilobytes", () => {
-    expect(formatBytes(2048)).toBe("2.0 KB");
   });
 });
