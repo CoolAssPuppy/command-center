@@ -1,4 +1,5 @@
 import type { ActionRef } from "../domain/actions";
+import type { RenderThemeRenderers } from "./themeRenderers";
 
 /**
  * What a renderer needs from the platform: how to format a time, how to invoke
@@ -10,6 +11,8 @@ export interface RenderContext {
   formatTime: (iso: string) => string;
   invokeAction: (ref: ActionRef) => void;
   reducedMotion: boolean;
+  /** Per-widget-type overrides from the active render theme, if any. */
+  themeRenderers?: RenderThemeRenderers;
 }
 
 function defaultFormatTime(iso: string): string {

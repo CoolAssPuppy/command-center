@@ -2,6 +2,7 @@ import type { PlacedCard } from "../dashboard/attention";
 import { applyTone, el } from "../render/helpers";
 import { renderWidget } from "../render/index";
 import type { RenderContext } from "../render/context";
+import type { RenderThemeRenderers } from "../render/themeRenderers";
 import { resolveActionUrl } from "../security/url";
 import { createActionInvoker, type ActionInvokerDeps } from "./actions";
 
@@ -15,6 +16,7 @@ import { createActionInvoker, type ActionInvokerDeps } from "./actions";
 export interface CardDeps extends ActionInvokerDeps {
   formatTime: (iso: string) => string;
   reducedMotion: boolean;
+  themeRenderers?: RenderThemeRenderers;
 }
 
 function ageLabel(seconds: number): string {
@@ -95,6 +97,7 @@ export function renderCard(
     invokeAction: createActionInvoker(card.actions, deps),
     reducedMotion: deps.reducedMotion,
   };
+  if (deps.themeRenderers !== undefined) ctx.themeRenderers = deps.themeRenderers;
 
   // Reconnect launches the provider app for re-auth via a commandcenter route,
   // which needs no feed-supplied param and is always a safe scheme.

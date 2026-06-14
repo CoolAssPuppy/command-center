@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { RenderThemeRenderers } from "../render/themeRenderers";
+
 /**
  * Theme tokens are the styling contract between the platform and a theme. The
  * platform exposes a fixed set of tokens; a theme provides values. Tone names,
@@ -50,6 +52,8 @@ export type ThemeMeta = z.infer<typeof ThemeMetaSchema>;
 export interface Theme {
   meta: ThemeMeta;
   tokens: ThemeTokens;
+  /** Optional per-widget renderers for a render-tier theme. Token themes omit this. */
+  renderers?: RenderThemeRenderers;
 }
 
 /** Flatten tokens into the CSS custom properties the renderers consume. */

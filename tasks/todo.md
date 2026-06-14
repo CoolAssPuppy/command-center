@@ -75,7 +75,7 @@ Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test log
 ## Phase 6: open presentation layer
 
 - [x] P6.2 Ship Aurora, Paper, Mono (token themes) + registry + settings-driven selection.
-- [ ] P6.1 Render-theme tier (custom JS renderers, shadow-root isolation, no-network theme context) — FOLLOWING iteration.
+- [x] P6.1 Render-theme tier (custom JS renderers, shadow-root isolation). First-party render themes; third-party untrusted render themes gated behind an iframe/worker sandbox (future, needs user security review).
 - [ ] P6.3 Theme guideline and a sample theme of each tier.
 
 ## Phase 7: polish and ship
@@ -169,6 +169,16 @@ LOOP PAUSED. The cleanly-autonomous, unsigned, this-repo backlog is exhausted. E
 - Phase 3-4: make Linear Bar + Meeting Notifier publish feeds (modifies the other apps).
 - Phase 7: release pipeline (notarization, fresh Sparkle key, R2).
 Deferred for a user decision: the render-theme tier (P6.1, executes third-party JS; security can't be fully verified in jsdom) and openStream/live WebSocket publishing (optional).
+
+### Iteration 29 (P6.1) — render-theme tier (first-party)
+
+User chose to build the render-theme tier. Shipped the verifiable first-party core: a RenderThemeRenderers type (per-widget-type WidgetRenderer), an optional `renderers` on Theme and `themeRenderers` on RenderContext, and renderWidget dispatch that, when the active theme provides a renderer for a widget type, renders it into an isolated SHADOW ROOT (DOM/style isolation; --cc-* tokens still pierce). Theme renderers receive only display data + the validated context (format time, invokeAction) — no feeds, no tokens, no direct URL opening. Threaded the active theme's renderers through renderDashboard -> card -> ctx. Updated docs/14 with an honest implementation status.
+
+Security boundary (told the user up front): this is for FIRST-PARTY (trusted) render themes. The connect-src 'none' no-network guarantee and a true JS sandbox for UNTRUSTED third-party render themes need a sandboxed iframe/worker — NOT built, gated, pending the user's security review. Token tier remains the safe default for outside contributors.
+
+Verified: 3 new dashboard tests (151 total): themed widget renders into a shadow root and is isolated from the light DOM; falls back to the platform renderer when the theme lacks one; a theme renderer can only invoke actions through the validated context. Lint, build, size green.
+
+Remaining unsigned/optional: openStream/live WebSocket publishing, and the third-party render-theme sandbox (needs user security review). Everything else (signed/Safari, Phase 3-4 other apps, Phase 7 ship) needs the user.
 
 Each iteration appends a short note here: what shipped, what was verified, what is next.
 

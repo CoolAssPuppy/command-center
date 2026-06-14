@@ -107,6 +107,8 @@ When a theme renders an action target, it must call `ctx.invokeAction(item.actio
 - Themes run within the page's performance budget. First paint from cache stays under 100ms, so theme guidelines include a performance section and a frame budget for animations and charts.
 - Reduced motion is mandatory to honor. A theme that ignores it fails review.
 
+Implementation status: the render API and per-widget dispatch are implemented (a theme supplies `renderers` keyed by widget type; each themed widget renders into a shadow root, so DOM and styles are isolated while the `--cc-*` tokens still pierce the boundary). Theme renderers receive only the widget's display data and the validated render context (they format times and invoke actions through the platform; they cannot reach feeds, tokens, or open a URL directly). This is the path for FIRST-PARTY render themes, which are trusted code. The `connect-src 'none'` no-network guarantee and a true JavaScript sandbox for UNTRUSTED third-party render themes require running the theme in a sandboxed iframe or worker; that boundary is not yet built, so third-party render themes are gated until it is and the token tier remains the safe default for outside contributors.
+
 ## Trust model for third-party render themes
 
 Because a render theme runs code and sees on-screen data, third-party render themes are installed deliberately, never silently:

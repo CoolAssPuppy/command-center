@@ -70,6 +70,7 @@ export function renderDashboard(
     reducedMotion,
   };
   if (deps.allowedSchemes !== undefined) cardDeps.allowedSchemes = deps.allowedSchemes;
+  if (theme.renderers !== undefined) cardDeps.themeRenderers = theme.renderers;
 
   const grid = el("div", "cc-grid");
   for (const card of model.cards) renderCard(grid, card, cardDeps);
