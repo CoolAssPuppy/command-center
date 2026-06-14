@@ -38,7 +38,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test logic unsigned; signing and notarization wait for the release task and the user's certificate. Lead with the distribution-agnostic SwiftPM core, which needs no signing.
 
 - [x] P2.0 SwiftPM core package `CommandCenterCore`: Codable manifest/feed models mirroring the TS contract (feed `data` kept as opaque JSONValue and forwarded; the dashboard stays the single widget validator), feed-envelope decoding with schemaVersion + glance guard, and provider-installed detection via NSWorkspace (injectable for tests). `swift test`. Distribution-agnostic, no signing.
-- [ ] P2.2 FeedStore directory scanner in CommandCenterCore: given an injected container base URL, list Providers/<id>/manifest.json, decode each manifest and its feeds, drop unreadable feeds, filter to installed providers, and compose a DashboardData-like result. Signing-free; swift-test with temp directories. (Moved before Xcode scaffolding so it needs no Team ID.)
+- [x] P2.2 FeedStore directory scanner in CommandCenterCore: given an injected container base URL, list Providers/<id>/manifest.json, decode each manifest and its feeds, drop unreadable feeds, filter to installed providers, and compose a DashboardData-like result. Signing-free; swift-test with temp directories. (Moved before Xcode scaffolding so it needs no Team ID.)
 - [ ] P2.1 Scaffold `app/` and `extension/` with XcodeGen project.yml, Developer ID entitlements (App Group, ubiquity-kvstore, no sandbox), Info.plist, referencing CommandCenterCore. NEEDS the user's Team ID for the App Group identifier and a signing identity to build the app target; author the config then attempt an unsigned/automatic build, and STOP to ask if it cannot build without a provisioning profile.
 - [ ] P2.3 SafariWebExtensionHandler getDashboard and getSettings, composing providers plus settings.
 - [ ] P2.4 Swap dashboard from mock JSON to sendNativeMessage, with graceful fallback.
@@ -200,3 +200,11 @@ Verified: 10 swift tests green via `swift build` + `swift test` (no signing): st
 Design decision recorded: native forwards feed `data` as opaque JSON; the dashboard is the single widget validator (avoids two-language drift).
 
 Next: P2.2 FeedStore directory scanner (signing-free, temp-dir tests), then P2.1 Xcode scaffolding which will pause for the user's Team ID and signing identity.
+
+### Iteration 15 (P2.2)
+
+Shipped: FeedStore in CommandCenterCore. Given an injected container URL it scans Providers/<id>/manifest.json, decodes each manifest, filters to installed providers via the ProviderLocator, reads each manifest feed path and decodes it (dropping unreadable or invalid feeds without failing the provider), and exposes loadProviders plus loadSettings (settings forwarded as opaque JSONValue). Security: feed paths are provider-controlled, so safeURL refuses any path that escapes the provider folder (../ traversal), verified by a test that plants a file outside the folder and confirms it is not read.
+
+Verified: 7 new swift tests (17 total) green via swift build + swift test, no signing: installed provider with feed, uninstalled dropped, missing feed dropped but provider kept, no-manifest and malformed-manifest skipped, path traversal refused, settings present/absent. Files under 300 lines.
+
+Next: P2.1 Xcode app/extension scaffolding. This needs the user's Apple Team ID (for the App Group identifier) and a signing identity to build the app target, so the loop will author the config and STOP to ask rather than guess.
