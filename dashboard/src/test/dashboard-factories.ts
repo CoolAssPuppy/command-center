@@ -1,3 +1,4 @@
+import type { PlacedCard } from "../dashboard/attention";
 import type { ComposedCard } from "../dashboard/compose";
 import type {
   DashboardPayload,
@@ -61,6 +62,14 @@ export function makeComposedCard(
     card: makeCard(),
     actions: [],
     ...overrides,
+  };
+}
+
+export function makePlacedCard(overrides: Partial<PlacedCard> = {}): PlacedCard {
+  const { presentation, ...composedOverrides } = overrides;
+  return {
+    ...makeComposedCard(composedOverrides),
+    presentation: presentation ?? "full",
   };
 }
 

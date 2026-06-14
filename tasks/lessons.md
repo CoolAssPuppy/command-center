@@ -13,6 +13,7 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 - Under strict TS plus type-checked ESLint, do not assign a closure-captured variable to drive later control flow. The compiler cannot see the assignment, narrows the variable to its initial type, and a later guard collapses to `never` (hit in P1.8 fillTemplate). Pre-scan or compute the value before the callback instead.
 - In DOM render tests, attach the host node to document.body (and clear it in afterEach with replaceChildren, never innerHTML). getByText throws on miss so it already proves existence, but toBeInTheDocument additionally requires the node be attached to the document; a detached host fails it (hit in P1.9).
 - Keep a buildable entry (index.html + src/main.ts) so `npm run build` stays green every iteration; vite needs an HTML entry even while the real shell is unwritten.
+- A needs_auth reconnect must not reuse an action that requires a feed-supplied param (like open?url={url}); with no url it silently never fires. Launch the provider via a parameterless commandcenter://openProvider route instead. Design-review actions for their required params before wiring a button to them.
 
 ## Architecture invariants to never violate
 

@@ -49,6 +49,22 @@ export const SettingsSchema = z
         hidden: z.array(z.string()).optional(),
       })
       .optional(),
+    worldClock: z
+      .object({
+        baseTimeZone: z.string().optional(),
+        cities: z.array(z.object({ label: z.string(), timeZone: z.string() })),
+      })
+      .optional(),
+    weather: z
+      .object({
+        location: z.object({
+          label: z.string(),
+          lat: z.number(),
+          lon: z.number(),
+        }),
+        units: z.enum(["fahrenheit", "celsius"]),
+      })
+      .optional(),
   })
   .passthrough();
 export type Settings = z.infer<typeof SettingsSchema>;

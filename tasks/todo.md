@@ -28,7 +28,7 @@ Foundation, no native code. Renders the widget vocabulary and the first theme ag
 - [x] P1.8 Security utilities: text-only rendering helper, action URL validation against host allowlist, CSP string. Tests cover injection attempts.
 - [x] P1.9 Default widget renderers, vanilla DOM into a host node, one per widget type. Testing Library behavior tests.
 - [x] P1.10 Theme token layer and the first theme tokens (Aurora). Token application. Tests.
-- [ ] P1.11 Dashboard shell: header with time, date, greeting; responsive grid; instant paint from cache; all card states. Integration tests.
+- [x] P1.11 Dashboard shell: header with time, date, greeting; responsive grid; instant paint from cache; all card states. Integration tests.
 - [ ] P1.12 Mock native bridge and mock feed fixtures for local dev and the demo page.
 - [ ] P1.13 Performance pass: bundle budget check, reduced-motion support, first-paint measurement harness.
 - [ ] P1.14 Phase 1 demo: index.html renders the full dashboard from mocks. Manual verification screenshot.
@@ -155,3 +155,11 @@ Shipped: the theme token layer in src/theme. ThemeTokensSchema and ThemeMeta def
 Verified: 7 new tests (108 total) green, covering schema validation, the var mapping with units and flags, runtime application, the reduced-motion override, and CSS text output. Lint, typecheck, and build all pass.
 
 Next: P1.11 dashboard shell (header with time/date/greeting, responsive card grid, instant paint from cache, all card states), tying renderers, theme, time, and weather together, with integration tests.
+
+### Iteration 10 (P1.11)
+
+Shipped: the dashboard shell in src/shell. renderDashboard applies theme tokens, then composes the header (time, date, hour-based greeting), a rail (weather summary with loading skeleton, world clock), and the card grid. renderCard handles every state: glance vs full presentation, needs_auth reconnect (launches the provider via a commandcenter://openProvider route, no feed param needed), quiet error and empty notices, and an age note for stale data. The action invoker (src/shell/actions.ts) binds manifest actions to navigation, deriving the allowed scheme set from declared non-dangerous app schemes while resolveActionUrl still blocks dangerous ones. Added a localStorage cache for instant paint and extended Settings with worldClock and weather.
+
+Verified: 18 new tests (126 total) green: header greeting/time/date, world clock day-night and date offset, weather skeleton vs present, every card state, reconnect navigation, the cache round-trip and corrupt-cache fallback, and a full renderDashboard integration test that clicks an inbox row and asserts the resolved linearbar:// navigation. Two issues caught before completion: the needs_auth reconnect originally reused a param-requiring action (would never fire), redesigned to openProvider; and a ComposedCard-vs-PlacedCard factory type mismatch, fixed with makePlacedCard. Lint, typecheck, and build pass.
+
+Next: P1.12 mock native bridge and mock feed fixtures, so the dashboard runs end to end against realistic data for local dev and the demo.
