@@ -4,7 +4,7 @@ import type { IntegrationResult } from "../integrations/types";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { renderStreams } from "../streams/streams";
-import { themeById } from "../theme/registry";
+import { resolveActiveTheme } from "../theme/resolve";
 import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
 import { renderHomeClock, type HomeClockModel } from "./homeClock";
@@ -44,7 +44,7 @@ export function renderDashboard(
   model: DashboardModel,
   deps: DashboardDeps,
 ): HTMLElement {
-  const theme = deps.theme ?? themeById(model.config.appearance.theme);
+  const theme = deps.theme ?? resolveActiveTheme(model.config, model.now);
   const reducedMotion = deps.reducedMotion ?? false;
   applyTokens(root, theme.tokens, { reducedMotion });
   root.replaceChildren();

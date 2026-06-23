@@ -112,6 +112,17 @@ Settings model: `chrome.storage.sync` for non-secret config (zones, links, strea
 
 ---
 
+## Active epic: implement the Paper redesign + real integrations (started 2026-06-23)
+
+User direction: implement the Paper "Twilight/Mineral" design in the app, plus real service auth. Auth decision (serverless, no broker): Google Calendar via `chrome.identity` OAuth; Linear via a pasted personal API key; Notion via its integration token (done). The user provides the Google OAuth client id, Linear key, and Notion token; these can't be hardcoded or tested without their accounts.
+
+- [x] D1 Day/night themes: new Twilight (night) theme + Mineral (day) gradient backgrounds; `resolveActiveTheme` auto-switches by the home zone's local time; "Auto · day & night" option in the edit pane. Tests + live (Twilight verified).
+- [ ] D2 Meeting-window widget (compact, honest "no single hour" verdict) + place-card / integration-panel restyle with brand icons.
+- [ ] D3 Wallpaper source picker: gradient | Unsplash terms | custom URL (+ rotation), in config + edit pane.
+- [ ] D4 Google Calendar integration via `chrome.identity` OAuth (Today panel) + setup doc.
+- [ ] D5 Linear integration via personal API key (Inbox panel).
+- [ ] D6 Wire Calendar/Linear/Notion as default panels; settings; tests; build; README/docs.
+
 ## Standing quality mandate
 
 Every iteration: keep the architecture impeccable, not just green. Before marking a task done, refactor what you touched (no duplication, no dead code, single source of truth, honest docs). The reused TS core is already audited; do not regress it. Keep files under ~300-500 lines and split by responsibility (UI / settings / integration / render).

@@ -42,8 +42,9 @@ export const mineral: Theme = {
       speed: 1.0,
     },
     background: {
-      mode: "solid",
-      value: "#ECE8E0",
+      mode: "gradient",
+      value:
+        "linear-gradient(176deg, #F1ECE3 0%, #ECE6DB 46%, #E6DED1 78%, #E1D7C7 100%)",
       imageOfDay: false,
     },
   },

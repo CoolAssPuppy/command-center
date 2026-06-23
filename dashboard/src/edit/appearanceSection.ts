@@ -1,5 +1,6 @@
 import { el } from "../render/helpers";
-import { SHIPPED_THEMES, themeById } from "../theme/registry";
+import { SHIPPED_THEMES } from "../theme/registry";
+import { AUTO_THEME } from "../theme/resolve";
 import { field, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
@@ -24,21 +25,23 @@ export function renderAppearanceSection(host: HTMLElement, ctx: SectionContext):
   section.appendChild(field("Name", name));
 
   const chips = el("div", "cc-edit__chips");
-  const activeId = themeById(ctx.draft.appearance.theme).meta.themeId;
-  for (const theme of SHIPPED_THEMES) {
+  const current = ctx.draft.appearance.theme ?? AUTO_THEME;
+  const addChip = (id: string, label: string): void => {
     const chip = el(
       "button",
-      `cc-edit__chip${theme.meta.themeId === activeId ? " is-active" : ""}`,
-      theme.meta.name,
+      `cc-edit__chip${current === id ? " is-active" : ""}`,
+      label,
     );
     chip.setAttribute("type", "button");
     chip.addEventListener("click", () => {
       ctx.update((config) => {
-        config.appearance.theme = theme.meta.themeId;
+        config.appearance.theme = id;
       });
     });
     chips.appendChild(chip);
-  }
+  };
+  addChip(AUTO_THEME, "Auto · day & night");
+  for (const theme of SHIPPED_THEMES) addChip(theme.meta.themeId, theme.meta.name);
   section.appendChild(field("Theme", chips));
 
   const clockRow = el("label", "cc-edit__check");
