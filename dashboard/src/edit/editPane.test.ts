@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConfigSchema, homeZone, type Config, type Secrets } from "../config/schema";
 import type { GeoResult } from "../geo/geocode";
 import { host } from "../test/dom";
+import { SHIPPED_THEMES } from "../theme/registry";
 import { openEditPane } from "./editPane";
 
 afterEach(() => {
@@ -181,6 +182,42 @@ describe("edit pane — connections", () => {
     token.value = "secret_notion";
     token.dispatchEvent(new Event("change"));
     expect(harness.appliedSecrets()?.notionToken).toBe("secret_notion");
+  });
+});
+
+describe("edit pane — appearance", () => {
+  it("sets the greeting name", () => {
+    const harness = open(twoZones());
+    const name = harness.root.querySelector<HTMLInputElement>(
+      'input[aria-label="Your name"]',
+    );
+    if (name === null) throw new Error("no name field");
+    name.value = "Prashant";
+    name.dispatchEvent(new Event("change"));
+    expect(harness.applied()?.profile.name).toBe("Prashant");
+  });
+
+  it("changes the theme", () => {
+    const harness = open(twoZones());
+    const target = SHIPPED_THEMES[1];
+    if (target === undefined) throw new Error("expected a second theme");
+    const chip = [
+      ...harness.root.querySelectorAll<HTMLButtonElement>(".cc-edit__chips .cc-edit__chip"),
+    ].find((node) => node.textContent === target.meta.name);
+    chip?.click();
+    expect(harness.applied()?.appearance.theme).toBe(target.meta.themeId);
+  });
+
+  it("toggles the 24-hour clock", () => {
+    const harness = open(twoZones());
+    const label = [
+      ...harness.root.querySelectorAll<HTMLElement>("label.cc-edit__check"),
+    ].find((node) => node.textContent?.includes("24-hour"));
+    const clock = label?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (clock === null || clock === undefined) throw new Error("no clock toggle");
+    clock.checked = true;
+    clock.dispatchEvent(new Event("change"));
+    expect(harness.applied()?.appearance.hour12).toBe(false);
   });
 });
 

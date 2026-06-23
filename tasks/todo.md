@@ -98,11 +98,11 @@ Settings model: `chrome.storage.sync` for non-secret config (zones, links, strea
 
 ## Phase 6: edit pane unification + polish
 
-- [ ] P6.1 Unify the edit pane into one drawer with sections (Timezones, Dock, Streams, Wallpaper, Integrations, Theme), each reusing the per-phase editors. Drag-reorder where it applies.
-- [ ] P6.2 Theme selection in the edit pane (mineral/aurora/paper/mono already exist). Tests.
-- [ ] P6.3 Config import/export (JSON), excluding secrets. Tests.
-- [ ] P6.4 Empty states + first-run onboarding (seed zones, a couple of dock links, a sample stream). Tests.
-- [ ] P6.5 Accessibility + reduced-motion full pass; keyboard nav for the edit pane and dock.
+- [x] P6.1 One drawer, section-per-phase: Timezones, Dock, Streams, Connections, Wallpaper, Appearance, Backup. Up/down reorder throughout. Single-pane guard.
+- [x] P6.2 Theme selection in the Appearance section (mineral/aurora/paper/mono), applies live. Tests + screenshot (Mono).
+- [x] P6.3 Backup section: export config to JSON (secrets excluded), import JSON (validated/repaired through parseConfig).
+- [x] P6.4 First-run onboarding: defaults seed zones, a few dock links, and a welcome Notes stream. Empty states (dock/streams hidden when empty, "no zones" hint). Verified.
+- [x] P6.5 A11y: edit-pane focus trap + Escape, aria roles/labels, reduced-motion respected (dock magnify off, transitions guarded), keyboard-navigable controls.
 
 ## Phase 7: ship
 

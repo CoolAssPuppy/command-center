@@ -27,10 +27,12 @@ describe("defaultConfig", () => {
     expect(newYorkZones[0]?.isHome).toBe(true);
   });
 
-  it("starts with links, streams, and wallpaper empty/off", () => {
+  it("seeds a few starter links and a welcome notes stream, wallpaper off", () => {
     const config = defaultConfig({ timeZone: "UTC" });
-    expect(config.links).toEqual([]);
-    expect(config.streams).toEqual([]);
+    expect(config.links.map((link) => link.title)).toContain("GitHub");
+    expect(config.streams).toHaveLength(1);
+    expect(config.streams[0]?.content.type).toBe("static");
+    expect(config.streams[0]?.collapsedByDefault).toBe(false);
     expect(config.wallpaper.enabled).toBe(false);
   });
 });

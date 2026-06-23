@@ -1,6 +1,8 @@
 import { type Config, type Secrets } from "../config/schema";
 import type { GeoResult } from "../geo/geocode";
 import { el } from "../render/helpers";
+import { renderAppearanceSection } from "./appearanceSection";
+import { renderBackupSection } from "./backupSection";
 import { renderConnectionsSection } from "./connectionsSection";
 import { renderDockSection } from "./dockSection";
 import { renderStreamsSection } from "./streamsSection";
@@ -49,10 +51,33 @@ const SECTIONS: SectionRenderer[] = [
   renderStreamsSection,
   renderConnectionsSection,
   renderWallpaperSection,
+  renderAppearanceSection,
+  renderBackupSection,
 ];
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
+}
+
+const FOCUSABLE =
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+/** Keep Tab focus inside the open pane. */
+function trapFocus(panel: HTMLElement, event: KeyboardEvent): void {
+  const focusable = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+    (node) => !node.hasAttribute("disabled"),
+  );
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (first === undefined || last === undefined) return;
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 export interface EditPaneHandle {
@@ -115,7 +140,11 @@ export function openEditPane(host: HTMLElement, deps: EditPaneDeps): EditPaneHan
   done.addEventListener("click", close);
   backdrop.addEventListener("click", close);
   root.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") close();
+    if (event.key === "Escape") {
+      close();
+      return;
+    }
+    if (event.key === "Tab") trapFocus(panel, event);
   });
   panel.focus();
 

@@ -641,6 +641,26 @@ body {
   padding: 4px 0 2px;
 }
 
+.cc-edit__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cc-edit__import {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  cursor: pointer;
+}
+
+.cc-edit__file {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 /* Work streams (display) -------------------------------------------------- */
 
 .cc-streams {

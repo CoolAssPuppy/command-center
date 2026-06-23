@@ -121,6 +121,8 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     const current = config;
     if (current === undefined) return;
     const editHost = deps.editHost ?? document.body;
+    // Don't stack panes if one is already open.
+    if (editHost.querySelector(".cc-edit") !== null) return;
     void deps.store.loadSecrets().then((secrets) => {
       openEditPane(editHost, {
         config: current,

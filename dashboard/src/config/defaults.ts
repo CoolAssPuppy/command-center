@@ -51,5 +51,21 @@ export function defaultConfig(options: DefaultConfigOptions = {}): Config {
   return ConfigSchema.parse({
     version: 1,
     zones: [home, ...others],
+    links: [
+      { id: "gmail", title: "Gmail", url: "https://mail.google.com" },
+      { id: "calendar", title: "Calendar", url: "https://calendar.google.com" },
+      { id: "github", title: "GitHub", url: "https://github.com" },
+    ],
+    streams: [
+      {
+        id: "welcome",
+        title: "Notes",
+        collapsedByDefault: false,
+        content: {
+          type: "static",
+          body: "Welcome to Command Center. Open Edit (top-right) to add timezones, dock links, work streams, a wallpaper, and a Notion database.",
+        },
+      },
+    ],
   });
 }
