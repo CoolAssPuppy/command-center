@@ -1,6 +1,7 @@
 import { type Config, type Secrets } from "../config/schema";
 import type { GeoResult } from "../geo/geocode";
 import { el } from "../render/helpers";
+import { renderConnectionsSection } from "./connectionsSection";
 import { renderDockSection } from "./dockSection";
 import { renderStreamsSection } from "./streamsSection";
 import { renderWallpaperSection } from "./wallpaperSection";
@@ -46,6 +47,7 @@ const SECTIONS: SectionRenderer[] = [
   renderZonesSection,
   renderDockSection,
   renderStreamsSection,
+  renderConnectionsSection,
   renderWallpaperSection,
 ];
 

@@ -25,6 +25,14 @@ export function textInput(placeholder: string, type = "text"): HTMLInputElement 
   return input;
 }
 
+/** A labelled field wrapper around a control. */
+export function field(labelText: string, control: HTMLElement): HTMLElement {
+  const wrap = el("div", "cc-edit__field");
+  wrap.appendChild(el("label", "cc-edit__field-label", labelText));
+  wrap.appendChild(control);
+  return wrap;
+}
+
 /** Swap an item with its neighbour, in place. A no-op at the ends. */
 export function moveInArray<T>(items: T[], index: number, delta: number): void {
   const target = index + delta;

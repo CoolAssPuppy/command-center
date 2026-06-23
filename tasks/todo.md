@@ -90,11 +90,11 @@ Settings model: `chrome.storage.sync` for non-secret config (zones, links, strea
 
 ## Phase 5: integration platform (lean) + Notion first
 
-- [ ] P5.1 Integration interface + registry: `{ id, configSchema (Zod), fetch(config, deps) -> NormalizedItem[], renderHints? }`. A `NormalizedItem` is text-only and URL-validated. Registry + tests with a fake integration.
-- [ ] P5.2 Notion client: query a database with the pasted integration token (token in `chrome.storage.local`), correct `Notion-Version` header, via `host_permissions`. Normalize rows -> items. Injected-fetch tests, including error/`needs_token` states.
-- [ ] P5.3 Notion filters: configurable property filters + sort, passed through to the query. Tests on filter -> query mapping.
-- [ ] P5.4 Wire Notion as a stream `content: integration` type: a stream renders its integration's items (collapsed by default). Tests.
-- [ ] P5.5 Edit pane (Notion): paste token, pick database, configure filters, attach to a stream. Document the token-in-extension-storage tradeoff. Persistence tests.
+- [x] P5.1 Integration interface + registry: `{ id, displayName, fetch(rawConfig, ctx) -> NormalizedItem[] }`, text-only URL-validated items, `IntegrationResult` states (loading/ok/error/needs_auth). Registry. Tests.
+- [x] P5.2 Notion client: query a database with the local token, `Notion-Version` header, defensive title extraction. 401 -> needs_auth. Injected-fetch tests.
+- [x] P5.3 Notion filters: raw Notion `filter` + `sorts` passed through; configurable via the stream's Filter (JSON) editor. Tests on filter -> query mapping.
+- [x] P5.4 Stream `integration` content: streams render their integration's items (loading/needs_auth/error/items). Platform resolves results in `run.ts` (cached per render, refetch on load + edit). Tests + live screenshot.
+- [x] P5.5 Edit pane: Connections section for the Notion token (local secret); per-stream Notion config (database id, title prop, items, filter JSON) in the Work streams section. Tradeoff documented. Tests.
 
 ## Phase 6: edit pane unification + polish
 

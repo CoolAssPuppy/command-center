@@ -1,5 +1,6 @@
 import type { DockLink, Stream } from "../config/schema";
 import { fallbackGlyph, faviconUrl } from "../dock/favicon";
+import type { IntegrationResult, NormalizedItem } from "../integrations/types";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 
@@ -15,13 +16,13 @@ export interface StreamsModel {
   links: DockLink[];
   /** Per-stream open override; absent means use collapsedByDefault. */
   expanded: Record<string, boolean>;
+  /** Resolved integration data, keyed by stream id. */
+  integrationResults?: Record<string, IntegrationResult>;
 }
 
 export interface StreamsDeps {
   navigate: (url: string) => void;
   onToggle: (streamId: string, open: boolean) => void;
-  /** Renders an integration stream's body. Provided by P5; optional here. */
-  renderIntegration?: (host: HTMLElement, stream: Stream) => void;
 }
 
 function isOpen(stream: Stream, expanded: Record<string, boolean>): boolean {
@@ -99,13 +100,61 @@ function renderContent(
     return;
   }
 
-  if (deps.renderIntegration !== undefined) {
-    deps.renderIntegration(body, stream);
-  } else {
+  renderIntegration(body, model.integrationResults?.[stream.id], deps);
+}
+
+function renderIntegration(
+  body: HTMLElement,
+  result: IntegrationResult | undefined,
+  deps: StreamsDeps,
+): void {
+  if (result === undefined || result.status === "loading") {
+    body.appendChild(el("div", "cc-stream__empty", "Loading…"));
+    return;
+  }
+  if (result.status === "needs_auth") {
     body.appendChild(
       el("div", "cc-stream__empty", "Connect this integration in the edit pane."),
     );
+    return;
   }
+  if (result.status === "error") {
+    body.appendChild(
+      el("div", "cc-stream__empty", result.error ?? "Could not load this stream."),
+    );
+    return;
+  }
+  const items = result.items ?? [];
+  if (items.length === 0) {
+    body.appendChild(el("div", "cc-stream__empty", "Nothing to show."));
+    return;
+  }
+  const list = el("div", "cc-stream__items");
+  for (const item of items) list.appendChild(renderItem(item, deps));
+  body.appendChild(list);
+}
+
+function renderItem(item: NormalizedItem, deps: StreamsDeps): HTMLElement {
+  const navigable = item.url !== undefined && isSafeUrl(item.url);
+  const row = el(navigable ? "button" : "div", "cc-stream__item");
+  if (navigable && item.url !== undefined) {
+    const url = item.url;
+    row.setAttribute("type", "button");
+    row.addEventListener("click", () => {
+      deps.navigate(url);
+    });
+  }
+
+  const body = el("div", "cc-stream__item-body");
+  body.appendChild(el("span", "cc-stream__item-title", item.title));
+  if (item.subtitle !== undefined) {
+    body.appendChild(el("span", "cc-stream__item-sub", item.subtitle));
+  }
+  row.appendChild(body);
+  if (item.meta !== undefined) {
+    row.appendChild(el("span", "cc-stream__item-meta", item.meta));
+  }
+  return row;
 }
 
 function renderStreamLink(link: DockLink, deps: StreamsDeps): HTMLElement {

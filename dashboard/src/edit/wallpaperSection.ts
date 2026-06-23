@@ -1,5 +1,5 @@
 import { el } from "../render/helpers";
-import { textInput } from "./controls";
+import { field, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -8,13 +8,6 @@ import type { SectionContext } from "./editPane";
  * secret, so it goes through updateSecrets (local, never synced); everything
  * else is config.
  */
-function field(labelText: string, control: HTMLElement): HTMLElement {
-  const wrap = el("div", "cc-edit__field");
-  wrap.appendChild(el("label", "cc-edit__field-label", labelText));
-  wrap.appendChild(control);
-  return wrap;
-}
-
 export function renderWallpaperSection(host: HTMLElement, ctx: SectionContext): void {
   const section = el("section", "cc-edit__section");
   section.appendChild(el("h3", "cc-edit__section-title", "Wallpaper"));

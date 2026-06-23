@@ -80,27 +80,54 @@ describe("renderStreams", () => {
     expect(navigate).toHaveBeenCalledWith("https://github.com");
   });
 
-  it("shows a placeholder for an integration with no renderer", () => {
+  it("shows a loading note for an integration with no result yet", () => {
     const root = host();
     renderStreams(
       root,
       { streams: [integrationStream("a")], links, expanded: {} },
       { navigate: noop, onToggle: noop },
     );
-    expect(root.querySelector(".cc-stream__empty")?.textContent).toContain("Connect");
+    expect(root.querySelector(".cc-stream__empty")?.textContent).toBe("Loading…");
   });
 
-  it("uses the integration renderer when one is provided", () => {
-    const renderIntegration = vi.fn((bodyHost: HTMLElement) => {
-      bodyHost.appendChild(document.createElement("p"));
-    });
+  it("prompts to connect when the integration needs auth", () => {
     const root = host();
     renderStreams(
       root,
-      { streams: [integrationStream("a")], links, expanded: {} },
-      { navigate: noop, onToggle: noop, renderIntegration },
+      {
+        streams: [integrationStream("a")],
+        links,
+        expanded: {},
+        integrationResults: { a: { status: "needs_auth" } },
+      },
+      { navigate: noop, onToggle: noop },
     );
-    expect(renderIntegration).toHaveBeenCalledOnce();
+    expect(root.querySelector(".cc-stream__empty")?.textContent).toContain("Connect");
+  });
+
+  it("renders integration items and navigates", () => {
+    const navigate = vi.fn();
+    const root = host();
+    renderStreams(
+      root,
+      {
+        streams: [integrationStream("a")],
+        links,
+        expanded: {},
+        integrationResults: {
+          a: {
+            status: "ok",
+            items: [{ id: "1", title: "Roadmap item", url: "https://notion.so/x" }],
+          },
+        },
+      },
+      { navigate, onToggle: noop },
+    );
+    expect(root.querySelector(".cc-stream__item-title")?.textContent).toBe(
+      "Roadmap item",
+    );
+    root.querySelector<HTMLButtonElement>(".cc-stream__item")?.click();
+    expect(navigate).toHaveBeenCalledWith("https://notion.so/x");
   });
 
   it("reports toggles", () => {

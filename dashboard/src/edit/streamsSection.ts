@@ -1,7 +1,7 @@
 import type { Stream, StreamContent } from "../config/schema";
 import { el } from "../render/helpers";
 import { newId } from "../util/id";
-import { iconButton, moveInArray, textInput } from "./controls";
+import { field, iconButton, moveInArray, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -145,11 +145,105 @@ function renderContentEditor(stream: Stream, ctx: SectionContext): HTMLElement {
     return wrap;
   }
 
-  return el(
-    "div",
-    "cc-edit__hint",
-    "This stream shows an integration (set up in Integrations).",
-  );
+  if (content.integrationId === "notion") return renderNotionEditor(stream, ctx);
+  return el("div", "cc-edit__hint", `Integration: ${content.integrationId}`);
+}
+
+function updateNotionConfig(
+  ctx: SectionContext,
+  streamId: string,
+  mutate: (config: Record<string, unknown>) => void,
+): void {
+  ctx.update((config) => {
+    const found = config.streams.find((stream) => stream.id === streamId);
+    if (found !== undefined && found.content.type === "integration") {
+      mutate(found.content.config);
+    }
+  });
+}
+
+function renderNotionEditor(stream: Stream, ctx: SectionContext): HTMLElement {
+  const wrap = el("div", "cc-edit__nested");
+  const raw: Record<string, unknown> =
+    stream.content.type === "integration" ? stream.content.config : {};
+
+  const databaseId = textInput("Database ID");
+  databaseId.value = typeof raw.databaseId === "string" ? raw.databaseId : "";
+  databaseId.setAttribute("aria-label", "Notion database ID");
+  databaseId.addEventListener("change", () => {
+    updateNotionConfig(ctx, stream.id, (config) => {
+      config.databaseId = databaseId.value.trim();
+    });
+  });
+  wrap.appendChild(field("Database ID", databaseId));
+
+  const titleProperty = textInput("Title property (optional)");
+  titleProperty.value = typeof raw.titleProperty === "string" ? raw.titleProperty : "";
+  titleProperty.setAttribute("aria-label", "Notion title property");
+  titleProperty.addEventListener("change", () => {
+    updateNotionConfig(ctx, stream.id, (config) => {
+      const value = titleProperty.value.trim();
+      if (value.length > 0) config.titleProperty = value;
+      else delete config.titleProperty;
+    });
+  });
+  wrap.appendChild(field("Title property", titleProperty));
+
+  const pageSize = textInput("10", "number");
+  pageSize.value = String(typeof raw.pageSize === "number" ? raw.pageSize : 10);
+  pageSize.setAttribute("aria-label", "Number of items");
+  pageSize.addEventListener("change", () => {
+    updateNotionConfig(ctx, stream.id, (config) => {
+      const parsed = Number(pageSize.value);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        config.pageSize = Math.min(50, Math.floor(parsed));
+      }
+    });
+  });
+  wrap.appendChild(field("Items", pageSize));
+
+  const filter = document.createElement("textarea");
+  filter.className = "cc-edit__textarea";
+  filter.rows = 3;
+  filter.placeholder = '{ "property": "Status", "select": { "equals": "Active" } }';
+  filter.value = raw.filter !== undefined ? JSON.stringify(raw.filter, null, 2) : "";
+  filter.setAttribute("aria-label", "Notion filter JSON");
+  const filterHint = el("div", "cc-edit__hint");
+  filter.addEventListener("change", () => {
+    const text = filter.value.trim();
+    filterHint.replaceChildren();
+    if (text.length === 0) {
+      updateNotionConfig(ctx, stream.id, (config) => {
+        delete config.filter;
+      });
+      return;
+    }
+    try {
+      const parsed: unknown = JSON.parse(text);
+      updateNotionConfig(ctx, stream.id, (config) => {
+        config.filter = parsed;
+      });
+    } catch {
+      filterHint.appendChild(el("span", undefined, "Filter must be valid JSON."));
+    }
+  });
+  const filterField = field("Filter (JSON)", filter);
+  filterField.appendChild(filterHint);
+  wrap.appendChild(filterField);
+
+  return wrap;
+}
+
+function contentForType(type: string): StreamContent {
+  if (type === "links") return { type: "links", linkIds: [] };
+  if (type === "notion") {
+    return {
+      type: "integration",
+      integrationId: "notion",
+      config: { databaseId: "", pageSize: 10 },
+    };
+  }
+  return { type: "static", body: "" };
 }
 
 function renderAddStream(ctx: SectionContext): HTMLElement {
@@ -165,6 +259,7 @@ function renderAddStream(ctx: SectionContext): HTMLElement {
   const streamTypes: ReadonlyArray<readonly [string, string]> = [
     ["static", "Notes"],
     ["links", "Links group"],
+    ["notion", "Notion database"],
   ];
   for (const [value, text] of streamTypes) {
     const option = document.createElement("option");
@@ -184,10 +279,7 @@ function renderAddStream(ctx: SectionContext): HTMLElement {
     event.preventDefault();
     const titleValue = title.value.trim();
     if (titleValue.length === 0) return;
-    const content: StreamContent =
-      select.value === "links"
-        ? { type: "links", linkIds: [] }
-        : { type: "static", body: "" };
+    const content = contentForType(select.value);
     ctx.update((config) => {
       config.streams.push({
         id: newId("stream"),

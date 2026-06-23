@@ -1,5 +1,6 @@
 import { homeZone, otherZones, type Config } from "../config/schema";
 import { renderDock } from "../dock/dock";
+import type { IntegrationResult } from "../integrations/types";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { renderStreams } from "../streams/streams";
@@ -24,6 +25,8 @@ export interface DashboardModel {
   streamExpanded?: Record<string, boolean>;
   /** The resolved wallpaper image plus attribution, once Unsplash has answered. */
   wallpaper?: { imageUrl: string; authorName?: string; authorUrl?: string };
+  /** Resolved integration data per stream id. */
+  integrationResults?: Record<string, IntegrationResult>;
 }
 
 export interface DashboardDeps {
@@ -126,18 +129,18 @@ export function renderDashboard(
   // Work streams.
   if (model.config.streams.length > 0) {
     const streamsHost = el("div", "cc-streams-slot");
-    renderStreams(
-      streamsHost,
-      {
-        streams: model.config.streams,
-        links: model.config.links,
-        expanded: model.streamExpanded ?? {},
-      },
-      {
-        navigate: deps.navigate,
-        onToggle: deps.onToggleStream ?? ((): void => {}),
-      },
-    );
+    const streamsModel = {
+      streams: model.config.streams,
+      links: model.config.links,
+      expanded: model.streamExpanded ?? {},
+      ...(model.integrationResults !== undefined
+        ? { integrationResults: model.integrationResults }
+        : {}),
+    };
+    renderStreams(streamsHost, streamsModel, {
+      navigate: deps.navigate,
+      onToggle: deps.onToggleStream ?? ((): void => {}),
+    });
     stage.appendChild(streamsHost);
   }
 

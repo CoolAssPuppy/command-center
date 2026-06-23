@@ -4,6 +4,14 @@ import type { ConfigStore } from "../config/store";
 import type { ParseResult } from "../domain/result";
 import { openEditPane } from "../edit/editPane";
 import { searchCities as geoSearch, type GeoResult } from "../geo/geocode";
+import { realHttpFetch } from "../integrations/http";
+import { integrationById } from "../integrations/registry";
+import {
+  NEEDS_AUTH,
+  type HttpFetch,
+  type IntegrationContext,
+  type IntegrationResult,
+} from "../integrations/types";
 import { prefersReducedMotion } from "../perf/perf";
 import {
   renderDashboard,
@@ -52,6 +60,8 @@ export interface RunDeps {
   searchCities?: (query: string) => Promise<GeoResult[]>;
   /** Fetch used for the Unsplash wallpaper. Defaults to the global fetch. */
   unsplashFetch?: FetchLike;
+  /** HTTP client used by integrations. Defaults to the real one. */
+  httpFetch?: HttpFetch;
 }
 
 interface LocatedZone {
@@ -75,6 +85,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
   let wallpaperPhoto:
     | { imageUrl: string; authorName: string; authorUrl: string }
     | undefined;
+  let integrationResults: Record<string, IntegrationResult> = {};
   const weatherByZone: Record<string, Weather> = {};
 
   const searchCities =
@@ -91,6 +102,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       model.weatherByZone = { ...weatherByZone };
     }
     model.streamExpanded = streamExpanded;
+    model.integrationResults = integrationResults;
     if (wallpaperPhoto !== undefined) model.wallpaper = wallpaperPhoto;
     const renderDeps: DashboardDeps = {
       navigate: deps.navigate,
@@ -119,10 +131,12 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
           saveCache(next);
           paint();
           void resolveAndPaintWallpaper();
+          void refreshIntegrations();
         },
         applySecrets: (next) => {
           void deps.store.saveSecrets(next);
           void resolveAndPaintWallpaper(next);
+          void refreshIntegrations();
         },
         onClose: () => {
           /* nothing to do; the dashboard already reflects the latest config */
@@ -159,6 +173,58 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     }
   }
 
+  async function refreshIntegrations(): Promise<void> {
+    if (config === undefined) return;
+    const integrationStreams = config.streams.filter(
+      (stream) => stream.content.type === "integration",
+    );
+    if (integrationStreams.length === 0) {
+      if (Object.keys(integrationResults).length > 0) {
+        integrationResults = {};
+        paint();
+      }
+      return;
+    }
+
+    const secrets = await deps.store.loadSecrets();
+    const ctx: IntegrationContext = {
+      secrets,
+      fetch: deps.httpFetch ?? realHttpFetch,
+      now: deps.now(),
+    };
+
+    // Keep any already-loaded results, mark the rest loading, drop stale streams.
+    const next: Record<string, IntegrationResult> = {};
+    for (const stream of integrationStreams) {
+      next[stream.id] = integrationResults[stream.id] ?? { status: "loading" };
+    }
+    integrationResults = next;
+    paint();
+
+    await Promise.all(
+      integrationStreams.map(async (stream) => {
+        if (stream.content.type !== "integration") return;
+        const integration = integrationById(stream.content.integrationId);
+        if (integration === undefined) {
+          integrationResults[stream.id] = {
+            status: "error",
+            error: "Unknown integration",
+          };
+          return;
+        }
+        const result = await integration.fetch(stream.content.config, ctx);
+        if (result.ok) {
+          integrationResults[stream.id] = { status: "ok", items: result.value };
+        } else if (result.error === NEEDS_AUTH) {
+          integrationResults[stream.id] = { status: "needs_auth" };
+        } else {
+          integrationResults[stream.id] = { status: "error", error: result.error };
+        }
+      }),
+    );
+    paint();
+  }
+
   // 1. Instant paint from the cached config, if any (runs before the first await).
   const cached = loadCache();
   if (cached !== undefined) {
@@ -179,7 +245,10 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
   // 4. Wallpaper, when enabled and an Unsplash key is set.
   await resolveAndPaintWallpaper();
 
-  // 5. Weather for zones that carry coordinates.
+  // 5. Integration streams (Notion and friends).
+  void refreshIntegrations();
+
+  // 6. Weather for zones that carry coordinates.
   const located: LocatedZone[] = config.zones.flatMap((zone) =>
     zone.lat !== undefined && zone.lon !== undefined
       ? [{ id: zone.id, label: zone.label, lat: zone.lat, lon: zone.lon }]

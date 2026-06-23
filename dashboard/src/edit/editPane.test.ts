@@ -161,11 +161,26 @@ describe("edit pane — wallpaper", () => {
 
   it("stores the access key in secrets", () => {
     const harness = open(twoZones());
-    const key = harness.root.querySelector<HTMLInputElement>('input[type="password"]');
+    const key = harness.root.querySelector<HTMLInputElement>(
+      'input[aria-label="Unsplash access key"]',
+    );
     if (key === null) throw new Error("no access key field");
     key.value = "unsplash-key";
     key.dispatchEvent(new Event("change"));
     expect(harness.appliedSecrets()?.unsplashAccessKey).toBe("unsplash-key");
+  });
+});
+
+describe("edit pane — connections", () => {
+  it("stores the Notion token in secrets", () => {
+    const harness = open(twoZones());
+    const token = harness.root.querySelector<HTMLInputElement>(
+      'input[aria-label="Notion integration token"]',
+    );
+    if (token === null) throw new Error("no Notion token field");
+    token.value = "secret_notion";
+    token.dispatchEvent(new Event("change"));
+    expect(harness.appliedSecrets()?.notionToken).toBe("secret_notion");
   });
 });
 
