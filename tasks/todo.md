@@ -77,10 +77,10 @@ Settings model: `chrome.storage.sync` for non-secret config (zones, links, strea
 
 ## Phase 3: collapsible work streams
 
-- [ ] P3.1 Stream settings schema: `{ id, title, collapsedByDefault, content }` where `content` is a discriminated union (start with `static`/`links`, leave room for `integration`). Tests.
-- [ ] P3.2 Stream UI: titled section with a chevron, collapsed by default, expand state persisted per stream. Reuse `render/helpers.ts`. Tests.
-- [ ] P3.3 Edit pane (streams): add/rename/remove/reorder streams, toggle collapsed default. Persistence tests.
-- [ ] P3.4 (Optional) host the 24h overlap timeline (`overlapTimeline.ts`) as a built-in stream type.
+- [x] P3.1 Stream settings schema: `{ id, title, collapsedByDefault, content }` with a `static | links | integration` content union. Tests.
+- [x] P3.2 Stream UI: native `<details>` section with a rotating chevron, collapsed by default, open-state persisted in local UI state (`streamState`). Static/links/integration content. Tests + live screenshot.
+- [x] P3.3 Edit pane (streams): add (notes or links group), rename, reorder, toggle collapsed-default, remove, edit body / pick links. Shared edit controls factored out. Tests.
+- [ ] P3.4 (Optional, deferred) host the 24h overlap timeline as a built-in stream type.
 
 ## Phase 4: Unsplash wallpaper
 

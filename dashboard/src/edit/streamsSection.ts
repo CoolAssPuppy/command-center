@@ -1,0 +1,203 @@
+import type { Stream, StreamContent } from "../config/schema";
+import { el } from "../render/helpers";
+import { newId } from "../util/id";
+import { iconButton, moveInArray, textInput } from "./controls";
+import type { SectionContext } from "./editPane";
+
+/**
+ * The Work streams section: add a stream (notes or a links group), rename it,
+ * reorder, toggle whether it is collapsed by default, remove it, and edit its
+ * content. Text and link-selection edits commit on change (blur), so the pane's
+ * live re-render never interrupts typing.
+ */
+export function renderStreamsSection(host: HTMLElement, ctx: SectionContext): void {
+  const section = el("section", "cc-edit__section");
+  section.appendChild(el("h3", "cc-edit__section-title", "Work streams"));
+
+  const list = el("div", "cc-edit__list");
+  ctx.draft.streams.forEach((stream, index) => {
+    list.appendChild(renderStreamRow(stream, index, ctx));
+  });
+  if (ctx.draft.streams.length === 0) {
+    list.appendChild(el("div", "cc-edit__hint", "No streams yet. Add one below."));
+  }
+  section.appendChild(list);
+
+  section.appendChild(renderAddStream(ctx));
+  host.appendChild(section);
+}
+
+function renderStreamRow(
+  stream: Stream,
+  index: number,
+  ctx: SectionContext,
+): HTMLElement {
+  const row = el("div", "cc-edit__row cc-edit__row--stack");
+
+  const head = el("div", "cc-edit__row-head");
+  const title = textInput("Stream title");
+  title.value = stream.title;
+  title.setAttribute("aria-label", "Stream title");
+  title.addEventListener("change", () => {
+    ctx.update((config) => {
+      const found = config.streams.find((s) => s.id === stream.id);
+      if (found !== undefined && title.value.trim().length > 0) {
+        found.title = title.value.trim();
+      }
+    });
+  });
+  head.appendChild(title);
+
+  const controls = el("div", "cc-edit__row-controls");
+  const collapsedChip = el(
+    "button",
+    `cc-edit__chip${stream.collapsedByDefault ? " is-active" : ""}`,
+    stream.collapsedByDefault ? "Collapsed" : "Open",
+  );
+  collapsedChip.setAttribute("type", "button");
+  collapsedChip.setAttribute("title", "Collapsed by default");
+  collapsedChip.addEventListener("click", () => {
+    ctx.update((config) => {
+      const found = config.streams.find((s) => s.id === stream.id);
+      if (found !== undefined) found.collapsedByDefault = !found.collapsedByDefault;
+    });
+  });
+  controls.appendChild(collapsedChip);
+  controls.appendChild(
+    iconButton("Move up", "↑", () => {
+      ctx.update((config) => {
+        moveInArray(config.streams, index, -1);
+      });
+    }),
+  );
+  controls.appendChild(
+    iconButton("Move down", "↓", () => {
+      ctx.update((config) => {
+        moveInArray(config.streams, index, 1);
+      });
+    }),
+  );
+  controls.appendChild(
+    iconButton("Remove", "✕", () => {
+      ctx.update((config) => {
+        config.streams = config.streams.filter((s) => s.id !== stream.id);
+      });
+    }),
+  );
+  head.appendChild(controls);
+  row.appendChild(head);
+
+  row.appendChild(renderContentEditor(stream, ctx));
+  return row;
+}
+
+function renderContentEditor(stream: Stream, ctx: SectionContext): HTMLElement {
+  const content = stream.content;
+
+  if (content.type === "static") {
+    const textarea = document.createElement("textarea");
+    textarea.className = "cc-edit__textarea";
+    textarea.rows = 3;
+    textarea.value = content.body;
+    textarea.placeholder = "Write something…";
+    textarea.setAttribute("aria-label", "Stream text");
+    textarea.addEventListener("change", () => {
+      ctx.update((config) => {
+        const found = config.streams.find((s) => s.id === stream.id);
+        if (found !== undefined && found.content.type === "static") {
+          found.content.body = textarea.value;
+        }
+      });
+    });
+    return textarea;
+  }
+
+  if (content.type === "links") {
+    const wrap = el("div", "cc-edit__checks");
+    if (ctx.draft.links.length === 0) {
+      wrap.appendChild(el("div", "cc-edit__hint", "Add dock links first."));
+      return wrap;
+    }
+    for (const link of ctx.draft.links) {
+      const label = el("label", "cc-edit__check");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = content.linkIds.includes(link.id);
+      checkbox.addEventListener("change", () => {
+        ctx.update((config) => {
+          const found = config.streams.find((s) => s.id === stream.id);
+          if (found === undefined || found.content.type !== "links") return;
+          if (checkbox.checked) {
+            if (!found.content.linkIds.includes(link.id)) {
+              found.content.linkIds.push(link.id);
+            }
+          } else {
+            found.content.linkIds = found.content.linkIds.filter(
+              (id) => id !== link.id,
+            );
+          }
+        });
+      });
+      label.appendChild(checkbox);
+      label.appendChild(el("span", undefined, link.title));
+      wrap.appendChild(label);
+    }
+    return wrap;
+  }
+
+  return el(
+    "div",
+    "cc-edit__hint",
+    "This stream shows an integration (set up in Integrations).",
+  );
+}
+
+function renderAddStream(ctx: SectionContext): HTMLElement {
+  const wrap = el("div", "cc-edit__add");
+  const form = el("form", "cc-edit__add-form cc-edit__add-form--stack");
+
+  const title = textInput("Stream title");
+  title.setAttribute("aria-label", "New stream title");
+
+  const select = document.createElement("select");
+  select.className = "cc-edit__input";
+  select.setAttribute("aria-label", "Stream type");
+  const streamTypes: ReadonlyArray<readonly [string, string]> = [
+    ["static", "Notes"],
+    ["links", "Links group"],
+  ];
+  for (const [value, text] of streamTypes) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = text;
+    select.appendChild(option);
+  }
+
+  const submit = el("button", "cc-edit__add-btn", "Add stream");
+  submit.setAttribute("type", "submit");
+
+  form.appendChild(title);
+  form.appendChild(select);
+  form.appendChild(submit);
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const titleValue = title.value.trim();
+    if (titleValue.length === 0) return;
+    const content: StreamContent =
+      select.value === "links"
+        ? { type: "links", linkIds: [] }
+        : { type: "static", body: "" };
+    ctx.update((config) => {
+      config.streams.push({
+        id: newId("stream"),
+        title: titleValue,
+        collapsedByDefault: true,
+        content,
+      });
+    });
+  });
+
+  wrap.appendChild(form);
+  return wrap;
+}

@@ -10,6 +10,7 @@ import {
   type DashboardDeps,
   type DashboardModel,
 } from "../shell/dashboard";
+import { loadStreamState, saveStreamState } from "../streams/streamState";
 import type { Theme } from "../theme/tokens";
 import {
   fetchWeather as openMeteoFetch,
@@ -66,6 +67,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       openMeteoFetch(location, units, { fetch: (url) => fetch(url) }));
 
   let config: Config | undefined;
+  let streamExpanded = loadStreamState();
   const weatherByZone: Record<string, Weather> = {};
 
   const searchCities =
@@ -81,10 +83,15 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     if (Object.keys(weatherByZone).length > 0) {
       model.weatherByZone = { ...weatherByZone };
     }
+    model.streamExpanded = streamExpanded;
     const renderDeps: DashboardDeps = {
       navigate: deps.navigate,
       reducedMotion,
       onEdit: openEdit,
+      onToggleStream: (streamId, open) => {
+        streamExpanded = { ...streamExpanded, [streamId]: open };
+        saveStreamState(streamExpanded);
+      },
     };
     if (deps.theme !== undefined) renderDeps.theme = deps.theme;
     renderDashboard(deps.mount, model, renderDeps);

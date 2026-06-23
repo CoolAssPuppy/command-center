@@ -2,6 +2,7 @@ import { type Config, type Secrets } from "../config/schema";
 import type { GeoResult } from "../geo/geocode";
 import { el } from "../render/helpers";
 import { renderDockSection } from "./dockSection";
+import { renderStreamsSection } from "./streamsSection";
 import { renderZonesSection } from "./zonesSection";
 
 /**
@@ -40,7 +41,11 @@ export interface SectionContext {
 
 export type SectionRenderer = (host: HTMLElement, ctx: SectionContext) => void;
 
-const SECTIONS: SectionRenderer[] = [renderZonesSection, renderDockSection];
+const SECTIONS: SectionRenderer[] = [
+  renderZonesSection,
+  renderDockSection,
+  renderStreamsSection,
+];
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;

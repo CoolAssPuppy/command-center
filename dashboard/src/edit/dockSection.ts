@@ -1,7 +1,8 @@
-import type { Config, DockLink } from "../config/schema";
+import type { DockLink } from "../config/schema";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { newId } from "../util/id";
+import { iconButton, moveInArray, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -26,26 +27,6 @@ export function renderDockSection(host: HTMLElement, ctx: SectionContext): void 
   host.appendChild(section);
 }
 
-function iconButton(label: string, glyph: string, onClick: () => void): HTMLElement {
-  const button = el("button", "cc-edit__icon-btn", glyph);
-  button.setAttribute("type", "button");
-  button.setAttribute("aria-label", label);
-  button.setAttribute("title", label);
-  button.addEventListener("click", onClick);
-  return button;
-}
-
-function moveLink(config: Config, index: number, delta: number): void {
-  const target = index + delta;
-  if (target < 0 || target >= config.links.length) return;
-  const links = config.links;
-  const moved = links[index];
-  const swapped = links[target];
-  if (moved === undefined || swapped === undefined) return;
-  links[index] = swapped;
-  links[target] = moved;
-}
-
 function renderLinkRow(
   link: DockLink,
   index: number,
@@ -62,14 +43,14 @@ function renderLinkRow(
   controls.appendChild(
     iconButton("Move up", "↑", () => {
       ctx.update((config) => {
-        moveLink(config, index, -1);
+        moveInArray(config.links, index, -1);
       });
     }),
   );
   controls.appendChild(
     iconButton("Move down", "↓", () => {
       ctx.update((config) => {
-        moveLink(config, index, 1);
+        moveInArray(config.links, index, 1);
       });
     }),
   );
@@ -82,14 +63,6 @@ function renderLinkRow(
   );
   row.appendChild(controls);
   return row;
-}
-
-function textInput(placeholder: string, type: string): HTMLInputElement {
-  const input = document.createElement("input");
-  input.type = type;
-  input.className = "cc-edit__input";
-  input.placeholder = placeholder;
-  return input;
 }
 
 /** Add a scheme when the user typed a bare host, e.g. "github.com". */

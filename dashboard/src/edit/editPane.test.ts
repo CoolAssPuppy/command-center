@@ -123,6 +123,25 @@ describe("edit pane — dock", () => {
   });
 });
 
+describe("edit pane — streams", () => {
+  it("adds a notes stream collapsed by default", () => {
+    const harness = open(twoZones());
+    const forms = [
+      ...harness.root.querySelectorAll<HTMLFormElement>(".cc-edit__add-form--stack"),
+    ];
+    const streamForm = forms.find((form) => form.querySelector("select") !== null);
+    if (streamForm === undefined) throw new Error("missing stream form");
+    const input = streamForm.querySelector<HTMLInputElement>("input");
+    if (input === null) throw new Error("missing stream input");
+    input.value = "Today";
+    streamForm.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+
+    const stream = harness.applied()?.streams.find((s) => s.title === "Today");
+    expect(stream?.content.type).toBe("static");
+    expect(stream?.collapsedByDefault).toBe(true);
+  });
+});
+
 describe("edit pane — shell", () => {
   it("closes and removes itself on Done", () => {
     const onClose = vi.fn();

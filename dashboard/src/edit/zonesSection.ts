@@ -1,6 +1,7 @@
-import { homeZone, type Config, type Zone } from "../config/schema";
+import { homeZone, type Zone } from "../config/schema";
 import { el } from "../render/helpers";
 import { newId } from "../util/id";
+import { iconButton, moveInArray } from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -24,26 +25,6 @@ export function renderZonesSection(host: HTMLElement, ctx: SectionContext): void
 
   section.appendChild(renderAddZone(ctx));
   host.appendChild(section);
-}
-
-function iconButton(label: string, glyph: string, onClick: () => void): HTMLElement {
-  const button = el("button", "cc-edit__icon-btn", glyph);
-  button.setAttribute("type", "button");
-  button.setAttribute("aria-label", label);
-  button.setAttribute("title", label);
-  button.addEventListener("click", onClick);
-  return button;
-}
-
-function moveZone(config: Config, index: number, delta: number): void {
-  const target = index + delta;
-  if (target < 0 || target >= config.zones.length) return;
-  const zones = config.zones;
-  const moved = zones[index];
-  const swapped = zones[target];
-  if (moved === undefined || swapped === undefined) return;
-  zones[index] = swapped;
-  zones[target] = moved;
 }
 
 function renderZoneRow(
@@ -77,14 +58,14 @@ function renderZoneRow(
   controls.appendChild(
     iconButton("Move up", "↑", () => {
       ctx.update((config) => {
-        moveZone(config, index, -1);
+        moveInArray(config.zones, index, -1);
       });
     }),
   );
   controls.appendChild(
     iconButton("Move down", "↓", () => {
       ctx.update((config) => {
-        moveZone(config, index, 1);
+        moveInArray(config.zones, index, 1);
       });
     }),
   );

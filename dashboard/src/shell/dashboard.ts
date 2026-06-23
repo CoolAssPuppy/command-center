@@ -1,6 +1,7 @@
 import { homeZone, otherZones, type Config } from "../config/schema";
 import { renderDock } from "../dock/dock";
 import { el } from "../render/helpers";
+import { renderStreams } from "../streams/streams";
 import { themeById } from "../theme/registry";
 import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
@@ -18,6 +19,8 @@ export interface DashboardModel {
   config: Config;
   /** Current weather per zone id, filled in as fetches land. */
   weatherByZone?: Record<string, Weather>;
+  /** Per-stream open override (UI state), keyed by stream id. */
+  streamExpanded?: Record<string, boolean>;
 }
 
 export interface DashboardDeps {
@@ -26,6 +29,8 @@ export interface DashboardDeps {
   theme?: Theme;
   /** Open the edit pane. */
   onEdit?: () => void;
+  /** Persist a stream's open/closed toggle. */
+  onToggleStream?: (streamId: string, open: boolean) => void;
 }
 
 export function renderDashboard(
@@ -82,8 +87,23 @@ export function renderDashboard(
     );
   }
 
-  // Work streams (P3) fill this slot.
-  stage.appendChild(el("div", "cc-streams-slot"));
+  // Work streams.
+  if (model.config.streams.length > 0) {
+    const streamsHost = el("div", "cc-streams-slot");
+    renderStreams(
+      streamsHost,
+      {
+        streams: model.config.streams,
+        links: model.config.links,
+        expanded: model.streamExpanded ?? {},
+      },
+      {
+        navigate: deps.navigate,
+        onToggle: deps.onToggleStream ?? ((): void => {}),
+      },
+    );
+    stage.appendChild(streamsHost);
+  }
 
   root.appendChild(stage);
 
