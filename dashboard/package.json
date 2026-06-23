@@ -8,6 +8,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "build:extension": "vite build --config vite.extension.config.ts && node scripts/finish-extension.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "package": "npm run build:extension && cd dist-extension && zip -r -FS ../command-center.zip . -x '.DS_Store' && cd ..",
     "size": "node scripts/check-bundle.mjs",
     "preview": "vite preview",
     "test": "vitest run",

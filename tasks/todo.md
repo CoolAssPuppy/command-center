@@ -106,12 +106,39 @@ Settings model: `chrome.storage.sync` for non-secret config (zones, links, strea
 
 ## Phase 7: ship
 
-- [ ] P7.1 Package the unpacked extension; produce a zip for Chrome Web Store (or document load-unpacked for personal use).
-- [ ] P7.2 Icons, store listing copy, screenshots.
-- [ ] P7.3 README: install, configure (Notion + Unsplash keys), architecture overview. Reconcile/trim `docs/` to the Chrome reality; archive Safari/native/platform docs.
+- [x] P7.1 `npm run package` builds and zips `dist-extension/` to `command-center.zip` (111 KB). Load-unpacked documented in the README.
+- [x] P7.2 Icons: dependency-free PNG encoder (`npm run icons`) draws a mineral clock at 16/48/128, referenced in the manifest. Removed the unused city skyline JPGs (~770 KB).
+- [x] P7.3 Root `README.md`: install, package, configure (Notion + Unsplash), privacy, develop, architecture. Old platform docs moved to `docs/archive/` with a note.
 
 ---
 
 ## Standing quality mandate
 
 Every iteration: keep the architecture impeccable, not just green. Before marking a task done, refactor what you touched (no duplication, no dead code, single source of truth, honest docs). The reused TS core is already audited; do not regress it. Keep files under ~300-500 lines and split by responsibility (UI / settings / integration / render).
+
+---
+
+## Review (completed 2026-06-23)
+
+All phases P0–P7 done. The Chrome pivot shipped on branch `build/chrome-pivot`.
+
+What landed:
+- A single Chrome MV3 new-tab extension, config-driven (one Zod `Config` in `chrome.storage.sync`; secrets in `local`). 150 tests, lint clean, build + package green.
+- Centered home clock + timezone row (offset, day/night, weather), reusing the tested time/solar/weather engine.
+- macOS-style dock with proximity magnification.
+- Collapsible work streams (notes / links / integration), open-state persisted.
+- Unsplash wallpaper (per-day cache, scrim, attribution).
+- Pluggable integration platform with Notion (token, filters, normalized items, needs-auth/error states).
+- One edit drawer: Timezones, Dock, Streams, Connections, Wallpaper, Appearance, Backup. Live-apply, focus trap, import/export.
+- Onboarding seeds, four themes, icons, README, archived platform docs.
+
+Verified live at each phase (screenshots): skeleton, edit pane, dock magnify, streams, wallpaper, Notion config + needs-auth, onboarding, live theme switch.
+
+Not done / deferred:
+- P3.4 (24h overlap timeline as a built-in stream type) — optional; `overlapTimeline.ts` is kept and ready.
+- Inline rename of dock links (remove + re-add for now).
+- Live Notion API call needs the user's real token + a shared database to exercise end-to-end (client is fully unit-tested).
+- Notion sorts UI (raw `sorts` pass-through is supported in config; no dedicated editor yet).
+- Periodic integration refresh (currently refetches on load and on edit, not on a timer).
+
+Nothing is pushed; commits are local on `build/chrome-pivot`. The pre-pivot platform is at tag `archive/safari-platform-2026-06-23`.

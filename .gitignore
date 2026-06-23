@@ -44,3 +44,7 @@ Thumbs.db
 
 # XcodeGen output (project.yml is the source of truth)
 native/*.xcodeproj/
+
+# Packaged extension
+command-center.zip
+dashboard/command-center.zip
