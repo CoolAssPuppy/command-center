@@ -129,10 +129,10 @@ export function renderDashboard(
     }
   }
 
-  // Dock of links.
+  // Dock of links, pinned along the bottom of the page.
   if (model.config.links.length > 0) {
     renderDock(
-      stage,
+      root,
       { links: model.config.links, reducedMotion },
       { navigate: deps.navigate },
     );

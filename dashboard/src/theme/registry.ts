@@ -1,7 +1,10 @@
 import { aurora } from "./aurora";
+import { hermione } from "./hermione";
+import { kirk } from "./kirk";
 import { mineral } from "./mineral";
 import { mono } from "./mono";
 import { paper } from "./paper";
+import { supa } from "./supa";
 import type { Theme } from "./tokens";
 import { twilight } from "./twilight";
 
@@ -11,7 +14,16 @@ import { twilight } from "./twilight";
  * and Twilight (night) are a matched pair the "auto" setting switches between;
  * see resolveActiveTheme. Third-party themes (a future registry) would join here.
  */
-export const SHIPPED_THEMES: Theme[] = [mineral, twilight, aurora, paper, mono];
+export const SHIPPED_THEMES: Theme[] = [
+  mineral,
+  twilight,
+  hermione,
+  kirk,
+  supa,
+  aurora,
+  paper,
+  mono,
+];
 
 export const DEFAULT_THEME = mineral;
 
