@@ -89,6 +89,9 @@ export interface EditPaneHandle {
 export function openEditPane(host: HTMLElement, deps: EditPaneDeps): EditPaneHandle {
   const draft = clone(deps.config);
   const draftSecrets = clone(deps.secrets);
+  // Remember who opened the drawer so focus returns there when it closes.
+  const opener =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
   const root = el("div", "cc-edit");
   const backdrop = el("div", "cc-edit__backdrop");
@@ -114,6 +117,7 @@ export function openEditPane(host: HTMLElement, deps: EditPaneDeps): EditPaneHan
 
   const close = (): void => {
     root.remove();
+    opener?.focus();
     deps.onClose();
   };
 

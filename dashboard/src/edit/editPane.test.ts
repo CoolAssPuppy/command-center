@@ -186,6 +186,15 @@ describe("edit pane — dock", () => {
     );
   });
 
+  it("reorders links with the move buttons (keyboard and touch path)", () => {
+    const harness = open(withLinks());
+    const down = linkRow(harness.root, "GitHub").querySelector<HTMLButtonElement>(
+      '[aria-label="Move down"]',
+    );
+    down?.click();
+    expect(harness.applied()?.links.map((l) => l.id)).toEqual(["l2", "l1"]);
+  });
+
   it("reorders links by dropping one row onto another", () => {
     const harness = open(withLinks());
     const rows = [...harness.root.querySelectorAll<HTMLElement>(".cc-edit__row--drag")];

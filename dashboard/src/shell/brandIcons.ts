@@ -7,9 +7,14 @@ import { el, svgEl } from "../render/helpers";
  * sources without a mark.
  */
 function tile(): HTMLElement {
+  // The logos (Google blue, Linear indigo, Notion ink) need a light ground to
+  // stay legible, so the tile is light on every theme. A warm off-white plus a
+  // soft ring keeps it from glaring as a pure-white chip on the dark themes.
+  // Decorative: the stream title already names the service.
   const node = el("div", "cc-brand");
-  node.style.background = "#FFFFFF";
-  node.style.border = "1px solid rgba(0,0,0,0.08)";
+  node.setAttribute("aria-hidden", "true");
+  node.style.background = "#F5F2EC";
+  node.style.border = "1px solid rgba(20,22,28,0.12)";
   return node;
 }
 

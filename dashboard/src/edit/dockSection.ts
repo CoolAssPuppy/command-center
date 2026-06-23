@@ -2,7 +2,7 @@ import type { DockLink } from "../config/schema";
 import { el, svgEl } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { newId } from "../util/id";
-import { iconButton, reorderInArray, textInput } from "./controls";
+import { iconButton, moveInArray, reorderInArray, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -88,7 +88,23 @@ function renderLinkRow(
   fields.appendChild(url);
   row.appendChild(fields);
 
+  // Buttons are the accessible reorder path; dragging the grip is an
+  // enhancement. Keyboard and touch users cannot drag, so they get these.
   const controls = el("div", "cc-edit__row-controls");
+  controls.appendChild(
+    iconButton("Move up", "↑", () => {
+      ctx.update((config) => {
+        moveInArray(config.links, index, -1);
+      });
+    }),
+  );
+  controls.appendChild(
+    iconButton("Move down", "↓", () => {
+      ctx.update((config) => {
+        moveInArray(config.links, index, 1);
+      });
+    }),
+  );
   controls.appendChild(
     iconButton("Remove", "✕", () => {
       ctx.update((config) => {

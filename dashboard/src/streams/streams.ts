@@ -55,7 +55,9 @@ function renderStream(
 
   const summary = document.createElement("summary");
   summary.className = "cc-stream__summary";
-  summary.appendChild(el("span", "cc-stream__chevron", "›"));
+  const chevron = el("span", "cc-stream__chevron", "›");
+  chevron.setAttribute("aria-hidden", "true");
+  summary.appendChild(chevron);
   if (connection !== undefined) {
     const icon = brandIcon(connection.service);
     if (icon !== undefined) summary.appendChild(icon);
