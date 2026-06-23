@@ -138,9 +138,9 @@ export function renderDashboard(
     );
   }
 
-  // Work streams.
+  // Work streams, rendered directly into the stage so the panel grid fills
+  // the remaining height.
   if (model.config.streams.length > 0) {
-    const streamsHost = el("div", "cc-streams-slot");
     const streamsModel = {
       streams: model.config.streams,
       links: model.config.links,
@@ -149,11 +149,10 @@ export function renderDashboard(
         ? { integrationResults: model.integrationResults }
         : {}),
     };
-    renderStreams(streamsHost, streamsModel, {
+    renderStreams(stage, streamsModel, {
       navigate: deps.navigate,
       onToggle: deps.onToggleStream ?? ((): void => {}),
     });
-    stage.appendChild(streamsHost);
   }
 
   root.appendChild(stage);

@@ -27,10 +27,9 @@ describe("defaultConfig", () => {
     expect(newYorkZones[0]?.isHome).toBe(true);
   });
 
-  it("seeds starter links, a welcome note, and the three service streams", () => {
+  it("seeds starter links and the three service panels", () => {
     const config = defaultConfig({ timeZone: "UTC" });
     expect(config.links.map((link) => link.title)).toContain("GitHub");
-    expect(config.streams[0]?.content.type).toBe("static");
     const integrationIds = config.streams.flatMap((stream) =>
       stream.content.type === "integration" ? [stream.content.integrationId] : [],
     );

@@ -58,30 +58,21 @@ export function defaultConfig(options: DefaultConfigOptions = {}): Config {
     ],
     streams: [
       {
-        id: "welcome",
-        title: "Notes",
-        collapsedByDefault: false,
-        content: {
-          type: "static",
-          body: "Welcome to Command Center. Open Edit (top-right) to connect your services, add timezones and dock links, and pick a wallpaper.",
-        },
-      },
-      {
         id: "today",
         title: "Today",
-        collapsedByDefault: true,
+        collapsedByDefault: false,
         content: { type: "integration", integrationId: "google-calendar", config: {} },
       },
       {
         id: "inbox",
         title: "Inbox",
-        collapsedByDefault: true,
+        collapsedByDefault: false,
         content: { type: "integration", integrationId: "linear", config: {} },
       },
       {
         id: "docs",
         title: "Docs",
-        collapsedByDefault: true,
+        collapsedByDefault: false,
         content: {
           type: "integration",
           integrationId: "notion",
