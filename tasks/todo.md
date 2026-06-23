@@ -65,7 +65,7 @@ Settings model: `chrome.storage.sync` for non-secret config (zones, links, strea
 - [x] P1.2 Centered home clock: big local time + date + phase for the home zone, minute ticker, reuses `time/clock.ts` + `time/solar.ts`. Tests with injected `now`.
 - [x] P1.3 Timezone row: compact cards for non-home zones with time, offset-from-home, day-offset badge, day/night tint. Tests.
 - [x] P1.4 Per-zone weather via `weather/openMeteo.ts` (zones with coords), fetched after first paint, repaints. Injected-fetch tests.
-- [ ] P1.5 Edit pane (zones): add/remove/reorder zones, set the home zone, city search with free geocode fallback (solstice-style). Tests on the edit interactions and persistence.
+- [x] P1.5 Edit pane (zones): add/remove/reorder zones, set the home zone, city search via the Open-Meteo geocoder. Extensible section architecture (later phases append sections). Live-apply. Tests + live screenshot.
 
 ## Phase 2: dock-style links
 

@@ -2,6 +2,8 @@ import { loadCachedConfig, saveCachedConfig } from "../config/cache";
 import { type Config } from "../config/schema";
 import type { ConfigStore } from "../config/store";
 import type { ParseResult } from "../domain/result";
+import { openEditPane } from "../edit/editPane";
+import { searchCities as geoSearch, type GeoResult } from "../geo/geocode";
 import { prefersReducedMotion } from "../perf/perf";
 import {
   renderDashboard,
@@ -40,8 +42,11 @@ export interface RunDeps {
   scheduleTick?: (cb: () => void) => void;
   reducedMotion?: boolean;
   theme?: Theme;
-  onEdit?: () => void;
   units?: WeatherUnits;
+  /** Where the edit pane mounts. Defaults to document.body. */
+  editHost?: HTMLElement;
+  /** City search for the edit pane. Defaults to the Open-Meteo geocoder. */
+  searchCities?: (query: string) => Promise<GeoResult[]>;
 }
 
 interface LocatedZone {
@@ -63,17 +68,52 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
   let config: Config | undefined;
   const weatherByZone: Record<string, Weather> = {};
 
-  const paint = (): void => {
+  const searchCities =
+    deps.searchCities ??
+    ((query: string): Promise<GeoResult[]> =>
+      geoSearch(query, { fetch: (url) => fetch(url) }).then((result) =>
+        result.ok ? result.value : [],
+      ));
+
+  function paint(): void {
     if (config === undefined) return;
     const model: DashboardModel = { now: deps.now(), config };
     if (Object.keys(weatherByZone).length > 0) {
       model.weatherByZone = { ...weatherByZone };
     }
-    const renderDeps: DashboardDeps = { navigate: deps.navigate, reducedMotion };
+    const renderDeps: DashboardDeps = {
+      navigate: deps.navigate,
+      reducedMotion,
+      onEdit: openEdit,
+    };
     if (deps.theme !== undefined) renderDeps.theme = deps.theme;
-    if (deps.onEdit !== undefined) renderDeps.onEdit = deps.onEdit;
     renderDashboard(deps.mount, model, renderDeps);
-  };
+  }
+
+  function openEdit(): void {
+    const current = config;
+    if (current === undefined) return;
+    const editHost = deps.editHost ?? document.body;
+    void deps.store.loadSecrets().then((secrets) => {
+      openEditPane(editHost, {
+        config: current,
+        secrets,
+        applyConfig: (next) => {
+          config = next;
+          void deps.store.save(next);
+          saveCache(next);
+          paint();
+        },
+        applySecrets: (next) => {
+          void deps.store.saveSecrets(next);
+        },
+        onClose: () => {
+          /* nothing to do; the dashboard already reflects the latest config */
+        },
+        runtime: { searchCities },
+      });
+    });
+  }
 
   // 1. Instant paint from the cached config, if any (runs before the first await).
   const cached = loadCache();
