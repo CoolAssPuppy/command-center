@@ -2,6 +2,7 @@ import type { DockLink, Stream } from "../config/schema";
 import { fallbackGlyph, faviconUrl } from "../dock/favicon";
 import type { IntegrationResult, NormalizedItem } from "../integrations/types";
 import { el } from "../render/helpers";
+import { brandIcon } from "../shell/brandIcons";
 import { isSafeUrl } from "../security/url";
 
 /**
@@ -55,6 +56,10 @@ function renderStream(
   const summary = document.createElement("summary");
   summary.className = "cc-stream__summary";
   summary.appendChild(el("span", "cc-stream__chevron", "›"));
+  if (stream.content.type === "integration") {
+    const icon = brandIcon(stream.content.integrationId);
+    if (icon !== undefined) summary.appendChild(icon);
+  }
   summary.appendChild(el("span", "cc-stream__title", stream.title));
   details.appendChild(summary);
 

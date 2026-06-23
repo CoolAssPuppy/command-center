@@ -8,6 +8,7 @@ import { resolveActiveTheme } from "../theme/resolve";
 import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
 import { renderHomeClock, type HomeClockModel } from "./homeClock";
+import { renderMeetingWindow } from "./meetingWindow";
 import { renderZoneRow, type ZoneRowModel } from "./zoneRow";
 
 /**
@@ -92,6 +93,7 @@ export function renderDashboard(
 
   const home = homeZone(model.config);
   if (home !== undefined) {
+    const hero = el("div", "cc-hero");
     const clockModel: HomeClockModel = {
       now: model.now,
       zone: home,
@@ -100,7 +102,17 @@ export function renderDashboard(
     if (model.config.profile.name !== undefined) {
       clockModel.name = model.config.profile.name;
     }
-    renderHomeClock(stage, clockModel);
+    renderHomeClock(hero, clockModel);
+
+    if (model.config.zones.length >= 2) {
+      renderMeetingWindow(hero, {
+        now: model.now,
+        zones: model.config.zones,
+        homeZone: home,
+        hour12: model.config.appearance.hour12,
+      });
+    }
+    stage.appendChild(hero);
 
     const others = otherZones(model.config);
     if (others.length > 0) {

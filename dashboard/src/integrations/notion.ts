@@ -19,7 +19,7 @@ const NOTION_VERSION = "2022-06-28";
 const QUERY_BASE = "https://api.notion.com/v1/databases";
 
 export const NotionConfigSchema = z.object({
-  databaseId: z.string().min(1),
+  databaseId: z.string().default(""),
   /** Which property holds the title; defaults to the title-typed property. */
   titleProperty: z.string().optional(),
   /** A raw Notion filter object, passed through verbatim. */
@@ -96,6 +96,9 @@ export const notionIntegration: Integration = {
     }
 
     const config = parsed.data;
+    if (config.databaseId.trim().length === 0) {
+      return { ok: false, error: NEEDS_AUTH };
+    }
     const body: Record<string, unknown> = { page_size: config.pageSize };
     if (config.filter !== undefined) body.filter = config.filter;
     if (config.sorts !== undefined) body.sorts = config.sorts;
