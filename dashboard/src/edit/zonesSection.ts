@@ -1,8 +1,9 @@
 import { homeZone, type Zone } from "../config/schema";
 import { el } from "../render/helpers";
 import { newId } from "../util/id";
-import { collapsibleSection, iconButton, moveInArray } from "./controls";
+import { collapsibleSection, iconButton, reorderInArray } from "./controls";
 import type { SectionContext } from "./editPane";
+import { makeReorderable } from "./reorderable";
 
 /**
  * The Timezones section of the edit pane: reorder, set the home zone, remove a
@@ -57,20 +58,6 @@ function renderZoneRow(
   controls.appendChild(homeBtn);
 
   controls.appendChild(
-    iconButton("Move up", "↑", () => {
-      ctx.update((config) => {
-        moveInArray(config.zones, index, -1);
-      });
-    }),
-  );
-  controls.appendChild(
-    iconButton("Move down", "↓", () => {
-      ctx.update((config) => {
-        moveInArray(config.zones, index, 1);
-      });
-    }),
-  );
-  controls.appendChild(
     iconButton("Remove", "✕", () => {
       ctx.update((config) => {
         config.zones = config.zones.filter((z) => z.id !== zone.id);
@@ -79,6 +66,18 @@ function renderZoneRow(
   );
 
   row.appendChild(controls);
+
+  makeReorderable({
+    row,
+    index,
+    count: ctx.draft.zones.length,
+    itemId: zone.id,
+    itemNoun: "timezone",
+    applyReorder: (from, to) =>
+      ctx.update((config) => {
+        reorderInArray(config.zones, from, to);
+      }),
+  });
   return row;
 }
 

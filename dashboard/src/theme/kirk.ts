@@ -1,9 +1,9 @@
 import type { Theme } from "./tokens";
 
 /**
- * Kirk: the bridge of a starship. Deep-space indigo-black under bright type,
- * with command-gold as the accent and a science-blue secondary. A dark token
- * theme.
+ * Kirk: 1960s Star Trek. The black of space under bright optimistic type, with
+ * the command-gold tunic as the accent and the sciences-blue and operations-red
+ * of the other crew shirts beside it. A dark token theme.
  */
 export const kirk: Theme = {
   meta: {
@@ -14,18 +14,18 @@ export const kirk: Theme = {
   },
   tokens: {
     color: {
-      bg: "#0A0E18",
-      surface: "#17223A",
-      text: "#ECEFF6",
-      muted: "#8B95AC",
-      accent: "#E7B53C",
-      positive: "#54B98A",
-      urgent: "#D6584B",
-      primary: "#ECEFF6",
-      secondary: "#8B95AC",
-      accent1: "#E7B53C",
-      accent2: "#5AA9E6",
-      accent3: "#D6584B",
+      bg: "#08090E",
+      surface: "#15171F",
+      text: "#F2EFE6",
+      muted: "#8E8C81",
+      accent: "#E8B23A",
+      positive: "#56B98A",
+      urgent: "#CC4436",
+      primary: "#F2EFE6",
+      secondary: "#8E8C81",
+      accent1: "#E8B23A",
+      accent2: "#3E8FD0",
+      accent3: "#CC4436",
     },
     type: {
       fontFamily: "'Archivo Variable', Archivo, system-ui, -apple-system, sans-serif",
@@ -37,7 +37,7 @@ export const kirk: Theme = {
     background: {
       mode: "gradient",
       value:
-        "linear-gradient(176deg, #070B14 0%, #0C1424 45%, #122039 78%, #1A2A4A 100%)",
+        "linear-gradient(176deg, #050608 0%, #0A0B12 45%, #10121C 80%, #161526 100%)",
       imageOfDay: false,
     },
   },

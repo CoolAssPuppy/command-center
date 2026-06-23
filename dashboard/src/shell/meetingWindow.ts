@@ -1,6 +1,6 @@
 import type { Zone } from "../config/schema";
 import { el } from "../render/helpers";
-import { formatClock, zonedTime } from "../time/clock";
+import { zonedTime } from "../time/clock";
 import {
   computeMeetingWindow,
   formatAxisHour,
@@ -39,13 +39,6 @@ export function renderMeetingWindow(
 
   const header = el("div", "cc-mw__header");
   header.appendChild(el("span", "cc-mw__eyebrow", "MEETING WINDOW"));
-  header.appendChild(
-    el(
-      "span",
-      "cc-mw__now-label",
-      `now ${formatClock(model.now, referenceTimeZone, { hour12: model.hour12 ?? true })}`,
-    ),
-  );
   root.appendChild(header);
 
   const window = computeMeetingWindow(model.now, model.zones, referenceTimeZone);

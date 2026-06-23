@@ -1,15 +1,10 @@
 import type { DockLink } from "../config/schema";
-import { el, svgEl } from "../render/helpers";
+import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { newId } from "../util/id";
-import {
-  collapsibleSection,
-  iconButton,
-  moveInArray,
-  reorderInArray,
-  textInput,
-} from "./controls";
+import { collapsibleSection, iconButton, reorderInArray, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
+import { makeReorderable } from "./reorderable";
 
 /**
  * The Dock links section: reorder by dragging the grab handle, edit a link's
@@ -35,20 +30,6 @@ export function renderDockSection(host: HTMLElement, ctx: SectionContext): void 
   );
 }
 
-/** A six-dot grip mark, the drag affordance shown on row hover. */
-function gripHandle(): HTMLElement {
-  const handle = el("span", "cc-edit__grip");
-  handle.setAttribute("aria-hidden", "true");
-  const mark = svgEl("svg", { viewBox: "0 0 10 16", width: "10", height: "16", fill: "currentColor" });
-  for (const [cx, cy] of [
-    [2, 3], [8, 3], [2, 8], [8, 8], [2, 13], [8, 13],
-  ] as const) {
-    mark.appendChild(svgEl("circle", { cx: String(cx), cy: String(cy), r: "1.3" }));
-  }
-  handle.appendChild(mark);
-  return handle;
-}
-
 /** Mutate one link by id, persisting and re-rendering. */
 function updateLink(
   ctx: SectionContext,
@@ -66,15 +47,7 @@ function renderLinkRow(
   index: number,
   ctx: SectionContext,
 ): HTMLElement {
-  const row = el("div", "cc-edit__row cc-edit__row--drag");
-
-  const handle = gripHandle();
-  handle.title = "Drag to reorder";
-  // Only arm dragging from the handle, so the inputs stay selectable.
-  handle.addEventListener("mousedown", () => {
-    row.draggable = true;
-  });
-  row.appendChild(handle);
+  const row = el("div", "cc-edit__row");
 
   const fields = el("div", "cc-edit__row-fields");
   const title = textInput("Title");
@@ -95,23 +68,7 @@ function renderLinkRow(
   fields.appendChild(url);
   row.appendChild(fields);
 
-  // Buttons are the accessible reorder path; dragging the grip is an
-  // enhancement. Keyboard and touch users cannot drag, so they get these.
   const controls = el("div", "cc-edit__row-controls");
-  controls.appendChild(
-    iconButton("Move up", "↑", () => {
-      ctx.update((config) => {
-        moveInArray(config.links, index, -1);
-      });
-    }),
-  );
-  controls.appendChild(
-    iconButton("Move down", "↓", () => {
-      ctx.update((config) => {
-        moveInArray(config.links, index, 1);
-      });
-    }),
-  );
   controls.appendChild(
     iconButton("Remove", "✕", () => {
       ctx.update((config) => {
@@ -121,43 +78,18 @@ function renderLinkRow(
   );
   row.appendChild(controls);
 
-  wireDragReorder(row, index, ctx);
-  return row;
-}
-
-/** HTML5 drag-and-drop reordering, keyed by the row's current index. */
-function wireDragReorder(
-  row: HTMLElement,
-  index: number,
-  ctx: SectionContext,
-): void {
-  row.addEventListener("dragstart", (event) => {
-    event.dataTransfer?.setData("text/plain", String(index));
-    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
-    row.classList.add("is-dragging");
-  });
-  row.addEventListener("dragend", () => {
-    row.classList.remove("is-dragging");
-    row.draggable = false;
-  });
-  row.addEventListener("dragover", (event) => {
-    event.preventDefault();
-    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
-    row.classList.add("is-drop-target");
-  });
-  row.addEventListener("dragleave", () => {
-    row.classList.remove("is-drop-target");
-  });
-  row.addEventListener("drop", (event) => {
-    event.preventDefault();
-    row.classList.remove("is-drop-target");
-    const from = Number(event.dataTransfer?.getData("text/plain"));
-    if (Number.isInteger(from) && from !== index) {
+  makeReorderable({
+    row,
+    index,
+    count: ctx.draft.links.length,
+    itemId: link.id,
+    itemNoun: "link",
+    applyReorder: (from, to) =>
       ctx.update((config) => {
-        reorderInArray(config.links, from, index);
-      });
-    }
+        reorderInArray(config.links, from, to);
+      }),
   });
+  return row;
 }
 
 /** Add a scheme when the user typed a bare host, e.g. "github.com". */

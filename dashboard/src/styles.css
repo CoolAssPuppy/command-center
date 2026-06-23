@@ -160,7 +160,6 @@ body {
 .cc-mw__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
 
 .cc-mw__eyebrow {
@@ -168,13 +167,6 @@ body {
   font-weight: 600;
   letter-spacing: 0.2em;
   color: var(--cc-color-muted, #6a6e76);
-}
-
-.cc-mw__now-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--cc-color-muted, #6a6e76);
-  font-variant-numeric: tabular-nums;
 }
 
 .cc-mw__verdict {
@@ -469,6 +461,12 @@ body {
   flex-direction: column;
 }
 
+.cc-edit__add-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* Edit affordance --------------------------------------------------------- */
 
 .cc-edit-btn {
@@ -672,8 +670,13 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 16px;
+  width: 18px;
+  align-self: stretch;
+  padding: 0;
+  margin: 0;
   color: var(--cc-color-muted, #6a6e76);
+  background: transparent;
+  border: 0;
   cursor: grab;
   opacity: 0;
   transition: opacity 160ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -681,7 +684,14 @@ body {
 
 .cc-edit__row--drag:hover .cc-edit__grip,
 .cc-edit__row--drag:focus-within .cc-edit__grip {
-  opacity: 0.7;
+  opacity: 0.6;
+}
+
+.cc-edit__grip:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--cc-color-accent, #2f7a6f);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .cc-edit__grip:active {

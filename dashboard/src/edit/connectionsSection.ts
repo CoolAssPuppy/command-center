@@ -6,10 +6,11 @@ import {
   collapsibleSection,
   field,
   iconButton,
-  moveInArray,
+  reorderInArray,
   textInput,
 } from "./controls";
 import type { SectionContext } from "./editPane";
+import { makeReorderable } from "./reorderable";
 
 /**
  * The Connections section: add named connections to a service (you can have
@@ -84,20 +85,6 @@ function renderConnectionRow(
 
   const controls = el("div", "cc-edit__row-controls");
   controls.appendChild(
-    iconButton("Move up", "↑", () => {
-      ctx.update((config) => {
-        moveInArray(config.connections, index, -1);
-      });
-    }),
-  );
-  controls.appendChild(
-    iconButton("Move down", "↓", () => {
-      ctx.update((config) => {
-        moveInArray(config.connections, index, 1);
-      });
-    }),
-  );
-  controls.appendChild(
     iconButton("Remove", "✕", () => {
       ctx.update((config) => {
         config.connections = config.connections.filter((item) => item.id !== connection.id);
@@ -108,6 +95,19 @@ function renderConnectionRow(
   row.appendChild(head);
 
   row.appendChild(renderConnectionFields(connection, ctx));
+
+  makeReorderable({
+    row,
+    index,
+    count: ctx.draft.connections.length,
+    itemId: connection.id,
+    itemNoun: "connection",
+    handleHost: head,
+    applyReorder: (from, to) =>
+      ctx.update((config) => {
+        reorderInArray(config.connections, from, to);
+      }),
+  });
   return row;
 }
 
@@ -184,12 +184,26 @@ function renderConnectionFields(
   return wrap;
 }
 
+/** A password field for a credential (Linear key / Notion token). */
+function secretField(placeholder: string): HTMLInputElement {
+  const input = document.createElement("input");
+  input.type = "password";
+  input.className = "cc-edit__input";
+  input.placeholder = placeholder;
+  input.setAttribute("aria-label", placeholder);
+  return input;
+}
+
+/**
+ * Add a connection. The service drop-down comes first; the fields below it
+ * change to match the chosen service, since each needs different setup (Google
+ * connects its account afterwards, Linear takes an API key, Notion a token plus
+ * the database or page to pull from). On submit the connection and its secret
+ * are created together.
+ */
 function renderAddConnection(ctx: SectionContext): HTMLElement {
   const wrap = el("div", "cc-edit__add");
   const form = el("form", "cc-edit__add-form cc-edit__add-form--stack");
-
-  const name = textInput("Connection name (e.g. Work Calendar)");
-  name.setAttribute("aria-label", "New connection name");
 
   const select = document.createElement("select");
   select.className = "cc-edit__input";
@@ -201,20 +215,84 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
     select.appendChild(option);
   }
 
+  const name = textInput("Connection name (e.g. Work Calendar)");
+  name.setAttribute("aria-label", "New connection name");
+
+  // Rebuilt whenever the service changes; holds that service's setup fields.
+  const fieldsBox = el("div", "cc-edit__add-fields");
+  let secretInput: HTMLInputElement | undefined;
+  let targetInput: HTMLInputElement | undefined;
+
+  const rebuildFields = (): void => {
+    fieldsBox.replaceChildren();
+    secretInput = undefined;
+    targetInput = undefined;
+    const service = serviceFromValue(select.value);
+
+    if (service === "google-calendar") {
+      const calendarId = textInput("primary");
+      calendarId.setAttribute("aria-label", "Calendar id");
+      targetInput = calendarId;
+      fieldsBox.appendChild(field("Calendar id", calendarId));
+      fieldsBox.appendChild(
+        el(
+          "div",
+          "cc-edit__hint",
+          "Add the connection, then connect your Google account on its row.",
+        ),
+      );
+    } else if (service === "linear") {
+      const key = secretField("Linear API key");
+      secretInput = key;
+      fieldsBox.appendChild(field("API key", key));
+      fieldsBox.appendChild(
+        el("div", "cc-edit__hint", "A personal API key from Linear settings. Stored locally."),
+      );
+    } else {
+      const token = secretField("Notion token");
+      secretInput = token;
+      fieldsBox.appendChild(field("Token", token));
+      const database = textInput("Database or page id");
+      database.setAttribute("aria-label", "Notion database or page id");
+      targetInput = database;
+      fieldsBox.appendChild(field("Database or page", database));
+    }
+  };
+  select.addEventListener("change", rebuildFields);
+  rebuildFields();
+
   const submit = el("button", "cc-edit__add-btn", "Add connection");
   submit.setAttribute("type", "submit");
 
-  form.appendChild(name);
-  form.appendChild(select);
+  form.appendChild(field("Service", select));
+  form.appendChild(field("Name", name));
+  form.appendChild(fieldsBox);
   form.appendChild(submit);
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    const value = name.value.trim();
-    if (value.length === 0) return;
+    const nameValue = name.value.trim();
+    if (nameValue.length === 0) return;
     const service = serviceFromValue(select.value);
+    const id = newId("conn");
+    const target = targetInput?.value.trim();
+    const secret = secretInput?.value.trim();
+
     ctx.update((config) => {
-      config.connections.push({ id: newId("conn"), name: value, service });
+      const connection: Connection = { id, name: nameValue, service };
+      if (service === "google-calendar" && target !== undefined && target.length > 0) {
+        connection.calendarId = target;
+      }
+      if (service === "notion" && target !== undefined && target.length > 0) {
+        connection.databaseId = target;
+      }
+      config.connections.push(connection);
     });
+    if (secret !== undefined && secret.length > 0) {
+      ctx.updateSecrets((secrets) => {
+        secrets.connectionSecrets[id] = secret;
+      });
+    }
   });
 
   wrap.appendChild(form);

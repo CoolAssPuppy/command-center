@@ -186,18 +186,23 @@ describe("edit pane — dock", () => {
     );
   });
 
-  it("reorders links with the move buttons (keyboard and touch path)", () => {
+  it("reorders links with the grip's arrow keys (keyboard path)", () => {
     const harness = open(withLinks());
-    const down = linkRow(harness.root, "GitHub").querySelector<HTMLButtonElement>(
-      '[aria-label="Move down"]',
+    const grip = linkRow(harness.root, "GitHub").querySelector<HTMLElement>(
+      ".cc-edit__grip",
     );
-    down?.click();
+    if (grip === null) throw new Error("no grip handle");
+    grip.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
+    );
     expect(harness.applied()?.links.map((l) => l.id)).toEqual(["l2", "l1"]);
   });
 
   it("reorders links by dropping one row onto another", () => {
     const harness = open(withLinks());
-    const rows = [...harness.root.querySelectorAll<HTMLElement>(".cc-edit__row--drag")];
+    const rows = [
+      ...harness.root.querySelectorAll<HTMLElement>(".cc-edit__row--drag"),
+    ].filter((row) => row.querySelector('input[aria-label="Link title"]') !== null);
     const [first, second] = rows;
     if (first === undefined || second === undefined) throw new Error("missing rows");
     const transfer = fakeTransfer();

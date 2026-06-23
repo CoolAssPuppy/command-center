@@ -1,8 +1,9 @@
 import type { Connection } from "../config/schema";
 import { el } from "../render/helpers";
 import { newId } from "../util/id";
-import { collapsibleSection, iconButton, moveInArray, textInput } from "./controls";
+import { collapsibleSection, iconButton, reorderInArray, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
+import { makeReorderable } from "./reorderable";
 
 /**
  * The Work streams section: each work stream is a panel with a title that shows
@@ -85,20 +86,6 @@ function renderStreamRow(
 
   const controls = el("div", "cc-edit__row-controls");
   controls.appendChild(
-    iconButton("Move up", "↑", () => {
-      ctx.update((config) => {
-        moveInArray(config.streams, index, -1);
-      });
-    }),
-  );
-  controls.appendChild(
-    iconButton("Move down", "↓", () => {
-      ctx.update((config) => {
-        moveInArray(config.streams, index, 1);
-      });
-    }),
-  );
-  controls.appendChild(
     iconButton("Remove", "✕", () => {
       ctx.update((config) => {
         config.streams = config.streams.filter((item) => item.id !== stream.id);
@@ -106,6 +93,18 @@ function renderStreamRow(
     }),
   );
   row.appendChild(controls);
+
+  makeReorderable({
+    row,
+    index,
+    count: ctx.draft.streams.length,
+    itemId: stream.id,
+    itemNoun: "work stream",
+    applyReorder: (from, to) =>
+      ctx.update((config) => {
+        reorderInArray(config.streams, from, to);
+      }),
+  });
   return row;
 }
 
