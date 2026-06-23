@@ -69,11 +69,11 @@ Settings model: `chrome.storage.sync` for non-secret config (zones, links, strea
 
 ## Phase 2: dock-style links
 
-- [ ] P2.1 Link settings schema: `{ id, title, url, iconUrl? }` with URL validation via `security/url.ts`. Tests.
-- [ ] P2.2 Favicon resolution: resolve a site favicon (Google s2 service or per-site), with a cached fallback glyph. Tests on resolution + fallback.
-- [ ] P2.3 Dock render: a centered row of icon-sized favicons.
-- [ ] P2.4 Magnification: macOS-dock hover effect (scale by pointer proximity), gated behind `prefers-reduced-motion`. Behavior + reduced-motion tests.
-- [ ] P2.5 Edit pane (dock): add/edit/remove/reorder links, optional custom icon. Persistence tests.
+- [x] P2.1 Link settings schema: `{ id, title, url, iconUrl? }`, url-validated; navigation gated by `isSafeUrl`. Tests.
+- [x] P2.2 Favicon resolution: explicit iconUrl, else Google s2 by domain, else a letter glyph (img onerror fallback). Tests.
+- [x] P2.3 Dock render: centered row of favicons in a glass tray.
+- [x] P2.4 Magnification: macOS-dock proximity scale on pointermove, disabled under reduced motion. Verified live.
+- [x] P2.5 Edit pane (dock): add (host normalized to https + validated), remove, reorder. Tests. (Inline rename deferred to P6.)
 
 ## Phase 3: collapsible work streams
 

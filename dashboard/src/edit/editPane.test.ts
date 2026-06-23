@@ -100,6 +100,29 @@ describe("edit pane — zones", () => {
   });
 });
 
+describe("edit pane — dock", () => {
+  it("adds a dock link, normalizing a bare host to https", () => {
+    const harness = open(twoZones());
+    const form = harness.root.querySelector<HTMLFormElement>(
+      ".cc-edit__add-form--stack",
+    );
+    if (form === null) throw new Error("missing dock form");
+    const inputs = form.querySelectorAll<HTMLInputElement>("input");
+    const titleInput = inputs[0];
+    const urlInput = inputs[1];
+    if (titleInput === undefined || urlInput === undefined) {
+      throw new Error("missing dock inputs");
+    }
+    titleInput.value = "GitHub";
+    urlInput.value = "github.com";
+    form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+
+    expect(
+      harness.applied()?.links.some((link) => link.url === "https://github.com"),
+    ).toBe(true);
+  });
+});
+
 describe("edit pane — shell", () => {
   it("closes and removes itself on Done", () => {
     const onClose = vi.fn();

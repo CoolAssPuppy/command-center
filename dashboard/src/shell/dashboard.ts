@@ -1,4 +1,5 @@
 import { homeZone, otherZones, type Config } from "../config/schema";
+import { renderDock } from "../dock/dock";
 import { el } from "../render/helpers";
 import { themeById } from "../theme/registry";
 import { applyTokens, type Theme } from "../theme/tokens";
@@ -72,8 +73,16 @@ export function renderDashboard(
     }
   }
 
-  // Dock (P2) and work streams (P3) fill these slots.
-  stage.appendChild(el("div", "cc-dock-slot"));
+  // Dock of links.
+  if (model.config.links.length > 0) {
+    renderDock(
+      stage,
+      { links: model.config.links, reducedMotion },
+      { navigate: deps.navigate },
+    );
+  }
+
+  // Work streams (P3) fill this slot.
   stage.appendChild(el("div", "cc-streams-slot"));
 
   root.appendChild(stage);

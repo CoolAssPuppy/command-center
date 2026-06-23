@@ -200,6 +200,66 @@ body {
   gap: 12px;
 }
 
+/* Dock -------------------------------------------------------------------- */
+
+.cc-dock {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--cc-color-surface, #fff) 55%, transparent);
+  border: 1px solid var(--cc-hairline);
+  backdrop-filter: blur(10px);
+}
+
+.cc-dock__item {
+  --cc-dock-scale: 1;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  transform: scale(var(--cc-dock-scale));
+  transform-origin: bottom center;
+  transition: transform calc(var(--cc-motion-speed, 1) * 90ms) ease-out;
+}
+
+.cc-dock__item:focus-visible {
+  outline: 2px solid var(--cc-color-accent, #2f7a6f);
+  outline-offset: 2px;
+}
+
+.cc-dock__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: block;
+  pointer-events: none;
+}
+
+.cc-dock__glyph {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--cc-color-bg, #fff);
+  background: var(--cc-color-accent, #2f7a6f);
+}
+
+.cc-edit__add-form--stack {
+  flex-direction: column;
+}
+
 /* Edit affordance --------------------------------------------------------- */
 
 .cc-edit-btn {
