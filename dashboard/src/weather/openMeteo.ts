@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { firstIssue, type ParseResult } from "../domain/feed";
+import { firstIssue, type ParseResult } from "../domain/result";
 
 /**
  * The weather client. It is the dashboard's only first-party network call, and

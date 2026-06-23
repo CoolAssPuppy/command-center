@@ -1,11 +1,19 @@
 /**
  * The content security policy for the new tab page. Scripts and styles come
- * only from the extension itself, and the only outbound connection allowed is
- * the weather host. This blocks any injected script from a malformed feed value
- * from running or phoning home. See docs/06-safari-extension.md.
+ * only from the extension itself; outbound connections are limited to the few
+ * hosts the dashboard talks to (weather, Unsplash, Notion). This blocks any
+ * injected string from a feed value from running or phoning home. The same
+ * string is the single source of truth for both the manifest's
+ * `content_security_policy.extension_pages` and the dev `index.html` meta tag;
+ * a test asserts the manifest matches.
  */
 
-const WEATHER_HOST = "https://api.open-meteo.com";
+/** Hosts the dashboard is allowed to open outbound connections to. */
+export const CONNECT_HOSTS = [
+  "https://api.open-meteo.com",
+  "https://api.unsplash.com",
+  "https://api.notion.com",
+] as const;
 
 interface CspDirectives {
   connectSrc: string[];
@@ -22,12 +30,12 @@ function render(directives: CspDirectives): string {
 }
 
 export interface BuildCspOptions {
-  /** Extra hosts allowed for outbound connections, in addition to the weather host. */
+  /** Extra hosts allowed for outbound connections, in addition to the defaults. */
   connectSrc?: string[];
 }
 
 export function buildCsp(options: BuildCspOptions = {}): string {
-  return render({ connectSrc: [WEATHER_HOST, ...(options.connectSrc ?? [])] });
+  return render({ connectSrc: [...CONNECT_HOSTS, ...(options.connectSrc ?? [])] });
 }
 
 export const DEFAULT_CSP = buildCsp();

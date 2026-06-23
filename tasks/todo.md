@@ -1,427 +1,117 @@
-# Command Center build plan
+# Command Center build plan (Chrome pivot)
 
-This is the loop's worklist. Every task is implemented test-first. A task is only checked off when its tests, the linter, and the build all pass. Work happens on branch `build/platform`. Commits are local until the user asks to push.
+This is the loop's worklist. Every task is implemented test-first. A task is only checked off when its tests, the linter, and the build all pass. Commits are local until the user asks to push.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done.
 
-## Active epic: dashboard redesign + real data (started 2026-06-14)
+## Direction (reset 2026-06-23)
 
-User direction: the dashboard styling is placeholder-grade; redesign it, and wire real data via OAuth. Decisions locked: Reminders = Apple EventKit (no OAuth); OAuth secrets = hosted token broker; reuse the existing Google/Linear/Notion OAuth apps; calendar supports multiple sources (Apple + Google + Microsoft).
+We are pivoting away from the Safari extension + native macOS app + provider platform. Inspiration: Sean Oliver's solstice (a Chrome MV3 new-tab extension, https://github.com/seanoliver/solstice). We keep solstice's spirit (one extension, settings in local storage, no server) but go further on features and target Chrome.
 
-Visual redesign (dashboard, unblocked, build first):
-- [x] R1 Theme palette: primary, secondary, 3 accents (+ existing font). Update the 3 themes, css vars, schema, tests.
-- [x] R2 City hero row: New York, Lisbon, Singapore, Tokyo, Sydney. Per city: skyline outline in faint accent, big bold time + current weather in the foreground, card background gradient reflecting the live daylight state (solar-elevation calc, deterministic). Per-city weather via Open-Meteo.
-- [x] R3 24-hour overlap timeline: a 24h line per city marking working hours + the current-time cursor, to eyeball a shared meeting window.
-- [x] R4 Layout: 1/3-1/3-1/3 columns. Col1 Calendar then Reminders; Col2 Notion recent docs; Col3 Linear inbox.
+Decisions locked:
+- **Full pivot.** Drop `native/` (Swift app + Safari extension) and `core/` (SwiftPM). The pre-pivot state is preserved at git tag `archive/safari-platform-2026-06-23` and the old plan at `tasks/archive/safari-platform-todo.md`.
+- **Reuse the tested TS core, keep the build.** Rather than rewrite vanilla like solstice, wrap the existing `dashboard/src/` logic (time engine, weather, themes, security, render helpers) in a Chrome MV3 shell built with Vite.
+- **Notion auth = pasted integration token.** No OAuth broker for now. The user creates a Notion internal integration and pastes the token. Secrets live in `chrome.storage.local`, never synced.
 
-OAuth + data layer (user-gated on console setup):
-- [ ] O1 Hosted token broker (Cloudflare Worker): holds Google/Microsoft/Notion/Linear secrets, does the code-for-token exchange + refresh; app stores only user tokens in Keychain.
-- [ ] O2 Native OAuth flow (loopback redirect -> broker), Keychain storage, no token into the container.
-- [ ] O3 Providers publishing display-only feeds: Google Calendar, Microsoft Calendar, Notion recent docs, Linear inbox, Apple Reminders (EventKit). Multi-calendar "Add Calendar".
-- [ ] O4 Provider setup doc: exact console steps (redirect URIs, scopes) for reusing each existing OAuth app.
+What we keep from `dashboard/src/`:
+- `time/clock.ts`, `time/solar.ts`, `time/overlap.ts` (timezone + day/night + meeting-overlap math)
+- `weather/openMeteo.ts` (per-zone weather, optional)
+- `theme/*` (mineral, aurora, paper, mono token themes + registry)
+- `security/*` and `render/helpers.ts` (text-only render, URL validation, host allowlist, CSP)
+- `cities/cities.ts` (seed zones + skylines), `test/factories.ts`
+
+What we repurpose:
+- `shell/header.ts` -> the centered home-zone clock
+- `shell/cityRow.ts` -> the row of other timezones
+- `shell/overlapTimeline.ts` -> optional, can live inside a work stream
+- `shell/dashboard.ts` -> the new new-tab composition
+
+What we remove:
+- `bridge/native.ts` (native messaging) -> replaced by a `chrome.storage` settings bridge
+- `native/`, `core/`, `scripts/release.sh`, `native/scripts/embed-dashboard.sh`
+- Provider-platform code paths (ingest, SDK, consent) and the cards' `needs_auth/reconnect` flow tied to native providers
+
+## The new-tab page (target composition, top to bottom)
+
+1. **Background wallpaper** — full bleed, Unsplash by search terms, with a readability scrim.
+2. **Centered home clock** — big current local time + date + day/night phase for the home timezone, prominent in the center.
+3. **Timezone row** — a simple horizontal row of the other zones beneath the home clock; each compact card shows time, UTC offset, day/night tint, optional weather.
+4. **Dock** — a centered row of icon-sized favicons for customizable links, macOS-dock style with a subtle magnification on hover.
+5. **Work streams** — collapsible titled sections (chevron, collapsed by default). Static for the MVP; designed so an integration feed (Notion first) plugs in as a stream's content.
+6. **Edit pane** — one drawer to configure zones, dock links, streams, wallpaper terms, theme, and integrations.
+
+Settings model: `chrome.storage.sync` for non-secret config (zones, links, streams, wallpaper terms, theme); `chrome.storage.local` for secrets (Notion token, Unsplash access key). First paint repaints instantly from cached config, then live data fills in.
 
 ## Gates applied to every task
 
-- Tests written before implementation (TDD).
-- `npm test` green, `npm run lint` clean, `npm run build` succeeds for web work.
-- For Swift work: `swift build` and `swift test` green, SwiftLint clean.
-- No `any`, no swallowed errors, feed text rendered as text not HTML, action URLs validated.
-- First paint budget respected for dashboard work.
+- Tests written before implementation (TDD). `npm test` green, `npm run lint` clean, `npm run build` succeeds.
+- No `any`, no swallowed errors. Feed/integration text rendered as text, not HTML. Link/action URLs validated against the host allowlist.
+- Secrets never written to `chrome.storage.sync`. First-paint budget respected.
+- Respect `prefers-reduced-motion` for dock magnification and any wallpaper/transition motion.
 
 ---
 
-## Phase 1: dashboard, static and test-driven
+## Phase 0: pivot and scaffold
 
-Foundation, no native code. Renders the widget vocabulary and the first theme against mock data.
+- [x] P0.1 Strip native: removed `native/`, `core/`, `packages/`, `examples/`, `scripts/`, `.doppler.yaml`. Archive tag created.
+- [x] P0.2 Chrome MV3 manifest: `chrome_url_overrides.newtab`, no service worker (page does its own storage + fetch), `host_permissions` for notion/unsplash/open-meteo/favicons. CSP single-sourced from `security/csp.ts` (manifest-match test).
+- [x] P0.3 Settings bridge: `ConfigStore` over `chrome.storage` (sync config, local secrets), Zod schema, with localStorage + in-memory adapters for dev/tests. Native-messaging deleted.
+- [x] P0.4 Build + dev harness: Vite builds an unpacked MV3 extension to `dist-extension/` (newtab.html + manifest assembled by `finish-extension.mjs`). Dev page runs against localStorage. Verified load + green build.
+- [x] P0.5 Recompose the shell: new layout (wallpaper slot, centered home clock, zone row, dock/stream slots, edit button). 3-column provider grid removed; dead provider modules swept. Integration tests + live screenshot.
 
-- [x] P1.1 Scaffold `dashboard/`: npm, strict TS, Vite, Vitest, jsdom, Testing Library DOM, ESLint, Zod. Scripts: test, lint, build, dev.
-- [x] P1.2 Core domain types and Zod schemas: FeedEnvelope, Status, Glance, Card, Action, and the Widget union (metric, list, table, chart, timeline, progress, text). Validation tests with factory functions.
-- [x] P1.3 Convenience-kind schemas and mappers to cards/widgets: calendar.today, reminders.today, linear.inbox, docs.recent. Tests.
-- [x] P1.4 Time engine: world-clock current time, day/night, date offset, timeline overlap, all with injectable now. Pure, deterministic tests.
-- [x] P1.5 Weather client: Open-Meteo fetch and parse, injected-fetch behavior tests.
-- [x] P1.6 Dashboard composition: from a getDashboard payload, compose ordered cards and resolve states ok, stale, needs_auth, error, absent. Tests.
-- [x] P1.7 Attention and layout model, basic: ordering and glance-versus-full decisions. Tests.
-- [x] P1.8 Security utilities: text-only rendering helper, action URL validation against host allowlist, CSP string. Tests cover injection attempts.
-- [x] P1.9 Default widget renderers, vanilla DOM into a host node, one per widget type. Testing Library behavior tests.
-- [x] P1.10 Theme token layer and the first theme tokens (Aurora). Token application. Tests.
-- [x] P1.11 Dashboard shell: header with time, date, greeting; responsive grid; instant paint from cache; all card states. Integration tests.
-- [x] P1.12 Mock native bridge and mock feed fixtures for local dev and the demo page.
-- [x] P1.13 Performance pass: bundle budget check, reduced-motion support, first-paint measurement harness.
-- [x] P1.14 Phase 1 demo: index.html renders the full dashboard from mocks. Verified with a live screenshot.
+## Phase 1: timezones (centered home + row)
 
-## Phase 2: native shell and the bridge
+- [x] P1.1 Zone settings schema: `{ id, label, timeZone, lat?, lon?, isHome }` + `homeZone`/`otherZones` selectors, seeded from `cities/cities.ts`. Tests.
+- [x] P1.2 Centered home clock: big local time + date + phase for the home zone, minute ticker, reuses `time/clock.ts` + `time/solar.ts`. Tests with injected `now`.
+- [x] P1.3 Timezone row: compact cards for non-home zones with time, offset-from-home, day-offset badge, day/night tint. Tests.
+- [x] P1.4 Per-zone weather via `weather/openMeteo.ts` (zones with coords), fetched after first paint, repaints. Injected-fetch tests.
+- [ ] P1.5 Edit pane (zones): add/remove/reorder zones, set the home zone, city search with free geocode fallback (solstice-style). Tests on the edit interactions and persistence.
 
-Decision: Developer ID distribution, non-sandboxed (see lessons). Build/test logic unsigned; signing and notarization wait for the release task and the user's certificate. Lead with the distribution-agnostic SwiftPM core, which needs no signing.
+## Phase 2: dock-style links
 
-- [x] P2.0 SwiftPM core package `CommandCenterCore`: Codable manifest/feed models mirroring the TS contract (feed `data` kept as opaque JSONValue and forwarded; the dashboard stays the single widget validator), feed-envelope decoding with schemaVersion + glance guard, and provider-installed detection via NSWorkspace (injectable for tests). `swift test`. Distribution-agnostic, no signing.
-- [x] P2.2 FeedStore directory scanner in CommandCenterCore: given an injected container base URL, list Providers/<id>/manifest.json, decode each manifest and its feeds, drop unreadable feeds, filter to installed providers, and compose a DashboardData-like result. Signing-free; swift-test with temp directories. (Moved before Xcode scaffolding so it needs no Team ID.)
-- [x] P2.1 Scaffold `app/` and `extension/` with XcodeGen project.yml, Developer ID entitlements (App Group, ubiquity-kvstore, no sandbox), Info.plist, referencing CommandCenterCore. Structure verified: unsigned build assembles CommandCenter.app with the embedded extension and resources. Team ID DEVELOPMENT_TEAM = 955GSY56UT.
-- [ ] P2.1b Signed build / capability registration (USER-BLOCKED). Signed build fails: the provisioning profile lacks the iCloud capability and the ubiquity-kvstore entitlement. Resolve by either registering iCloud (KVS) + App Group capabilities for App IDs com.strategicnerds.commandcenter and .Extension in the Apple Developer account, or deferring iCloud settings sync (remove the ubiquity-kvstore entitlement, keep the App Group). Awaiting the user's choice. (see lessons; Developer ID cert in keychain). Author the project, `xcodegen generate`, and attempt `xcodebuild` of the app + extension. If the App Group entitlement or signing blocks a local build (e.g. App Group not registered to the team, or codesign fails), STOP and report the exact error rather than guessing.
-- [x] P2.3 SafariWebExtensionHandler getDashboard and getSettings, composing providers plus settings.
-- [ ] P2.4 Swap dashboard from mock JSON to sendNativeMessage, with graceful fallback.
-- [x] P2.5 commandcenter:// URL scheme, Router, host-allowlist validation, browser routing reusing MeetAppType.
-- [x] P2.6a Settings writer (core): a SettingsStore that atomically writes/reads CommandCenter/settings.json in an injected container URL, plus a defaultSettingsDocument. Round-trip tested with temp dirs; FeedStore.loadSettings reads what it writes. Defer iCloud KVS sync (entitlement unregistered, P2.1b).
-- [x] P2.6b Settings UI (app): the menu-bar popover + settings window in SwiftUI, MATCHING Sync Bar / Meeting Notifier. Port their design system (AppRadius/AppSpacing, ThemePalette, AppTheme + ThemeStore, DesignComponents, MenuBarPopover/SettingsView styling) into the CommandCenter app target; read those files first. Compile-verify via unsigned xcodebuild.
-- [x] P2.7 Apple EventKit provider, publishing calendar.today (reminders.today can reuse the same FeedPublisher later).
-- [ ] P2.8 Safari extension manifest with newtab override, minimal background, CSP. Cold-start test.
+- [ ] P2.1 Link settings schema: `{ id, title, url, iconUrl? }` with URL validation via `security/url.ts`. Tests.
+- [ ] P2.2 Favicon resolution: resolve a site favicon (Google s2 service or per-site), with a cached fallback glyph. Tests on resolution + fallback.
+- [ ] P2.3 Dock render: a centered row of icon-sized favicons.
+- [ ] P2.4 Magnification: macOS-dock hover effect (scale by pointer proximity), gated behind `prefers-reduced-motion`. Behavior + reduced-motion tests.
+- [ ] P2.5 Edit pane (dock): add/edit/remove/reorder links, optional custom icon. Persistence tests.
 
-## Phase 3: first real provider
+## Phase 3: collapsible work streams
 
-- [ ] P3.1 Add App Group entitlement to Linear Bar.
-- [ ] P3.2 FeedPublisher in Linear Bar, publish linear.inbox with honest status. Tests.
-- [ ] P3.3 Verify live inbox renders, absence hides the card, needs_auth prompts reconnect.
+- [ ] P3.1 Stream settings schema: `{ id, title, collapsedByDefault, content }` where `content` is a discriminated union (start with `static`/`links`, leave room for `integration`). Tests.
+- [ ] P3.2 Stream UI: titled section with a chevron, collapsed by default, expand state persisted per stream. Reuse `render/helpers.ts`. Tests.
+- [ ] P3.3 Edit pane (streams): add/rename/remove/reorder streams, toggle collapsed default. Persistence tests.
+- [ ] P3.4 (Optional) host the 24h overlap timeline (`overlapTimeline.ts`) as a built-in stream type.
 
-## Phase 4: schedule provider
+## Phase 4: Unsplash wallpaper
 
-- [ ] P4.1 App Group and FeedPublisher in Meeting Notifier, publish calendar.today.
-- [ ] P4.2 Join routing decision and wiring.
+- [ ] P4.1 Unsplash client: search by terms via the official API (access key required; `source.unsplash.com` is deprecated), pick deterministically from results, honor required attribution + download trigger. Injected-fetch tests.
+- [ ] P4.2 Wallpaper render: full-bleed background with a readability scrim so foreground stays legible across themes. Cache the chosen image; rotate per day (or per tab). Tests.
+- [ ] P4.3 Edit pane (wallpaper): comma-separated search terms (e.g. "San Francisco, Lisbon, Puppies"), refresh, scrim/opacity control, and a field for the Unsplash access key (stored in `chrome.storage.local`). Persistence tests.
 
-## Phase 5: open provider platform
+## Phase 5: integration platform (lean) + Notion first
 
-- [x] P5.4d FeedStore multi-root discovery: scan the App Group container AND the well-known Application Support dir (file-drop), dedupe by providerId (earlier root wins), via a MultiRootFeedStore composed on FeedStore + a ProviderSource protocol. Wire the extension handler to both roots. Update docs/12/03.
-- [x] P5.5 Providers consent screen (app UI): list registrations (RegistrationStore), approve (IngestHandler.approve -> show token for delivery)/deny/revoke, status. Match the suite theme via the ported ThemeStore. Compile-verify unsigned.
+- [ ] P5.1 Integration interface + registry: `{ id, configSchema (Zod), fetch(config, deps) -> NormalizedItem[], renderHints? }`. A `NormalizedItem` is text-only and URL-validated. Registry + tests with a fake integration.
+- [ ] P5.2 Notion client: query a database with the pasted integration token (token in `chrome.storage.local`), correct `Notion-Version` header, via `host_permissions`. Normalize rows -> items. Injected-fetch tests, including error/`needs_token` states.
+- [ ] P5.3 Notion filters: configurable property filters + sort, passed through to the query. Tests on filter -> query mapping.
+- [ ] P5.4 Wire Notion as a stream `content: integration` type: a stream renders its integration's items (collapsed by default). Tests.
+- [ ] P5.5 Edit pane (Notion): paste token, pick database, configure filters, attach to a stream. Document the token-in-extension-storage tradeoff. Persistence tests.
 
-- [x] P5.2a Ingest core logic (CommandCenterCore, testable): capability-token issuance/validation/revocation, a registration model (pending consent -> approved), and an IngestHandler that processes typed ingest requests (register, publish, revoke) — validating tokens and writing feeds via FeedPublisher into an injected container. Security tests: publish without a valid token refused, revoked token stops working, registration needs consent. Identity = loopback + consent tokens (lessons).
-- [x] P5.1 Local ingest endpoint TRANSPORT (app, thin): loopback NWListener HTTP + WebSocket wired to the IngestHandler, default port + Bonjour discovery. Compile-verify unsigned; do not bind real ports in unit tests.
-- [x] P5.3 CommandCenterKit SDK: register, publish, two transports (file-drop + endpoint), token storage. Tests. (openStream/live-publish deferred to a later iteration.)
-- [ ] P5.4 Full widget vocabulary including charts and tables in renderers.
-- [ ] P5.5 Providers screen: approval, status, revocation.
-- [x] P5.6 Sample provider app and public protocol docs.
+## Phase 6: edit pane unification + polish
 
-## Phase 6: open presentation layer
+- [ ] P6.1 Unify the edit pane into one drawer with sections (Timezones, Dock, Streams, Wallpaper, Integrations, Theme), each reusing the per-phase editors. Drag-reorder where it applies.
+- [ ] P6.2 Theme selection in the edit pane (mineral/aurora/paper/mono already exist). Tests.
+- [ ] P6.3 Config import/export (JSON), excluding secrets. Tests.
+- [ ] P6.4 Empty states + first-run onboarding (seed zones, a couple of dock links, a sample stream). Tests.
+- [ ] P6.5 Accessibility + reduced-motion full pass; keyboard nav for the edit pane and dock.
 
-- [x] P6.2 Ship Aurora, Paper, Mono (token themes) + registry + settings-driven selection.
-- [x] P6.1 Render-theme tier (custom JS renderers, shadow-root isolation). First-party render themes; third-party untrusted render themes gated behind an iframe/worker sandbox (future, needs user security review).
-- [ ] P6.3 Theme guideline and a sample theme of each tier.
+## Phase 7: ship
 
-## Phase 7: polish and ship
-
-- [ ] P7.1 Onboarding: enable extension, show detected providers.
-- [ ] P7.2 Background image and quote option, reminders card.
-- [ ] P7.3 Accessibility and reduced-motion full pass.
-- [ ] P7.4 Cold-start service-worker testing on target Safari.
-- [ ] P7.5 Developer ID signing, notarization, Sparkle, release pipeline.
+- [ ] P7.1 Package the unpacked extension; produce a zip for Chrome Web Store (or document load-unpacked for personal use).
+- [ ] P7.2 Icons, store listing copy, screenshots.
+- [ ] P7.3 README: install, configure (Notion + Unsplash keys), architecture overview. Reconcile/trim `docs/` to the Chrome reality; archive Safari/native/platform docs.
 
 ---
 
 ## Standing quality mandate
 
-Every iteration: keep the architecture impeccable, not just green. Before marking a task done, refactor what you touched (no duplication, no dead code, single source of truth, honest docs). Periodically re-audit. The full tech-debt audit (below) set the baseline; do not regress it.
-
-## Tech-debt audit (2026-06-14) — completed
-
-Three parallel specialist audits (dashboard TS, Swift, cross-language contract). Verdict: architecture healthy (no God classes, no oversized files, clean boundaries, provider-declares/theme-renders enforced in code). Fixed:
-- DEFECTS: openProvider/reconnect silent no-op (now resolves providerId -> installed app and launches it); FeedStore traversal guard now resolves symlinks (+ test); feed image URLs validated (https-only) before render; settings/calendar write failures logged not swallowed.
-- SINGLE SOURCE: meeting-host list unified into MeetingHosts (was duplicated across Routing + CalendarFeed); shared ISO8601 formatter; shared path-safety helper used by FeedStore + FeedPublisher; shared Swift test support (removed 5 duplicated locators + temp-dir helpers); shared firstIssue() zod-error helper at all 5 TS parse sites.
-- DEAD CODE: removed textEl, tokensToCssText, formatBytes/isWithinBudget/BUNDLE_GZIP_BUDGET_BYTES (+ tests); SizeSchema now used in CardSchema.
-- PARITY: Swift feed decoding tightened to TS (positive version, non-empty providerId/kind); JSONValue Sendable; EventKit I/O moved off the main thread; browserRouting added to the TS settings schema; table cells routed through setText.
-- DOCS: reconciled the scheme-vs-host validation split, openProvider behavior, unimplemented transports, planned reminders producer and settings write-back, and series colorHex-vs-hints.
-- Verified: 51 swift tests, 142 dashboard tests, lint, unsigned native build, bundle size — all green.
-
-Remaining MINOR/deferred (non-blocking, by design): accountEmail optional field unused by the Apple provider (privacy stance prefers names+counts — consider dropping); manifest schemaVersion not version-guarded (feed envelope is); deriveAllowedSchemes can widen the scheme set from a manifest (documented trust boundary, native re-validates host); JSONValue decodes numbers as Double (no large-int feed fields today).
-
-## Review log
-
-### Iteration 22 (P5.2a)
-
-Shipped: the ingest core in CommandCenterCore. ProviderRegistration + RegistrationStore persist provider registrations (consent state pending/approved/denied) to CommandCenter/registrations.json, surviving restarts. IngestHandler processes register (idempotent, starts pending), approve (issues a capability token ONCE, persists only its SHA-256 hash, writes the manifest), deny, revoke, and publish (writes the feed via FeedPublisher only for an approved provider with a matching token). Tokens are secrets: only the hash is stored, comparison is constant-time, and values are never logged. Quality: factored the encode+atomic-write pattern into writeJSONAtomically, now used by FeedPublisher, SettingsStore, and RegistrationStore (removed 3-way duplication).
-
-Verified: 9 new swift tests (60 total) green: pending start, idempotent register, publish refused before approval / with wrong token / for unknown / revoked / denied providers, approved publish writes a FeedStore-readable feed, and a restart test asserting the token still works AND the raw token never appears in the persisted file. Changed publish to return IngestError? (Void Result is not Equatable). Unsigned native build + dashboard gates green.
-
-Next: P5.1 the loopback NWListener transport (thin, wired to IngestHandler), then the CommandCenterKit SDK. Possible later hardening noted: move token hashes to the Keychain rather than the container file.
-
-### Iteration 23 (P5.1)
-
-Shipped: the ingest transport, split wire-protocol (pure) from socket (thin). In CommandCenterCore: IngestRequest (register/publish, typed Codable enum that throws on unknown type), IngestResponse, and handleIngestMessage(Data, using: IngestHandler) -> Data that decodes, dispatches, and encodes a response (registered+status / accepted / refused-with-code); IngestError gained a stable wire code. In the app target: IngestEndpoint, an NWListener on 127.0.0.1 (loopback-only) with 4-byte length-prefixed framing, a 1 MB cap, and per-connection receive->handle->send->close; started at launch only when the App Group container exists (inert in unsigned dev, not dead code). Tokens are never echoed in a response.
-
-Verified: 6 new swift tests (66 total): register->pending, malformed->invalid_request, unknown type refused, publish-before-approval->not_approved, approved publish over the protocol writes a FeedStore-readable feed, and a response never echoes a token. Unsigned native build (NWListener compiles) + dashboard green.
-
-Next: P5.3 CommandCenterKit SDK (a separate SwiftPM package: register/publish/openStream, transport auto-select file-drop vs endpoint, token storage in Keychain), then P5.5 providers screen (approve/deny/revoke + token delivery UX). Self-review for new debt is due around now per the mandate.
-
-### Iteration 24 (P5.3)
-
-Shipped: the CommandCenterKit SwiftPM package (packages/CommandCenterKit), a path dependency on CommandCenterCore so it reuses JSONValue, IngestRequest/Response, and FeedPublisher (single source of truth, no duplication). Public API CommandCenter(providerId:displayName:bundleId:transport:) with register(manifest:) and publish(_:to:); one IngestTransport protocol with two implementations: FileDropTransport (writes via the core FeedPublisher into the well-known dir, for Developer ID apps) and EndpointTransport (encodes IngestRequest, sends via an injected IngestSocketClient, reads the token from an injected TokenStore). Thin concrete pieces: LoopbackSocketClient (NWConnection, length-framed, async) and KeychainTokenStore (SecItem), plus InMemoryTokenStore for tests. Token is a secret: Keychain-stored, never logged. Made IngestResponse's init public so SDK consumers can construct responses.
-
-Verified: 6 Kit swift tests (file-drop register+publish -> FeedStore-readable provider; endpoint encodes the right register/publish request incl. the stored token; publish without a token throws notApproved; a refused response surfaces). Core 66 + unsigned native build + dashboard all green.
-
-Next: P5.5 providers screen (approve/deny/revoke + token-delivery UX, matching the suite theme) and the second discovery root (FeedStore scanning the well-known dir). openStream/live WebSocket publishing also deferred.
-
-### Iteration 25 (P5.4d)
-
-Shipped: multi-root provider discovery. ProviderSource protocol (FeedStore and MultiRootFeedStore both conform); MultiRootFeedStore composes per-root FeedStores, unions providers, dedupes by providerId with earlier roots winning, and takes settings from the first root that has them. DashboardComposer now takes a ProviderSource (was a concrete FeedStore). The well-known directory path moved to CommandCenterContainer.wellKnownDirectoryURL as the single source (the SDK's FileDropTransport now delegates to it). The extension handler discovers across both roots (App Group first, then the well-known dir). Docs 12 and 03 updated: Transport 1 (file-drop) and Transport 2 (endpoint) are now implemented; discovery spans two roots.
-
-Verified: 3 new core swift tests (69 total): unions providers across roots, earlier-root-wins on a providerId collision, settings from the first root that has them. Kit 6, unsigned native build, dashboard all green.
-
-Next: P5.5 the providers consent screen UI (approve/deny/revoke + token delivery), matching the suite theme.
-
-### Iteration 26 (P5.5)
-
-Shipped: the providers consent screen. Pure core: ProviderRow + providerRows(from:) maps registrations to sorted display rows (tested). App: ProvidersModel (loads rows from RegistrationStore, routes Approve/Deny/Revoke to IngestHandler, holds the one-time token in memory only) and ProvidersCard, a themed SwiftUI card added to SettingsView listing each app with its consent state and actions, plus a token-delivery row after approval (monospaced, copy to pasteboard, shown once, never persisted/logged). Quality: extracted AppContainer.url() as the single dev/App-Group container resolver, and refactored AppSettings to use it (removed the duplicated fallback logic).
-
-Verified: 2 new core swift tests (71 total): mapping sorts case-insensitively and carries consent/ids. Kit 6, unsigned native build, dashboard green. Fixed a try?-flattening double-bind (logged).
-
-The open platform is now functionally complete end to end (unsigned): a third-party app uses CommandCenterKit to register/publish (file-drop or endpoint), the user approves it here and delivers the token, and the dashboard discovers and renders the feed across both roots. Remaining Phase 5: openStream/live WebSocket publishing (deferred). Phase 6 (themes for the dashboard) and Phase 7 (ship) remain, plus the signed/Safari and other-app tasks that need the user.
-
-### Iteration 27 (P6.2)
-
-Shipped: the dashboard's token themes. Added Paper (light editorial serif) and Mono (dense monospaced) alongside Aurora, a theme registry (SHIPPED_THEMES, DEFAULT_THEME, themeById(id, fallback)), and settings-driven selection: renderDashboard now resolves the theme from settings.appearance.theme (a themeId) and applies it, defaulting to Aurora; added appearance.theme to the settings schema. The dashboard's web themes stay separate from the native app themes.
-
-Verified: 6 new dashboard tests (148 total): each shipped theme validates against ThemeTokensSchema with a unique id, registry lookup + fallback, and an integration test that settings.appearance.theme = mono applies mono's bg var to the root. Lint, build, size all green.
-
-Self-review done (was due): the Phase 5 + theme code is clean; the real duplications were already factored as I went (writeJSONAtomically, hexString, AppContainer, MeetingHosts, ProviderSource, the well-known path). No new debt.
-
-NOTE on the render-theme tier (P6.1): deferred for the user's review. It executes third-party JavaScript in the new tab page; its security guarantees (shadow-root isolation, no-network theme CSP) cannot be fully verified in jsdom and warrant the user weighing in on the security model before building. Token themes already deliver the user-facing theming.
-
-Next: P5.6 a sample provider using CommandCenterKit + a public "build a provider" doc (fully verifiable, showcases the platform).
-
-### Iteration 28 (P5.6) — autonomous backlog exhausted; loop paused for the user
-
-Shipped: examples/sample-provider, a SwiftPM package (library + executable + tests) depending on CommandCenterKit and CommandCenterCore. SampleProvider builds a DeployBot manifest + a metric-card feed (sub-expression JSON to keep the type checker fast) and publishes via CommandCenter + FileDropTransport. The executable takes an optional output dir (default the well-known dir). Plus docs/15-building-a-provider.md (accurate to the SDK API: register/publish, file-drop vs endpoint, the consent/token flow, the glance + display-data-only rules), linked from docs/README.
-
-Verified: sample package builds (incl. executable) and 2 tests pass (publish -> FeedStore-readable provider; feed decodes as a valid envelope). RAN the executable against a temp dir: it wrote Providers/com.example.deploybot/{manifest,deploys}.json. Full sweep green: core 71, Kit 6, sample 2, dashboard 148, unsigned native build.
-
-LOOP PAUSED. The cleanly-autonomous, unsigned, this-repo backlog is exhausted. Everything remaining needs the user:
-- Signing + capability registration -> run in Safari, finish P2.4 (native-messaging swap) + P2.8 (manifest cold-start). Needs iCloud/App Group capabilities on the Apple account (or -allowProvisioningUpdates approval).
-- Phase 3-4: make Linear Bar + Meeting Notifier publish feeds (modifies the other apps).
-- Phase 7: release pipeline (notarization, fresh Sparkle key, R2).
-Deferred for a user decision: the render-theme tier (P6.1, executes third-party JS; security can't be fully verified in jsdom) and openStream/live WebSocket publishing (optional).
-
-### Iteration 29 (P6.1) — render-theme tier (first-party)
-
-User chose to build the render-theme tier. Shipped the verifiable first-party core: a RenderThemeRenderers type (per-widget-type WidgetRenderer), an optional `renderers` on Theme and `themeRenderers` on RenderContext, and renderWidget dispatch that, when the active theme provides a renderer for a widget type, renders it into an isolated SHADOW ROOT (DOM/style isolation; --cc-* tokens still pierce). Theme renderers receive only display data + the validated context (format time, invokeAction) — no feeds, no tokens, no direct URL opening. Threaded the active theme's renderers through renderDashboard -> card -> ctx. Updated docs/14 with an honest implementation status.
-
-Security boundary (told the user up front): this is for FIRST-PARTY (trusted) render themes. The connect-src 'none' no-network guarantee and a true JS sandbox for UNTRUSTED third-party render themes need a sandboxed iframe/worker — NOT built, gated, pending the user's security review. Token tier remains the safe default for outside contributors.
-
-Verified: 3 new dashboard tests (151 total): themed widget renders into a shadow root and is isolated from the light DOM; falls back to the platform renderer when the theme lacks one; a theme renderer can only invoke actions through the validated context. Lint, build, size green.
-
-Remaining unsigned/optional: openStream/live WebSocket publishing, and the third-party render-theme sandbox (needs user security review). Everything else (signed/Safari, Phase 3-4 other apps, Phase 7 ship) needs the user.
-
-### Iteration 30 (tech-debt audit) — duplication swept into shared libraries
-
-A 3-agent duplication audit (Swift, TS, library boundaries) confirmed the codebase is well-factored; it found one HIGH bug and a handful of small dedups, all now fixed:
-
-- HIGH (a real bug, not just duplication): the 4-byte length-prefix wire framing was implemented twice and had drifted. IngestEndpoint capped reads at 1 MB; LoopbackSocketClient had NO bound (unbounded-read risk). Extracted `IngestWire` in core (single source for defaultPort, loopbackHost, maxMessageBytes, frame(), and a bounded decodeLength()), and refactored both transports onto it. Both ends now share one codec and one cap.
-- MEDIUM: container resolution was inconsistent in unsigned dev. AppSettings/ProvidersModel used AppContainer.url() (dev fallback) while RouteHandler/EventKitCalendarProvider used CommandCenterContainer.url() (nil unsigned -> silent no-op). Funneled the latter two through AppContainer.url(). Added `CommandCenterContainer.applicationSupportBaseURL()` as the single source for the App Support base path (well-known dir + dev fallback both derive from it).
-- Dedups: a public `AllInstalledProviderLocator` in core replaces three private always-true copies across the test targets; a shared `host()` test helper in dashboard/src/test/dom.ts replaces seven identical copies; a `makeActionable(node, action, ctx)` helper in render/helpers.ts replaces the repeated action-wiring block in list.ts and timeline.ts. Added cross-language "keep in sync" comments tying the TS MeetingSchema platform enum to the Swift MeetingPlatform.
-
-Verified: full sweep green after every change. Core 75 tests (+ new IngestWire round-trip/bounds tests), Kit 6, sample 2, dashboard 151 + lint + build + size (22.9 KB gzip, budget 90), unsigned native xcodebuild SUCCEEDED. No behavior changed; the unbounded-read path is now closed.
-
-### Iteration 31 (P2.4 + P2.8) — dashboard renders in a Safari new tab
-
-Wired the two pieces that were blocking the new-tab loop, so the dashboard now actually renders inside the Safari extension (mock data while unsigned).
-
-- P2.4 native bridge: `src/bridge/native.ts` — `createNativeBridge` sends `{type:"getDashboard"}` via `browser/chrome.runtime.sendNativeMessage` (the exact message the existing SafariWebExtensionHandler switches on) and returns the unknown payload for downstream validation; `getExtensionRuntime` detects the extension runtime (injectable scope for tests). main.ts now `selectBridge()`s: a `VITE_BRIDGE=mock` build forces fixtures; otherwise native inside the extension, mock in plain-browser dev. No token ever crosses this bridge.
-- P2.8 bundle into the extension: a separate `vite.extension.config.ts` (relative base, flat unhashed assets, no sourcemap, output to dist-extension) keeps the gated default build untouched. `scripts/copy-extension.mjs` syncs the bundle into the appex Resources (index.html -> newtab.html; flat index.js/index.css beside it), preserving the hand-authored manifest.json + background.js. New npm scripts: `build:extension` (native bridge, for the signed path) and `build:extension:demo` (mock, for the unsigned visual test). Added open-meteo to manifest host_permissions so weather loads on the extension page.
-
-Verified: dashboard 154 tests (+3 native-bridge), lint, default build + size (23.0 KB gzip) all green. Generated the demo bundle and confirmed it lands in the built `.appex` Resources (index.js/css + newtab.html with relative `./` refs, CSP preserved). xcodegen + unsigned xcodebuild SUCCEEDED.
-
-To see it: build `CommandCenter.app` in Xcode and run; Safari > Settings > Extensions, enable "Allow unsigned extensions" via the Develop menu, toggle Command Center on; a new tab renders the full dashboard against the mock fixtures. Live calendar data still needs signing (App Group) plus a plain `build:extension` (native bridge); the unsigned demo path is mock-only by design.
-
-### Iteration 32 (auto-embed + release.sh) — the dashboard builds itself into the app, and a release pipeline
-
-Two things: the new tab page now regenerates on every native build, and there is a SyncBar-style release script (no Sparkle yet).
-
-- Auto-embed: the dashboard bundle moved to `Resources/app/`, a folder reference in the Xcode project, so whatever is there at build time is bundled and signed. A pre-build Run Script phase (`native/scripts/embed-dashboard.sh`) regenerates it before Copy Resources, choosing the bridge by configuration: Release -> `build:extension` (native handler), Debug -> `build:extension:demo` (mock, so unsigned dev shows data). The script resolves node via Homebrew or nvm (Xcode's minimal PATH) and `npm ci`s on a clean checkout. The generated files are gitignored (only `app/.gitkeep` is tracked); the hand-authored manifest.json + background.js stay put, manifest's newtab now points to `app/newtab.html`. Removed the previously committed generated artifacts.
-- release.sh: mirrors SyncBar's pipeline adapted to the native/ subdir, with Sparkle intentionally omitted. `scripts/release.sh` bumps the version in native/project.yml, regenerates, archives + exports a Developer ID app, notarizes + staples it, builds + notarizes + staples a DMG via `scripts/build-dmg.sh`, and uploads it (versioned + latest alias) to R2 via Doppler creds. Plus `export-options.plist` (developer-id, team 955GSY56UT) and `scripts/README.md`. No appcast, no update signature.
-
-Verified: a clean build (app/ holding only .gitkeep, dist-extension deleted) ran the pre-build phase, regenerated the bundle, and the folder reference placed `app/{newtab.html,index.js,index.css}` into the built .appex with manifest pointing at `app/newtab.html` and relative refs intact. Unsigned native xcodebuild SUCCEEDED. Dashboard 154 tests + lint green. release.sh / build-dmg.sh / embed-dashboard.sh pass `bash -n`. release.sh is authored, not run: it needs signing + notary + Doppler/R2, which are the user's to drive.
-
-Next (user-gated): enable App Groups + iCloud KVS on the App ID, run release.sh for a real notarized DMG. Then the live-data Safari loop (signed App Group). Sparkle/auto-update can be added later.
-
-### Iteration 33 (R1 + R2) — dashboard redesign: palette + city hero row
-
-Shipped the loud-complaint fix: a real hero row replacing the placeholder weather/world-clock rail.
-- R1 theme palette: added primary, secondary, accent1/2/3 to the token schema and css vars (--cc-color-primary/secondary/accent-1..3); filled them for Aurora, Paper, Mono. Existing tokens untouched.
-- R2 city hero row: cities.ts (New York, Lisbon, Singapore, Tokyo, Sydney with tz, lat/lon, working hours, a stylized stroked-skyline SVG path); solar.ts (deterministic solar-elevation -> day/dawn/dusk/night, no network); cityRow.ts renders each city as a card with the skyline outline (faint accent), big bold time in the theme font, current weather, and a daylight-state background gradient built from the theme accents via color-mix. run.ts now fetches Open-Meteo weather per city (parallel) and fills it in progressively; daylight paints instantly from the solar calc. Removed the now-dead weather.ts/worldclock.ts shell components.
-
-Verified: 157 dashboard tests green (added solar + cityRow suites, updated run/dashboard suites for the new shape), lint clean, build + size (24.0 KB gzip, budget 90). Rendered the dev server headless and screenshotted it: the five cities show local time, live temps, skylines, and morning/evening daylight tints; sent the image to the user. The native pre-build phase regenerates this bundle, so it shows in the Safari new tab too.
-
-Next: R3 the 24-hour overlap timeline (working hours + current-time cursor per city), R4 the 1/3-1/3-1/3 columns (Calendar+Reminders / Notion / Linear). Then the OAuth broker + providers (O1-O4).
-
-### Iteration 34 (R3 + R4 + Mineral redesign) — the professional editorial look
-
-After a design review (the cartoon SVG look was rejected), the whole design was redrawn in Paper (the design tool) in a "mineral" direction and then implemented faithfully in code.
-
-- Mineral theme (new default): limestone ground, slate ink, a single oxidized-copper accent, rust only for overdue/at-risk. Self-hosted Archivo (via @fontsource-variable, bundled, no external/CSP dependency).
-- Hero: the five city squares now use real desaturated black-and-white skyline photos (sourced from Unsplash, greyscaled with ImageMagick, served from public/cities and bundled into the extension), with a daylight-tinted scrim, a time-of-day eyebrow (Pre-dawn..Night via a new solar phaseLabel), the local time, and weather.
-- R3 timeline: the 24h meeting-window strip (per-city working bands, the verdigris best-overlap window and now-line, axis), restyled editorial.
-- R4 columns: 1/3-1/3-1/3 with the cards rendered as editorial lists on the surface (no boxes, hairline rows) — Calendar (time pulled into a left lane) + Reminders (checkbox rows, OVERDUE in rust), Notion recent docs, Linear inbox (URGENT in rust). Brand icons (official Notion + Linear marks, drawn calendar + reminders glyphs) added to each section header, built as SVG DOM (no innerHTML).
-- Masthead restructured (eyebrow + greeting left, local time + date right), header now shows the viewer's real local time.
-
-Verified: 162 dashboard tests, lint, build, size (25.9 KB gzip, budget 90); rendered the dev server headless and confirmed it matches the Paper mock (hero photos, timeline, columns, brand icons); fixed the extension copy script for the new image subfolder + fonts and confirmed the unsigned native build bundles the full design into the .appex. User approved the Paper design before implementation.
-
-Next: the OAuth broker + providers (O1-O4) when the user is ready to wire real data.
-
-Each iteration appends a short note here: what shipped, what was verified, what is next.
-
-### Iteration 1 (P1.1, P1.2)
-
-Shipped: dashboard project scaffold (strict TS, Vite, Vitest, ESLint type-checked, Zod) and the full core domain model: primitives (Tone, Trend, Status, Glance), actions (ActionRef, ManifestAction), the seven-type widget vocabulary plus Card, and the FeedEnvelope with version-aware parsing and freshness. Strict tsconfig: noUncheckedIndexedAccess, exactOptionalPropertyTypes, no `any`.
-
-Verified: 21 tests green across feed, widgets, actions, including rejection of out-of-vocabulary widgets, missing glance, future schema versions, and bad dates. Lint and typecheck clean. Production audit 0 vulnerabilities (dev-only advisories noted).
-
-Next: P1.3 convenience-kind schemas (calendar.today, reminders.today, linear.inbox, docs.recent) and their mappers to cards and widgets, test-first.
-
-### Iteration 2 (P1.3)
-
-Shipped: convenience-kind data schemas and `cardFromFeed`, mapping calendar.today, reminders.today, linear.inbox, and docs.recent to default list cards, plus pass-through of generic `card` feeds and a skip-able error for unknown kinds. Times are kept as ISO `time` trailings so the renderer formats them, keeping mappers deterministic and i18n-correct. Meeting events get a validated join action; inbox rows get an open action; overdue reminders and urgent inbox rows get urgent badges.
-
-Verified: 12 new tests (33 total) green, covering each kind, missing required fields (start, url), empty days, malformed cards, and unknown kinds. Lint and typecheck clean.
-
-Next: P1.4 time engine (world-clock time, day/night, date offset, timeline overlap) with injectable now, pure and deterministic.
-
-### Iteration 3 (P1.4)
-
-Shipped: the time engine in src/time/clock.ts. Every function takes an explicit instant, so it is pure and deterministic and reads no system clock. Built on a single Intl.DateTimeFormat parts extractor: zonedTime, tzOffsetMinutes, relativeOffsetMinutes (the world-clock timeline alignment value), dateOffsetDays (date-line crossing), dayNight with configurable sunrise and sunset bands, formatClock, and cityClock composing the per-city view.
-
-Verified: 13 new tests (46 total) green, including a half-hour zone (Kolkata), summer-time offsets, a date-line crossing in both directions, and day/night band edges. A bad test expectation (offset arithmetic) was caught by the red test and corrected; the implementation was right. Lint and typecheck clean.
-
-Next: P1.5 weather client (Open-Meteo fetch and parse) with mocked-fetch behavior tests.
-
-### Iteration 4 (P1.5)
-
-Shipped: the Open-Meteo weather client in src/weather. fetch is injected, so it is tested with no network and no global coupling. It talks to exactly one host (no key, no token), validates the response with Zod, maps WMO codes to a condition and icon with a safe fallback, and returns a ParseResult so a bad body never yields a partial model. Network throws and non-ok statuses become error results.
-
-Verified: 9 new tests (55 total) green, covering success, host targeting, HTTP error, malformed body, network throw, and a response with no daily block. tsc caught an untyped vi.fn mock (empty-tuple call args); fixed by typing the stub parameter. Lint and typecheck clean.
-
-Next: P1.6 dashboard composition (compose ordered cards from a getDashboard payload, resolve states ok/stale/needs_auth/error/absent), test-first.
-
-### Iteration 5 (P1.6)
-
-Shipped: the getDashboard payload schemas (Manifest, ProviderEntry, Settings, DashboardPayload) and composeDashboard, which flattens providers x feeds into ordered ComposedCards. State resolution: disabled is dropped, unknown kinds are silently skipped (one bad provider cannot break the page), needs_auth and error map to their states, malformed known-kind feeds and future schema versions become error (never half-rendered), empty days become empty, and ok/stale drive a fresh flag plus ageSeconds for the "updated Nm ago" note. Ordering honors settings.layout.cardOrder with a stable index tiebreak and drops hidden entries. No fetching, no tokens; composition only shapes finished feeds.
-
-Verified: 13 new tests (68 total) green across every state, freshness past ttl, ordering, hidden, and payload parse rejection. Lint and typecheck clean.
-
-Next: P1.7 attention and layout model (glance-versus-full decisions when many providers exist), test-first.
-
-### Iteration 6 (P1.7)
-
-Shipped: the attention model in src/dashboard/attention.ts. planLayout annotates each composed card as full or glance under a maxFull budget. Empty and error cards never consume a full slot; urgent cards (with a body) are promoted to full even past budget; remaining slots go to ready and needs_auth cards in order, so reconnect prompts surface and user ordering is respected. Also added the required feed glance to ComposedCard so glance-only and needs_auth cards always have a glance line to show.
-
-Verified: 6 new tests (74 total) green, covering budget cutoff, urgent promotion past budget, empty/error never full, needs_auth full, all-urgent overflow, and order preservation. Lint and typecheck clean.
-
-Next: P1.8 security utilities (text-only render helper, action-URL validation against a scheme and host allowlist, CSP string), test-first, with injection attempts in the tests.
-
-### Iteration 7 (P1.8)
-
-Shipped: the security utilities in src/security. url.ts resolves a manifest action plus a widget action-ref into a single validated URL: params are URL-encoded so they cannot break out, dangerous schemes (javascript, data, file, vbscript, blob, about) are always blocked, and the final scheme must be allowlisted, so a malicious param can never change the scheme and a dangerous template scheme is rejected. dom.ts gives setText and textEl, the only way renderers emit feed text, always as inert text, never innerHTML. csp.ts builds the new tab CSP, scripts self-only with no inline or eval, connect limited to the weather host.
-
-Verified: 16 new tests (90 total) green, including javascript:/data:/file: rejection, scheme-change-by-param attempts, XSS strings rendered inert, and CSP shape. tsc caught a closure-narrowing bug (a guard collapsed to never); fixed by pre-scanning placeholders and logged as a lesson. Lint and typecheck clean.
-
-Next: P1.9 default widget renderers (vanilla DOM, one per widget type) with Testing Library behavior tests, using the security helpers exclusively.
-
-### Iteration 8 (P1.9)
-
-Shipped: the default widget renderers in src/render, one per vocabulary type (metric, list, table, chart, timeline, progress, text) plus a renderWidget dispatch and a RenderContext (formatTime, invokeAction, reducedMotion). All text goes through the security helpers, so feed content is always inert. Renderers never resolve or open URLs: actionable rows and timeline items call ctx.invokeAction with the action ref, leaving validation and navigation to the platform. Charts are dependency-free SVG to respect the first-paint budget; progress is an accessible progressbar; tones become data attributes the theme styles. Added a minimal index.html and main.ts entry so the full build pipeline (tsc plus vite) is green.
-
-Verified: 17 new tests (101 total) green, including XSS strings rendered inert, time formatting via context, click wiring to the action ref (no URL built in the renderer), typed table cells, line-chart point counts, timeline positioning, and progressbar aria. Security hook flagged an innerHTML in test cleanup; switched to replaceChildren. Lint, typecheck, and build all pass.
-
-Next: P1.10 theme token layer and the first theme tokens (Aurora), applying tokens as CSS custom properties, test-first.
-
-### Iteration 9 (P1.10)
-
-Shipped: the theme token layer in src/theme. ThemeTokensSchema and ThemeMeta define the styling contract; tokensToCssVars flattens tokens to --cc-* custom properties (colors, px sizes, tabular-nums flag, motion speed, background); applyTokens sets them on an element and forces motion to zero under reduced motion; tokensToCssText emits a :root block. Added the Aurora theme (dark glass, gradient background) as the first shipped theme's token layer. Tones map to token colors so a data-tone attribute resolves to the theme's color.
-
-Verified: 7 new tests (108 total) green, covering schema validation, the var mapping with units and flags, runtime application, the reduced-motion override, and CSS text output. Lint, typecheck, and build all pass.
-
-Next: P1.11 dashboard shell (header with time/date/greeting, responsive card grid, instant paint from cache, all card states), tying renderers, theme, time, and weather together, with integration tests.
-
-### Iteration 10 (P1.11)
-
-Shipped: the dashboard shell in src/shell. renderDashboard applies theme tokens, then composes the header (time, date, hour-based greeting), a rail (weather summary with loading skeleton, world clock), and the card grid. renderCard handles every state: glance vs full presentation, needs_auth reconnect (launches the provider via a commandcenter://openProvider route, no feed param needed), quiet error and empty notices, and an age note for stale data. The action invoker (src/shell/actions.ts) binds manifest actions to navigation, deriving the allowed scheme set from declared non-dangerous app schemes while resolveActionUrl still blocks dangerous ones. Added a localStorage cache for instant paint and extended Settings with worldClock and weather.
-
-Verified: 18 new tests (126 total) green: header greeting/time/date, world clock day-night and date offset, weather skeleton vs present, every card state, reconnect navigation, the cache round-trip and corrupt-cache fallback, and a full renderDashboard integration test that clicks an inbox row and asserts the resolved linearbar:// navigation. Two issues caught before completion: the needs_auth reconnect originally reused a param-requiring action (would never fire), redesigned to openProvider; and a ComposedCard-vs-PlacedCard factory type mismatch, fixed with makePlacedCard. Lint, typecheck, and build pass.
-
-Next: P1.12 mock native bridge and mock feed fixtures, so the dashboard runs end to end against realistic data for local dev and the demo.
-
-### Iteration 11 (P1.12)
-
-Shipped: the DashboardBridge interface (getDashboard returns unknown, always validated), a createMockBridge, and a realistic mockDashboardPayload exercising the full variety: a calendar list card with meet/zoom join actions, an urgent linear inbox, a generic card-kind provider carrying a metric plus a bar chart, and a needs_auth Notion provider. Settings include three world-clock cities and a weather location. Web links use a commandcenter://open route rather than a raw https template, since the action resolver URL-encodes params (an encoded https value is not a navigable URL); the native app decodes and opens. Added buildDashboardModel (parse, compose, plan) as the single call the shell makes from bytes to cards.
-
-Verified: 9 new tests (135 total) green: the fixture parses, exercises every required kind and the needs_auth status, carries a glance on every feed, and buildDashboardModel surfaces the needs_auth card and the chart-bearing generic card, with an error path for bad input. Lint, typecheck, and build pass.
-
-Next: P1.13 performance pass (bundle budget check, reduced-motion support, first-paint measurement harness).
-
-### Iteration 12 (P1.13)
-
-Shipped: the perf module (src/perf). prefersReducedMotion reads the media query (injectable, safe when unavailable, returns false rather than throwing); measureFirstPaint times a render callback against the 100ms budget with an injectable clock; budget helpers and a 90KB gzip ceiling. Added scripts/check-bundle.mjs and an npm "size" script that gzips dist and fails if over budget; current bundle is 0.5KB gzipped with huge headroom (the full app pulls in more once main wires it). Reduced motion flows through applyTokens (motion speed 0) and the RenderContext.
-
-Verified: 8 new tests (143 total) green, including the reduced-motion guard, the paint timer within and over budget, and the byte helpers. Fixed a jsdom crash where the default matcher assumed window.matchMedia exists; guarded it. Added scripts/ to eslint ignores (node tooling, not in the TS program). Lint, typecheck, build, and size all pass.
-
-Next: P1.14 the viewable demo: CSS for the Aurora look and a main.ts that wires the mock bridge, reduced motion, first-paint measurement, weather fetch, and instant paint from cache, then a manual verification screenshot. This completes Phase 1.
-
-### Iteration 13 (P1.14) — Phase 1 complete
-
-Shipped: the viewable demo. runDashboard (src/app/run.ts) is the testable app orchestration: instant paint from cache, then live bridge data which it caches, then a weather fetch and repaint, all injectable. main.ts wires it to the mock bridge with real Date, navigation, reduced-motion, and first-paint timing. styles.css implements the Aurora look entirely off the --cc-* tokens, so a theme swap restyles everything. Added vite-env.d.ts for CSS imports.
-
-Verified: 4 new tests (147 total) green, including a full end-to-end render (cache then bridge then weather, clickable navigation) and the cache-fallback-on-bridge-failure path. Built and served via vite preview, then loaded in a real browser: the dashboard renders the header greeting, world clock (SF/London/Bengaluru), the calendar card with two clickable meeting rows, the Linear inbox, the DeployBot chart card, and the Notion reconnect card. Screenshot delivered to the user. Bundle 22.4KB gzipped (budget 90KB). Lint, typecheck, build, and size all pass. Only console noise was a harmless favicon 404.
-
-PHASE 1 DONE. Phase 2 (native macOS app, Safari extension, EventKit, native bridge) begins Swift/Xcode work that needs user decisions before proceeding: Developer ID vs Mac App Store distribution (affects sandbox, entitlements, and the Apple-Notes-adjacent scope), and the endpoint identity approach for later phases. Loop paused here pending those decisions.
-
-### Iteration 14 (P2.0) — Phase 2 begins
-
-Decisions applied: Developer ID, non-sandboxed (lessons). Shipped the CommandCenterCore SwiftPM package: JSONValue (lossless any-JSON, so feed data and settings forward to the dashboard unchanged and the widget vocabulary is never duplicated in Swift), the contract models (Tone/Trend/FeedStatus/Glance, Manifest, FeedEnvelope, ProviderEntry, DashboardPayload), decodeFeedEnvelope with a schemaVersion + non-empty-glance guard, decodeDashboardPayload, and injectable ProviderLocator provider-installed detection (WorkspaceProviderLocator over NSWorkspace).
-
-Verified: 10 swift tests green via `swift build` + `swift test` (no signing): status mapping (needs_auth), opaque data round-trip, future-version refusal, empty-glance rejection, malformed JSON, JSONValue round-trip and bool-vs-number, and provider filtering. SourceKit showed stale cross-file errors that swift build resolved.
-
-Design decision recorded: native forwards feed `data` as opaque JSON; the dashboard is the single widget validator (avoids two-language drift).
-
-Next: P2.2 FeedStore directory scanner (signing-free, temp-dir tests), then P2.1 Xcode scaffolding which will pause for the user's Team ID and signing identity.
-
-### Iteration 15 (P2.2)
-
-Shipped: FeedStore in CommandCenterCore. Given an injected container URL it scans Providers/<id>/manifest.json, decodes each manifest, filters to installed providers via the ProviderLocator, reads each manifest feed path and decodes it (dropping unreadable or invalid feeds without failing the provider), and exposes loadProviders plus loadSettings (settings forwarded as opaque JSONValue). Security: feed paths are provider-controlled, so safeURL refuses any path that escapes the provider folder (../ traversal), verified by a test that plants a file outside the folder and confirms it is not read.
-
-Verified: 7 new swift tests (17 total) green via swift build + swift test, no signing: installed provider with feed, uninstalled dropped, missing feed dropped but provider kept, no-manifest and malformed-manifest skipped, path traversal refused, settings present/absent. Files under 300 lines.
-
-Next: P2.1 Xcode app/extension scaffolding. This needs the user's Apple Team ID (for the App Group identifier) and a signing identity to build the app target, so the loop will author the config and STOP to ask rather than guess.
-
-### Iteration 16 (P2.1) — scaffolding verified, signed build user-blocked
-
-Shipped: native/ XcodeGen project with two macOS targets, the CommandCenter menu-bar app (LSUIElement, status item, commandcenter:// URL type) and the CommandCenterExtension Safari Web Extension (NSExtension web-extension point, SafariWebExtensionHandler, manifest.json/newtab.html/background.js resources). Both reference the CommandCenterCore package. Entitlements: App Group group.com.strategicnerds.suite, ubiquity-kvstore; no sandbox; DEVELOPMENT_TEAM 955GSY56UT.
-
-Verified: xcodegen generate succeeds; an unsigned build (CODE_SIGNING_ALLOWED=NO) SUCCEEDS and produces CommandCenter.app with CommandCenterExtension.appex embedded in PlugIns and the manifest/web resources in place. core swift test still green.
-
-Blocked: a signed build fails with two exact errors: the Mac Team Provisioning Profile "doesn't include the iCloud capability" and "doesn't include the com.apple.developer.ubiquity-kvstore-identifier entitlement." The App Group did not error (it may auto-manage), but the build stops at iCloud KVS first. This needs an Apple Developer account capability decision, so the loop stopped and asked the user (P2.1b). No -allowProvisioningUpdates was run, since that would create/modify App IDs and capabilities on the user's account.
-
-Next (pending user): resolve P2.1b, then P2.3 SafariWebExtensionHandler + getDashboard bridge.
-
-### Iteration 17 (P2.3)
-
-Shipped: DashboardComposer in CommandCenterCore, which assembles the getDashboard payload (installed providers via FeedStore + opaque settings + a passed-in generatedAt) and serializes it; plus CommandCenterContainer (the App Group id and container URL helper). Wired the thin SafariWebExtensionHandler to answer "getDashboard" by reading the container through a FeedStore and returning the composed JSON; all real logic stays in core, the handler is glue. No token or secret crosses the boundary; only display data.
-
-Verified: 3 new swift tests (20 total) green via swift test (compose providers+settings, composeJSON round-trips through decodeDashboardPayload, empty container yields empty payload). xcodegen generate + unsigned xcodebuild SUCCEEDED with the extension importing CommandCenterCore. Dashboard gates still green.
-
-Next: P2.5 commandcenter:// URL router + browser routing (testable routing logic in core), then P2.6 settings, P2.7 EventKit provider. (P2.4 swap dashboard to native messaging and P2.8 manifest cold-start need a signed/run-in-Safari build, so defer those until signing is resolved.)
-
-### Iteration 18 (P2.5)
-
-Shipped: the commandcenter:// router in CommandCenterCore. parseRoute turns a URL into a typed CommandCenterRoute (settings, join, open, openProvider) with native-side re-validation: join targets must be https meeting hosts (suffix-matched, so zoom subdomains pass), open requires https, openProvider refuses dangerous schemes; an encoded javascript:/file: url is refused after decoding. Plus BrowserChoice (bundle ids, mirroring MeetAppType), browserRouting(from: settings), and resolveBrowserBundleId (platform -> bundle id, system = default). The app-side RouteHandler is thin: it reads routing from settings and calls NSWorkspace.open; AppDelegate handles application(_:open:). All decision logic is in core and tested.
-
-Verified: 17 new swift tests (37 total) green, including malicious-URL attempts (javascript, file, encoded scheme, non-meeting host), zoom subdomains, and browser resolution. xcodegen + unsigned xcodebuild SUCCEEDED. Dashboard gates green.
-
-Next: P2.6 settings (settings.json App Group mirror writer in core, testable; menu-bar + settings UI matching Sync Bar / Meeting Notifier per lessons; defer iCloud KVS). Then P2.7 EventKit provider (pure EKEvent->feed mapping in core).
-
-### Iteration 19 (P2.6a)
-
-Shipped: SettingsStore in CommandCenterCore. The app is the sole writer of CommandCenter/settings.json; it writes atomically (Data.write .atomic) into an injected container URL and reads it back, plus defaultSettingsDocument mirroring docs/08 (theme, world-clock cities, weather, browserRouting). Settings stay opaque JSONValue (no token ever written here).
-
-Verified: 6 new swift tests (43 total) green: write/read round-trip, nil before first write, directory creation, FeedStore.loadSettings reads what SettingsStore writes, default document round-trip and shape. Unsigned native build + dashboard gates green. Caught a Swift type-checker timeout on the big nested settings literal; fixed by building it from sub-expressions (logged as a lesson).
-
-Next: P2.6b the menu-bar popover + settings window UI matching Sync Bar / Meeting Notifier (port their design system), then P2.7 EventKit provider mapping.
-
-### Iteration 20 (P2.6b)
-
-Shipped: the native UI matching Sync Bar / Meeting Notifier. Ported their design system into the app target verbatim: ThemePalette, AppTheme (system + 9 named themes: Hoth, Risa, Weasley, Starbuck, Cylon, Vader, Kirk, Hermione, Nerds), all palette definitions, ThemeStore (UserDefaults-persisted, re-publishes on OS light/dark flip), AppRadius/AppSpacing tokens, and the EnvironmentValues.theme. Built Components (SectionLabel, themed Card with soft elevation and NO borders per the design rule, SettingRow), a themed MenuBarPopover (brand header, theme picker, Settings/Quit), and a SettingsView (Appearance theme picker, per-platform browser routing, weather units, world-clock cities add/remove). AppSettings persists the dashboard-facing prefs via the core SettingsStore, with an Application Support dev-container fallback since the App Group is inactive unsigned. The status item shows the popover; the Settings scene hosts SettingsView.
-
-Verified: unsigned native build SUCCEEDED with the full UI; 43 swift tests and dashboard gates green. One real compile fix: ForEach over BrowserChoice needed id: \.self (enum is Hashable, not Identifiable).
-
-Next: P2.7 EventKit provider — pure EKEvent->calendar.today feed mapping in CommandCenterCore (testable), with the permission-gated EventKit reading kept thin in the app.
-
-### Iteration 21 (P2.7)
-
-Shipped: the Apple calendar provider. In CommandCenterCore: CalendarEventInput (EventKit-agnostic), detectMeeting (scans url, then location, then notes via NSDataDetector; classifies meet/zoom/teams/webex with suffix matching), calendarFeedEnvelope (sorted events -> calendar.today JSON with a derived glance and ISO times), appleCalendarManifest, and a general FeedPublisher that atomically writes manifest.json + feeds under Providers/<id>/. The app's EventKitCalendarProvider is thin: it maps EKEvent -> CalendarEventInput (including calendar color -> hex) and publishes via core; refreshIfAuthorized never prompts. Added NSCalendars[FullAccess]UsageDescription to the app Info.plist.
-
-Verified: 7 new swift tests (50 total) green: meeting detection from each source/platform, a non-conference URL ignored, a valid decodable feed with the meeting object, empty-day glance, and a publish->FeedStore round-trip. Unsigned native build SUCCEEDED; dashboard green. One real fix: AppDelegate needed @MainActor to hold the @MainActor EventKit provider.
-
-Remaining Phase 2 is signed/Safari-only and deferred: P2.4 (swap dashboard to native messaging), P2.8 (Safari manifest cold-start), and P2.1b (capability registration). The unsigned-buildable native logic for Phase 2 is now complete. Suggest pausing the loop here or moving to Phase 3 satellite integration (also needs the other apps + App Group), which is largely user/signing-gated. Consider reporting status to the user.
+Every iteration: keep the architecture impeccable, not just green. Before marking a task done, refactor what you touched (no duplication, no dead code, single source of truth, honest docs). The reused TS core is already audited; do not regress it. Keep files under ~300-500 lines and split by responsibility (UI / settings / integration / render).

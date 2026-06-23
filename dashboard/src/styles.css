@@ -1,7 +1,6 @@
-/* Command Center — editorial dashboard styling. All colors and sizes come from
-   the active theme's --cc-* custom properties; the mineral theme is the default
-   (limestone ground, slate ink, one oxidized-copper accent). Hairlines are
-   derived from the muted token so any theme keeps the same structure. */
+/* Command Center — new tab styling. Every color and size comes from the active
+   theme's --cc-* custom properties; the mineral theme is the default. The page
+   is a calm centered stage over an optional wallpaper layer. */
 
 * {
   box-sizing: border-box;
@@ -21,250 +20,217 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-.cc-dashboard {
-  min-height: 100vh;
-  padding: clamp(28px, 4vw, 56px);
-  background: var(--cc-bg, #ece8e0);
-  display: flex;
-  flex-direction: column;
-  gap: 36px;
-}
-
-/* On-photo text is light regardless of theme, since the photos are dark. */
 :root {
   --cc-on-photo: #f7f5f0;
   --cc-hairline: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 24%, transparent);
-  --cc-rule-strong: var(--cc-color-text, #21242a);
 }
 
-/* Masthead ---------------------------------------------------------------- */
+/* Shell ------------------------------------------------------------------- */
 
-.cc-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--cc-hairline);
-}
-
-.cc-header__left {
+.cc-dashboard {
+  position: relative;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(40px, 9vh, 120px) clamp(20px, 4vw, 56px) 64px;
+  background: var(--cc-bg, #ece8e0);
 }
 
-.cc-header__eyebrow {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.24em;
+/* Background wallpaper layer. Empty/disabled by default; P4 sets the image and
+   scrim via inline custom properties on this element. */
+.cc-wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--cc-bg, #ece8e0);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.cc-wallpaper[data-enabled="true"] {
+  background-image: var(--cc-wallpaper-image, none);
+}
+
+.cc-wallpaper[data-enabled="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 14, 20, var(--cc-wallpaper-scrim, 0.4));
+}
+
+.cc-stage {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(28px, 5vh, 52px);
+}
+
+/* When a wallpaper is on, foreground text flips to light over the scrim. */
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-home__greeting,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-home__time,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-home__meta {
+  color: var(--cc-on-photo);
+}
+
+/* Home clock -------------------------------------------------------------- */
+
+.cc-home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.cc-home__greeting {
+  font-size: clamp(15px, 2vw, 18px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
   color: var(--cc-color-muted, #6a6e76);
 }
 
-.cc-header__greeting {
-  font-size: 28px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: var(--cc-color-text, #21242a);
-}
-
-.cc-header__right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 5px;
-}
-
-.cc-header__time {
-  font-size: 32px;
+.cc-home__time {
+  font-size: clamp(64px, 13vw, 132px);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  line-height: 1;
+  letter-spacing: -0.02em;
   color: var(--cc-color-text, #21242a);
   font-variant-numeric: var(--cc-numeric, tabular-nums);
 }
 
-.cc-header__date {
-  font-size: 13px;
+.cc-home__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(13px, 1.5vw, 15px);
   font-weight: 500;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   color: var(--cc-color-muted, #6a6e76);
 }
 
-/* City hero row ----------------------------------------------------------- */
-
-.cc-cityrow {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 14px;
+.cc-home__dot {
+  opacity: 0.6;
 }
 
-@media (max-width: 1024px) {
-  .cc-cityrow {
-    grid-template-columns: repeat(2, 1fr);
-  }
+/* Timezone row ------------------------------------------------------------ */
+
+.cc-zones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
 }
 
-@media (max-width: 560px) {
-  .cc-cityrow {
-    grid-template-columns: 1fr;
-  }
-}
-
-.cc-city {
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 1 / 1;
-  border-radius: 14px;
+.cc-zone {
+  min-width: 116px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  background: var(--cc-color-text, #21242a);
+  align-items: center;
+  gap: 4px;
+  padding: 14px 18px;
+  border-radius: var(--cc-card-radius, 14px);
+  background: color-mix(in srgb, var(--cc-color-surface, #fff) 70%, transparent);
+  border: 1px solid var(--cc-hairline);
+  backdrop-filter: blur(6px);
 }
 
-.cc-city__photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.cc-zone[data-daynight="night"] {
+  background: color-mix(in srgb, var(--cc-color-text, #21242a) 8%, transparent);
 }
 
-.cc-city__scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(18, 20, 24, 0.04) 0%,
-    rgba(18, 20, 24, 0.2) 46%,
-    rgba(14, 16, 20, 0.84) 100%
-  );
-}
-
-.cc-city[data-daylight="day"] .cc-city__scrim {
-  background: linear-gradient(
-    180deg,
-    rgba(18, 20, 24, 0) 0%,
-    rgba(18, 20, 24, 0.12) 48%,
-    rgba(16, 18, 22, 0.78) 100%
-  );
-}
-
-.cc-city[data-daylight="dawn"] .cc-city__scrim,
-.cc-city[data-daylight="dusk"] .cc-city__scrim {
-  background: linear-gradient(
-    180deg,
-    rgba(58, 38, 28, 0.12) 0%,
-    rgba(34, 26, 28, 0.32) 52%,
-    rgba(16, 16, 22, 0.85) 100%
-  );
-}
-
-.cc-city[data-daylight="night"] .cc-city__scrim {
-  background: linear-gradient(
-    180deg,
-    rgba(14, 16, 24, 0.4) 0%,
-    rgba(12, 14, 22, 0.55) 46%,
-    rgba(10, 12, 18, 0.9) 100%
-  );
-}
-
-.cc-city__body {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding: 18px;
-}
-
-.cc-city__eyebrow {
+.cc-zone__label {
   display: flex;
   align-items: center;
-  gap: 7px;
-}
-
-.cc-city__dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--cc-color-accent-2, #c9a267);
-}
-
-.cc-city[data-daylight="night"] .cc-city__dot {
-  background: rgba(247, 245, 240, 0.55);
-}
-
-.cc-city[data-daylight="day"] .cc-city__dot {
-  background: var(--cc-color-accent-1, #2f7a6f);
-}
-
-.cc-city__phase {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(247, 245, 240, 0.74);
-}
-
-.cc-city__name {
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--cc-on-photo);
-}
-
-.cc-city__time {
-  font-size: clamp(30px, 3vw, 44px);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.015em;
-  color: var(--cc-on-photo);
-  font-variant-numeric: tabular-nums;
-}
-
-.cc-city__meta {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-height: 18px;
+  gap: 6px;
   font-size: 13px;
-  color: rgba(247, 245, 240, 0.82);
-}
-
-.cc-city__temp {
-  color: var(--cc-on-photo);
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Meeting-window timeline ------------------------------------------------- */
-
-.cc-timeline-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.cc-timeline-panel__head {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-}
-
-.cc-timeline-panel__title {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--cc-color-text, #21242a);
 }
 
-.cc-timeline-panel__hint {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--cc-color-muted, #6a6e76);
+.cc-zone__day {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--cc-color-accent, #2f7a6f);
 }
+
+.cc-zone__time {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--cc-color-text, #21242a);
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-zone__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--cc-color-muted, #6a6e76);
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-zone__weather {
+  color: var(--cc-color-text, #21242a);
+  font-weight: 600;
+}
+
+/* Slots filled by later phases ------------------------------------------- */
+
+.cc-dock-slot:empty,
+.cc-streams-slot:empty {
+  display: none;
+}
+
+.cc-streams-slot {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Edit affordance --------------------------------------------------------- */
+
+.cc-edit-btn {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--cc-color-muted, #6a6e76);
+  background: color-mix(in srgb, var(--cc-color-surface, #fff) 60%, transparent);
+  border: 1px solid var(--cc-hairline);
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity calc(var(--cc-motion-speed, 1) * 160ms) ease;
+}
+
+.cc-dashboard:hover .cc-edit-btn,
+.cc-edit-btn:focus-visible {
+  opacity: 1;
+}
+
+/* Meeting-window timeline (optional work-stream type, P3) ------------------ */
 
 .cc-overlap {
   position: relative;
+  width: 100%;
 }
 
 .cc-overlap__grid {
@@ -299,331 +265,12 @@ body {
   background: color-mix(in srgb, var(--cc-color-text, #21242a) 82%, transparent);
 }
 
-.cc-overlap__overlay {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 84px;
-  right: 0;
-  pointer-events: none;
-}
-
-.cc-overlap__window {
-  position: absolute;
-  top: -5px;
-  bottom: -5px;
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--cc-color-accent-1, #2f7a6f) 14%, transparent);
-  border-inline: 1.5px solid
-    color-mix(in srgb, var(--cc-color-accent-1, #2f7a6f) 55%, transparent);
-}
-
 .cc-overlap__now {
   position: absolute;
   top: -8px;
   bottom: -8px;
   width: 2px;
   background: var(--cc-color-accent-1, #2f7a6f);
-}
-
-.cc-overlap__axis {
-  display: flex;
-  justify-content: space-between;
-  padding-left: 84px;
-}
-
-.cc-overlap__tick {
-  font-size: 11px;
-  font-weight: 500;
-  color: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 75%, transparent);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Three columns ----------------------------------------------------------- */
-
-.cc-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 44px;
-  align-items: start;
-  padding-top: 6px;
-}
-
-@media (max-width: 1024px) {
-  .cc-columns {
-    grid-template-columns: 1fr;
-    gap: 36px;
-  }
-}
-
-.cc-column {
-  display: flex;
-  flex-direction: column;
-  gap: 34px;
-  min-width: 0;
-}
-
-/* Sections (provider cards rendered as editorial lists, not boxes) -------- */
-
-.cc-card {
-  background: transparent;
-  box-shadow: none;
-  border-radius: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.cc-card__header {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding-bottom: 13px;
-  border-bottom: 1px solid var(--cc-rule-strong);
-}
-
-.cc-card__icon {
-  display: inline-flex;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  color: var(--cc-color-text, #21242a);
-}
-
-.cc-icon__svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.cc-card__name {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--cc-color-text, #21242a);
-}
-
-.cc-card__glance {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.cc-card__glance-value,
-.cc-card__glance-label {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--cc-color-muted, #6a6e76);
-  font-variant-numeric: tabular-nums;
-}
-
-.cc-card__glance[data-tone="urgent"] .cc-card__glance-value {
-  color: var(--cc-color-urgent, #a4503c);
-}
-
-.cc-card__body {
-  display: flex;
-  flex-direction: column;
-}
-
-.cc-card__age,
-.cc-card__notice {
-  color: var(--cc-color-muted, #6a6e76);
-  font-size: 13px;
-  padding-top: 12px;
-}
-
-.cc-card__reconnect {
-  align-self: flex-start;
-  margin-top: 14px;
-  background: transparent;
-  color: var(--cc-color-accent, #2f7a6f);
-  border: 1px solid color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 45%, transparent);
-  border-radius: 8px;
-  padding: 8px 14px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* List rows --------------------------------------------------------------- */
-
-.cc-list__items {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.cc-list__row {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  width: 100%;
-  text-align: left;
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid var(--cc-hairline);
-  color: inherit;
-  font: inherit;
-  padding: 13px 2px;
-  cursor: default;
-}
-
-button.cc-list__row {
-  cursor: pointer;
-}
-
-button.cc-list__row:hover {
-  background: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 8%, transparent);
-}
-
-.cc-list__body {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-  flex: 1;
-}
-
-.cc-list__title {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--cc-color-text, #21242a);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.cc-list__subtitle {
-  font-size: 13px;
-  color: var(--cc-color-muted, #6a6e76);
-}
-
-.cc-avatar,
-.cc-dot,
-.cc-icon {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 18%, transparent);
-}
-
-/* The editorial columns read as clean text rows; per-row leading marks (calendar
-   color dots, provider avatars/icons) are dropped in favor of typography. */
-.cc-card .cc-list__row > .cc-avatar,
-.cc-card .cc-list__row > .cc-dot,
-.cc-card .cc-list__row > .cc-icon {
-  display: none;
-}
-
-.cc-time,
-.cc-trailing-text {
-  margin-left: auto;
-  flex-shrink: 0;
-  color: var(--cc-color-muted, #6a6e76);
-  font-size: 13px;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-
-.cc-badge {
-  margin-left: auto;
-  flex-shrink: 0;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cc-color-muted, #6a6e76);
-}
-
-.cc-badge[data-tone="urgent"] {
-  color: var(--cc-color-urgent, #a4503c);
-}
-
-.cc-badge[data-tone="positive"] {
-  color: var(--cc-color-positive, #3e7c5a);
-}
-
-/* Calendar: pull the time into a left lane (agenda style). */
-[data-kind="calendar.today"] .cc-time {
-  order: -1;
-  margin-left: 0;
-  width: 54px;
-  color: var(--cc-color-text, #21242a);
-  font-weight: 600;
-}
-
-/* Reminders: a checkbox circle leads each row. */
-[data-kind="reminders.today"] .cc-list__row::before {
-  content: "";
-  flex-shrink: 0;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  border: 1.5px solid color-mix(in srgb, var(--cc-color-muted, #6a6e76) 55%, transparent);
-}
-
-/* Widgets (generic cards) ------------------------------------------------- */
-
-.cc-widget__title {
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cc-color-muted, #6a6e76);
-  margin-bottom: 6px;
-  padding-top: 12px;
-}
-
-.cc-metric__value {
-  font-size: 26px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--cc-color-text, #21242a);
-}
-
-.cc-metric[data-tone="urgent"] .cc-metric__value {
-  color: var(--cc-color-urgent, #a4503c);
-}
-
-.cc-metric[data-tone="positive"] .cc-metric__value {
-  color: var(--cc-color-positive, #3e7c5a);
-}
-
-.cc-chart__svg {
-  width: 100%;
-  height: 56px;
-  padding-top: 8px;
-}
-
-.cc-chart__line {
-  fill: none;
-  stroke: var(--cc-color-accent, #2f7a6f);
-  stroke-width: 1.5;
-}
-
-.cc-chart__point,
-.cc-chart__bar {
-  fill: var(--cc-color-accent, #2f7a6f);
-}
-
-.cc-progress__track {
-  height: 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 18%, transparent);
-  overflow: hidden;
-}
-
-.cc-progress__fill {
-  height: 100%;
-  background: var(--cc-color-accent, #2f7a6f);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,99 +1,71 @@
-import { fireEvent, getAllByText, getByRole, getByText } from "@testing-library/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createMockBridge, mockDashboardPayload } from "../bridge/mock";
-import { CITIES } from "../cities/cities";
-import type { ParseResult } from "../domain/feed";
-import type { Weather } from "../weather/openMeteo";
+import { defaultConfig } from "../config/defaults";
+import { createConfigStore, memoryArea } from "../config/store";
+import type { ParseResult } from "../domain/result";
+import { host } from "../test/dom";
+import type { Weather, WeatherLocation, WeatherUnits } from "../weather/openMeteo";
 import { runDashboard, type RunDeps } from "./run";
 
 afterEach(() => {
   document.body.replaceChildren();
 });
 
-function mount(): HTMLElement {
-  const node = document.createElement("div");
-  document.body.appendChild(node);
-  return node;
-}
+const okWeather = (temperature: number): ParseResult<Weather> => ({
+  ok: true,
+  value: { temperature, unit: "fahrenheit", code: 0, condition: "Clear", icon: "sun" },
+});
 
-const NOW = new Date("2026-06-14T15:05:00Z");
-
-const weather: Weather = {
-  temperature: 63.4,
-  unit: "fahrenheit",
-  code: 3,
-  condition: "Overcast",
-  icon: "cloud",
-};
-
-function baseDeps(overrides: Partial<RunDeps> = {}): RunDeps {
-  return {
-    mount: mount(),
-    bridge: createMockBridge(),
-    now: () => NOW,
-    navigate: vi.fn(),
-    fetchWeather: () => Promise.resolve<ParseResult<Weather>>({ ok: true, value: weather }),
-    loadCache: () => null,
-    saveCache: vi.fn(),
-    timeZone: "America/Los_Angeles",
-    ...overrides,
-  };
-}
+const baseDeps = (mount: HTMLElement): RunDeps => ({
+  mount,
+  store: createConfigStore(memoryArea(), memoryArea(), {
+    fallback: () => defaultConfig({ timeZone: "America/New_York" }),
+  }),
+  now: () => new Date(Date.UTC(2026, 5, 15, 16, 0, 0)),
+  navigate: () => {},
+  fetchWeather: (_location: WeatherLocation, _units: WeatherUnits) =>
+    Promise.resolve(okWeather(70)),
+  loadCache: () => undefined,
+  saveCache: () => {},
+  reducedMotion: true,
+});
 
 describe("runDashboard", () => {
-  it("renders live bridge data, caches it, and shows weather", async () => {
-    const saveCache = vi.fn();
-    const deps = baseDeps({ saveCache });
+  it("paints the home clock and zone row from the stored config", async () => {
+    const mount = host();
+    await runDashboard(baseDeps(mount));
 
-    await runDashboard(deps);
-
-    expect(getByText(deps.mount, "Good morning, Prashant.")).toBeInTheDocument();
-    expect(getByText(deps.mount, "Linear")).toBeInTheDocument();
-    // The hero row shows each city's temperature; every city uses the mock here.
-    expect(getAllByText(deps.mount, "63°").length).toBe(CITIES.length);
-    expect(saveCache).toHaveBeenCalledOnce();
+    expect(mount.querySelector(".cc-home__time")).not.toBeNull();
+    expect(mount.querySelectorAll(".cc-zone").length).toBeGreaterThan(0);
   });
 
-  it("wires provider actions to navigate", async () => {
-    const navigate = vi.fn();
-    const deps = baseDeps({ navigate });
-
-    await runDashboard(deps);
-    fireEvent.click(getByRole(deps.mount, "button", { name: /Crash on cold start/ }));
-
-    expect(navigate).toHaveBeenCalledOnce();
+  it("fills in weather for located zones, then repaints", async () => {
+    const mount = host();
+    await runDashboard(baseDeps(mount));
+    expect(mount.querySelector(".cc-zone__weather")?.textContent).toContain("70°");
   });
 
-  it("paints from cache and stays up when the bridge fails", async () => {
-    const saveCache = vi.fn();
-    const deps = baseDeps({
-      loadCache: () => mockDashboardPayload(),
-      bridge: { getDashboard: () => Promise.reject(new Error("offline")) },
-      saveCache,
+  it("paints instantly from the cache before storage resolves", async () => {
+    const mount = host();
+    const cached = defaultConfig({ timeZone: "Europe/Lisbon" });
+    let painted = false;
+    await runDashboard({
+      ...baseDeps(mount),
+      loadCache: () => {
+        return cached;
+      },
+      saveCache: () => {
+        // The cache must have already produced a first paint by now.
+        painted = mount.querySelector(".cc-home__time") !== null;
+      },
     });
-
-    await runDashboard(deps);
-
-    expect(getByText(deps.mount, "Linear")).toBeInTheDocument();
-    expect(saveCache).not.toHaveBeenCalled(); // bridge failed, nothing to cache
+    expect(painted).toBe(true);
   });
 
-  it("fetches weather once per city for the hero row", async () => {
-    const fetchWeather = vi.fn(() =>
-      Promise.resolve<ParseResult<Weather>>({ ok: true, value: weather }),
-    );
-    const payload = mockDashboardPayload();
-    delete payload.settings?.weather;
-
-    await runDashboard(baseDeps({ bridge: createMockBridge(payload), fetchWeather }));
-
-    // Cities are fixed, so weather is always fetched, defaulting units when the
-    // payload omits a weather config.
-    expect(fetchWeather).toHaveBeenCalledTimes(CITIES.length);
-    expect(fetchWeather).toHaveBeenCalledWith(
-      expect.objectContaining({ label: CITIES[0]?.label }),
-      "fahrenheit",
-    );
+  it("registers a minute ticker when one is provided", async () => {
+    const mount = host();
+    const scheduleTick = vi.fn();
+    await runDashboard({ ...baseDeps(mount), scheduleTick });
+    expect(scheduleTick).toHaveBeenCalledOnce();
   });
 });

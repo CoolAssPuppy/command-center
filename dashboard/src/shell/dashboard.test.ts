@@ -1,83 +1,61 @@
-import { fireEvent, getAllByText, getByRole, getByText } from "@testing-library/dom";
+import { getByRole, getByText } from "@testing-library/dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { defaultConfig } from "../config/defaults";
+import { ConfigSchema } from "../config/schema";
 import { host } from "../test/dom";
-
-import { CITIES } from "../cities/cities";
-import { planLayout } from "../dashboard/attention";
-import { composeDashboard } from "../dashboard/compose";
-import type { Settings } from "../dashboard/payload";
-import { makeDashboardPayload } from "../test/dashboard-factories";
-import type { Weather } from "../weather/openMeteo";
 import { renderDashboard } from "./dashboard";
 
 afterEach(() => {
   document.body.replaceChildren();
 });
 
-const LA = "America/Los_Angeles";
-// Within the inbox feed's ttl (updatedAt 15:04:05Z); 15:05 UTC is 08:05 in LA.
-const NOW = new Date("2026-06-14T15:05:00Z");
-
-const settings: Settings = {
-  profile: { name: "Prashant" },
-  worldClock: { cities: [{ label: "San Francisco", timeZone: LA }] },
-  weather: { location: { label: "SF", lat: 37.77, lon: -122.41 }, units: "fahrenheit" },
-};
-
-const weather: Weather = {
-  temperature: 63.4,
-  unit: "fahrenheit",
-  code: 3,
-  condition: "Overcast",
-  icon: "cloud",
-};
-
-const weatherByCity: Record<string, Weather> = Object.fromEntries(
-  CITIES.map((city) => [city.id, weather]),
-);
-
-function renderFixture(navigate = vi.fn()): { root: HTMLElement; navigate: typeof navigate } {
-  const payload = makeDashboardPayload({ settings });
-  const cards = planLayout(composeDashboard(payload, NOW));
-  const root = host();
-  renderDashboard(root, { now: NOW, settings, cards, weatherByCity }, { navigate, timeZone: LA });
-  return { root, navigate };
-}
+const now = new Date(Date.UTC(2026, 5, 15, 16, 0, 0));
 
 describe("renderDashboard", () => {
-  it("renders the header greeting, the city hero row with weather, and provider cards", () => {
-    const { root } = renderFixture();
-
-    expect(getByText(root, "Good morning, Prashant.")).toBeInTheDocument();
-    // New York appears in both the hero row and the overlap timeline.
-    expect(getAllByText(root, "New York").length).toBeGreaterThanOrEqual(1);
-    expect(getAllByText(root, "63°").length).toBe(CITIES.length);
-    expect(getByText(root, "Linear")).toBeInTheDocument();
-  });
-
-  it("navigates through the provider action when a row is clicked", () => {
-    const { root, navigate } = renderFixture();
-
-    fireEvent.click(getByRole(root, "button", { name: /Crash on cold start/ }));
-
-    expect(navigate).toHaveBeenCalledOnce();
-    const url = navigate.mock.calls[0]?.[0] as string;
-    expect(url.startsWith("linearbar://open?url=")).toBe(true);
-  });
-
-  it("applies theme tokens to the root", () => {
-    const { root } = renderFixture();
-
-    expect(root.classList.contains("cc-dashboard")).toBe(true);
-    expect(root.style.getPropertyValue("--cc-color-bg").length).toBeGreaterThan(0);
-  });
-
-  it("applies the theme named in settings.appearance.theme", () => {
+  it("renders the home clock and a card for each other zone", () => {
+    const config = defaultConfig({ timeZone: "America/New_York" });
     const root = host();
-    const themed: Settings = { ...settings, appearance: { theme: "com.strategicnerds.mono" } };
-    renderDashboard(root, { now: NOW, settings: themed, cards: [], weatherByCity }, { navigate: vi.fn(), timeZone: LA });
+    renderDashboard(root, { now, config }, { navigate: () => {}, reducedMotion: true });
 
-    expect(root.style.getPropertyValue("--cc-color-bg")).toBe("#0A0A0A");
+    expect(root.querySelector(".cc-home__time")).not.toBeNull();
+    expect(root.querySelectorAll(".cc-zone")).toHaveLength(config.zones.length - 1);
+  });
+
+  it("wires the edit button to the onEdit callback", () => {
+    const onEdit = vi.fn();
+    const root = host();
+    renderDashboard(
+      root,
+      { now, config: defaultConfig({ timeZone: "UTC" }) },
+      { navigate: () => {}, onEdit },
+    );
+
+    getByRole(root, "button", { name: "Edit dashboard" }).click();
+    expect(onEdit).toHaveBeenCalledOnce();
+  });
+
+  it("marks the wallpaper slot disabled by default", () => {
+    const root = host();
+    renderDashboard(
+      root,
+      { now, config: defaultConfig({ timeZone: "UTC" }) },
+      { navigate: () => {} },
+    );
+    expect(root.querySelector(".cc-wallpaper")?.getAttribute("data-enabled")).toBe(
+      "false",
+    );
+  });
+
+  it("greets with the profile name", () => {
+    const config = ConfigSchema.parse({
+      profile: { name: "Sam" },
+      zones: [
+        { id: "home", label: "Home", timeZone: "America/New_York", isHome: true },
+      ],
+    });
+    const root = host();
+    renderDashboard(root, { now, config }, { navigate: () => {} });
+    expect(getByText(root, /Sam\./)).toBeInTheDocument();
   });
 });

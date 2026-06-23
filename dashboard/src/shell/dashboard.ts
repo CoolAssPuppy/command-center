@@ -1,65 +1,30 @@
-import { CITIES } from "../cities/cities";
-import type { PlacedCard } from "../dashboard/attention";
-import type { Settings } from "../dashboard/payload";
-import { defaultRenderContext } from "../render/context";
+import { homeZone, otherZones, type Config } from "../config/schema";
 import { el } from "../render/helpers";
 import { themeById } from "../theme/registry";
 import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
-import { renderCard, type CardDeps } from "./card";
-import { renderCityRow, type CityRowModel } from "./cityRow";
-import { renderHeader, type HeaderModel } from "./header";
-import { renderOverlapTimeline } from "./overlapTimeline";
+import { renderHomeClock, type HomeClockModel } from "./homeClock";
+import { renderZoneRow, type ZoneRowModel } from "./zoneRow";
 
+/**
+ * The new-tab composition. Everything is driven by the config: a wallpaper layer
+ * behind, then a centered stage with the home clock, the timezone row, the dock,
+ * and the work streams. Phases fill the dock and stream slots; the skeleton and
+ * the timezones land first.
+ */
 export interface DashboardModel {
   now: Date;
-  settings: Settings;
-  cards: PlacedCard[];
-  /** Current weather per city id for the hero row, filled in as fetches land. */
-  weatherByCity?: Record<string, Weather>;
+  config: Config;
+  /** Current weather per zone id, filled in as fetches land. */
+  weatherByZone?: Record<string, Weather>;
 }
 
 export interface DashboardDeps {
   navigate: (url: string) => void;
-  theme?: Theme;
-  timeZone?: string;
-  formatTime?: (iso: string) => string;
   reducedMotion?: boolean;
-  allowedSchemes?: readonly string[];
-}
-
-function localTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  } catch {
-    return "UTC";
-  }
-}
-
-/** Column 1 stacks the calendar above reminders, in that order. */
-const LEFT_COLUMN_KINDS = ["calendar.today", "reminders.today"];
-
-interface DashboardColumns {
-  left: PlacedCard[];
-  middle: PlacedCard[];
-  right: PlacedCard[];
-}
-
-/**
- * Route cards into the three columns: calendar then reminders on the left, the
- * Linear inbox on the right, recent documents and anything else in the middle.
- */
-function toColumns(cards: PlacedCard[]): DashboardColumns {
-  const columns: DashboardColumns = { left: [], middle: [], right: [] };
-  for (const card of cards) {
-    if (card.kind === "linear.inbox") columns.right.push(card);
-    else if (LEFT_COLUMN_KINDS.includes(card.kind)) columns.left.push(card);
-    else columns.middle.push(card);
-  }
-  columns.left.sort(
-    (a, b) => LEFT_COLUMN_KINDS.indexOf(a.kind) - LEFT_COLUMN_KINDS.indexOf(b.kind),
-  );
-  return columns;
+  theme?: Theme;
+  /** Open the edit pane. */
+  onEdit?: () => void;
 }
 
 export function renderDashboard(
@@ -67,51 +32,59 @@ export function renderDashboard(
   model: DashboardModel,
   deps: DashboardDeps,
 ): HTMLElement {
-  const theme = deps.theme ?? themeById(model.settings.appearance?.theme);
+  const theme = deps.theme ?? themeById(model.config.appearance.theme);
   const reducedMotion = deps.reducedMotion ?? false;
   applyTokens(root, theme.tokens, { reducedMotion });
   root.replaceChildren();
   root.classList.add("cc-dashboard");
 
-  // The header shows the viewer's own local time. An explicit deps.timeZone
-  // (tests, or a future "home zone" setting) overrides it.
-  const timeZone = deps.timeZone ?? localTimeZone();
-  const formatTime = deps.formatTime ?? defaultRenderContext().formatTime;
+  // Background wallpaper layer. P4 paints it; here it is an empty, themed slot.
+  const wallpaper = el("div", "cc-wallpaper");
+  wallpaper.setAttribute("data-enabled", String(model.config.wallpaper.enabled));
+  root.appendChild(wallpaper);
 
-  const headerModel: HeaderModel = { now: model.now, timeZone };
-  if (model.settings.profile?.name !== undefined) {
-    headerModel.name = model.settings.profile.name;
+  const stage = el("div", "cc-stage");
+
+  const home = homeZone(model.config);
+  if (home !== undefined) {
+    const clockModel: HomeClockModel = {
+      now: model.now,
+      zone: home,
+      hour12: model.config.appearance.hour12,
+    };
+    if (model.config.profile.name !== undefined) {
+      clockModel.name = model.config.profile.name;
+    }
+    renderHomeClock(stage, clockModel);
+
+    const others = otherZones(model.config);
+    if (others.length > 0) {
+      const rowModel: ZoneRowModel = {
+        now: model.now,
+        homeZone: home,
+        zones: others,
+        hour12: model.config.appearance.hour12,
+      };
+      if (model.weatherByZone !== undefined) {
+        rowModel.weatherByZone = model.weatherByZone;
+      }
+      renderZoneRow(stage, rowModel);
+    }
   }
-  renderHeader(root, headerModel);
 
-  const cityRowModel: CityRowModel = { now: model.now, cities: CITIES };
-  if (model.weatherByCity !== undefined) {
-    cityRowModel.weatherByCity = model.weatherByCity;
+  // Dock (P2) and work streams (P3) fill these slots.
+  stage.appendChild(el("div", "cc-dock-slot"));
+  stage.appendChild(el("div", "cc-streams-slot"));
+
+  root.appendChild(stage);
+
+  const edit = el("button", "cc-edit-btn", "Edit");
+  edit.setAttribute("type", "button");
+  edit.setAttribute("aria-label", "Edit dashboard");
+  if (deps.onEdit !== undefined) {
+    edit.addEventListener("click", deps.onEdit);
   }
-  renderCityRow(root, cityRowModel);
-
-  renderOverlapTimeline(root, {
-    now: model.now,
-    cities: CITIES,
-    referenceTimeZone: timeZone,
-  });
-
-  const cardDeps: CardDeps = {
-    navigate: deps.navigate,
-    formatTime,
-    reducedMotion,
-  };
-  if (deps.allowedSchemes !== undefined) cardDeps.allowedSchemes = deps.allowedSchemes;
-  if (theme.renderers !== undefined) cardDeps.themeRenderers = theme.renderers;
-
-  const columns = toColumns(model.cards);
-  const grid = el("div", "cc-columns");
-  for (const column of [columns.left, columns.middle, columns.right]) {
-    const node = el("div", "cc-column");
-    for (const card of column) renderCard(node, card, cardDeps);
-    grid.appendChild(node);
-  }
-  root.appendChild(grid);
+  root.appendChild(edit);
 
   return root;
 }
