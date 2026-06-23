@@ -1,7 +1,7 @@
 import { el } from "../render/helpers";
 import { SHIPPED_THEMES } from "../theme/registry";
 import { AUTO_THEME } from "../theme/resolve";
-import { field, textInput } from "./controls";
+import { collapsibleSection, field, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -9,9 +9,14 @@ import type { SectionContext } from "./editPane";
  * All three are plain config and apply live to the dashboard.
  */
 export function renderAppearanceSection(host: HTMLElement, ctx: SectionContext): void {
-  const section = el("section", "cc-edit__section");
-  section.appendChild(el("h3", "cc-edit__section-title", "Appearance"));
+  collapsibleSection(
+    host,
+    { title: "Appearance", key: "appearance", collapsed: ctx.collapsed },
+    (section) => buildAppearance(section, ctx),
+  );
+}
 
+function buildAppearance(section: HTMLElement, ctx: SectionContext): void {
   const name = textInput("Your name (optional)");
   name.value = ctx.draft.profile.name ?? "";
   name.setAttribute("aria-label", "Your name");
@@ -56,6 +61,4 @@ export function renderAppearanceSection(host: HTMLElement, ctx: SectionContext):
   clockRow.appendChild(clock);
   clockRow.appendChild(el("span", undefined, "Use a 24-hour clock"));
   section.appendChild(clockRow);
-
-  host.appendChild(section);
 }

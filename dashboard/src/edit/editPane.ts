@@ -43,6 +43,8 @@ export interface SectionContext {
   /** Mutate the draft secrets and persist. */
   updateSecrets: (mutate: (secrets: Secrets) => void) => void;
   runtime: EditPaneRuntimeDeps;
+  /** Collapsed section keys, persisted across the pane's re-renders. */
+  collapsed: Set<string>;
 }
 
 export type SectionRenderer = (host: HTMLElement, ctx: SectionContext) => void;
@@ -92,6 +94,8 @@ export function openEditPane(host: HTMLElement, deps: EditPaneDeps): EditPaneHan
   // Remember who opened the drawer so focus returns there when it closes.
   const opener =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  // Section collapse state, kept across re-renders (the body rebuilds on edit).
+  const collapsed = new Set<string>();
 
   const root = el("div", "cc-edit");
   const backdrop = el("div", "cc-edit__backdrop");
@@ -135,6 +139,7 @@ export function openEditPane(host: HTMLElement, deps: EditPaneDeps): EditPaneHan
       renderBody();
     },
     runtime: deps.runtime,
+    collapsed,
   };
 
   function renderBody(): void {

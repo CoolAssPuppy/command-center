@@ -35,6 +35,7 @@ export function renderMeetingWindow(
 ): HTMLElement {
   const referenceTimeZone = model.homeZone.timeZone;
   const root = el("div", "cc-mw");
+  root.dataset.flipId = "meeting-window";
 
   const header = el("div", "cc-mw__header");
   header.appendChild(el("span", "cc-mw__eyebrow", "MEETING WINDOW"));

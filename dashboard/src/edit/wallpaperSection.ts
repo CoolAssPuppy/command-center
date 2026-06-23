@@ -1,6 +1,6 @@
 import type { Wallpaper } from "../config/schema";
 import { el } from "../render/helpers";
-import { field, textInput } from "./controls";
+import { collapsibleSection, field, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
 type Source = Wallpaper["source"];
@@ -11,9 +11,14 @@ type Source = Wallpaper["source"];
  * scrim. The Unsplash key is a secret (local, never synced); the rest is config.
  */
 export function renderWallpaperSection(host: HTMLElement, ctx: SectionContext): void {
-  const section = el("section", "cc-edit__section");
-  section.appendChild(el("h3", "cc-edit__section-title", "Wallpaper"));
+  collapsibleSection(
+    host,
+    { title: "Wallpaper", key: "wallpaper", collapsed: ctx.collapsed },
+    (section) => buildWallpaper(section, ctx),
+  );
+}
 
+function buildWallpaper(section: HTMLElement, ctx: SectionContext): void {
   const current = ctx.draft.wallpaper.source;
   const chips = el("div", "cc-edit__chips");
   const addChip = (value: Source, label: string): void => {
@@ -103,6 +108,4 @@ export function renderWallpaperSection(host: HTMLElement, ctx: SectionContext): 
     });
     section.appendChild(field("Darkening", scrim));
   }
-
-  host.appendChild(section);
 }

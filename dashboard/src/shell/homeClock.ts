@@ -32,6 +32,7 @@ function formatDate(now: Date, timeZone: string): string {
 
 export function renderHomeClock(host: HTMLElement, model: HomeClockModel): HTMLElement {
   const root = el("div", "cc-home");
+  root.dataset.flipId = "home-clock";
   const { hour } = zonedTime(model.now, model.zone.timeZone);
 
   const greeting =

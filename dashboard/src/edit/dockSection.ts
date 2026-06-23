@@ -2,7 +2,13 @@ import type { DockLink } from "../config/schema";
 import { el, svgEl } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { newId } from "../util/id";
-import { iconButton, moveInArray, reorderInArray, textInput } from "./controls";
+import {
+  collapsibleSection,
+  iconButton,
+  moveInArray,
+  reorderInArray,
+  textInput,
+} from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -12,20 +18,21 @@ import type { SectionContext } from "./editPane";
  * always holds a safe, parseable url.
  */
 export function renderDockSection(host: HTMLElement, ctx: SectionContext): void {
-  const section = el("section", "cc-edit__section");
-  section.appendChild(el("h3", "cc-edit__section-title", "Dock links"));
-
-  const list = el("div", "cc-edit__list");
-  ctx.draft.links.forEach((link, index) => {
-    list.appendChild(renderLinkRow(link, index, ctx));
-  });
-  if (ctx.draft.links.length === 0) {
-    list.appendChild(el("div", "cc-edit__hint", "No links yet. Add one below."));
-  }
-  section.appendChild(list);
-
-  section.appendChild(renderAddLink(ctx));
-  host.appendChild(section);
+  collapsibleSection(
+    host,
+    { title: "Dock links", key: "dock", collapsed: ctx.collapsed },
+    (section) => {
+      const list = el("div", "cc-edit__list");
+      ctx.draft.links.forEach((link, index) => {
+        list.appendChild(renderLinkRow(link, index, ctx));
+      });
+      if (ctx.draft.links.length === 0) {
+        list.appendChild(el("div", "cc-edit__hint", "No links yet. Add one below."));
+      }
+      section.appendChild(list);
+      section.appendChild(renderAddLink(ctx));
+    },
+  );
 }
 
 /** A six-dot grip mark, the drag affordance shown on row hover. */

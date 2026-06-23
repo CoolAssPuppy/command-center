@@ -33,6 +33,39 @@ export function field(labelText: string, control: HTMLElement): HTMLElement {
   return wrap;
 }
 
+/**
+ * A collapsible edit-pane section built on native <details>, so keyboard and
+ * accessibility come for free. The open/closed state lives in the caller's
+ * `collapsed` set (keyed by `key`) so it survives the pane's full re-renders.
+ * Content is appended to the body passed to `build`.
+ */
+export function collapsibleSection(
+  host: HTMLElement,
+  options: { title: string; key: string; collapsed: Set<string> },
+  build: (body: HTMLElement) => void,
+): void {
+  const details = document.createElement("details");
+  details.className = "cc-edit__section";
+  details.open = !options.collapsed.has(options.key);
+
+  const summary = document.createElement("summary");
+  summary.className = "cc-edit__section-summary";
+  summary.appendChild(el("span", "cc-edit__section-title", options.title));
+  summary.appendChild(el("span", "cc-edit__section-caret", "›"));
+  details.appendChild(summary);
+
+  const body = el("div", "cc-edit__section-body");
+  build(body);
+  details.appendChild(body);
+
+  details.addEventListener("toggle", () => {
+    if (details.open) options.collapsed.delete(options.key);
+    else options.collapsed.add(options.key);
+  });
+
+  host.appendChild(details);
+}
+
 /** Swap an item with its neighbour, in place. A no-op at the ends. */
 export function moveInArray<T>(items: T[], index: number, delta: number): void {
   const target = index + delta;

@@ -330,6 +330,39 @@ describe("edit pane — appearance", () => {
   });
 });
 
+describe("edit pane — collapsible sections", () => {
+  const sectionFor = (root: HTMLElement, title: string): HTMLDetailsElement => {
+    const found = [
+      ...root.querySelectorAll<HTMLDetailsElement>("details.cc-edit__section"),
+    ].find((node) => node.querySelector(".cc-edit__section-title")?.textContent === title);
+    if (found === undefined) throw new Error(`no section ${title}`);
+    return found;
+  };
+
+  it("renders each section as a details, open by default", () => {
+    const { root } = open(twoZones());
+    const sections = root.querySelectorAll<HTMLDetailsElement>("details.cc-edit__section");
+    expect(sections.length).toBeGreaterThanOrEqual(6);
+    expect([...sections].every((node) => node.open)).toBe(true);
+  });
+
+  it("remembers a collapsed section across the pane's re-renders", () => {
+    const harness = open(twoZones());
+    const zones = sectionFor(harness.root, "Timezones");
+    zones.open = false;
+    zones.dispatchEvent(new Event("toggle"));
+
+    // Any edit re-renders the whole body; the section must stay collapsed.
+    const name = harness.root.querySelector<HTMLInputElement>('input[aria-label="Your name"]');
+    if (name === null) throw new Error("no name field");
+    name.value = "Prashant";
+    name.dispatchEvent(new Event("change"));
+
+    expect(sectionFor(harness.root, "Timezones").open).toBe(false);
+    expect(sectionFor(harness.root, "Appearance").open).toBe(true);
+  });
+});
+
 describe("edit pane — shell", () => {
   it("closes and removes itself on Done", () => {
     const onClose = vi.fn();

@@ -1,7 +1,7 @@
 import type { Connection } from "../config/schema";
 import { el } from "../render/helpers";
 import { newId } from "../util/id";
-import { iconButton, moveInArray, textInput } from "./controls";
+import { collapsibleSection, iconButton, moveInArray, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -27,31 +27,32 @@ function connectionSelect(
 }
 
 export function renderStreamsSection(host: HTMLElement, ctx: SectionContext): void {
-  const section = el("section", "cc-edit__section");
-  section.appendChild(el("h3", "cc-edit__section-title", "Work streams"));
+  collapsibleSection(
+    host,
+    { title: "Work streams", key: "streams", collapsed: ctx.collapsed },
+    (section) => {
+      if (ctx.draft.connections.length === 0) {
+        section.appendChild(
+          el(
+            "div",
+            "cc-edit__hint",
+            "Add a Connection first, then create a Work stream that shows it.",
+          ),
+        );
+        return;
+      }
 
-  if (ctx.draft.connections.length === 0) {
-    section.appendChild(
-      el(
-        "div",
-        "cc-edit__hint",
-        "Add a Connection first, then create a Work stream that shows it.",
-      ),
-    );
-    host.appendChild(section);
-    return;
-  }
-
-  const list = el("div", "cc-edit__list");
-  ctx.draft.streams.forEach((stream, index) => {
-    list.appendChild(renderStreamRow(stream, index, ctx));
-  });
-  if (ctx.draft.streams.length === 0) {
-    list.appendChild(el("div", "cc-edit__hint", "No work streams yet. Add one below."));
-  }
-  section.appendChild(list);
-  section.appendChild(renderAddStream(ctx));
-  host.appendChild(section);
+      const list = el("div", "cc-edit__list");
+      ctx.draft.streams.forEach((stream, index) => {
+        list.appendChild(renderStreamRow(stream, index, ctx));
+      });
+      if (ctx.draft.streams.length === 0) {
+        list.appendChild(el("div", "cc-edit__hint", "No work streams yet. Add one below."));
+      }
+      section.appendChild(list);
+      section.appendChild(renderAddStream(ctx));
+    },
+  );
 }
 
 function renderStreamRow(

@@ -42,6 +42,7 @@ export function renderZoneRow(host: HTMLElement, model: ZoneRowModel): HTMLEleme
     });
     const card = el("div", "cc-zone");
     card.setAttribute("data-daynight", clock.dayNight);
+    card.dataset.flipId = `zone:${zone.id}`;
 
     const label = el("div", "cc-zone__label", zone.label);
     const badge = dayOffsetBadge(clock.dateOffsetDays);

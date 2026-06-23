@@ -2,7 +2,13 @@ import type { Connection, Service } from "../config/schema";
 import { el } from "../render/helpers";
 import { brandIcon } from "../shell/brandIcons";
 import { newId } from "../util/id";
-import { field, iconButton, moveInArray, textInput } from "./controls";
+import {
+  collapsibleSection,
+  field,
+  iconButton,
+  moveInArray,
+  textInput,
+} from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -33,25 +39,27 @@ function updateConnection(
 }
 
 export function renderConnectionsSection(host: HTMLElement, ctx: SectionContext): void {
-  const section = el("section", "cc-edit__section");
-  section.appendChild(el("h3", "cc-edit__section-title", "Connections"));
-
-  const list = el("div", "cc-edit__list");
-  ctx.draft.connections.forEach((connection, index) => {
-    list.appendChild(renderConnectionRow(connection, index, ctx));
-  });
-  if (ctx.draft.connections.length === 0) {
-    list.appendChild(
-      el(
-        "div",
-        "cc-edit__hint",
-        "No connections yet. Add one below, then build a Work stream from it.",
-      ),
-    );
-  }
-  section.appendChild(list);
-  section.appendChild(renderAddConnection(ctx));
-  host.appendChild(section);
+  collapsibleSection(
+    host,
+    { title: "Connections", key: "connections", collapsed: ctx.collapsed },
+    (section) => {
+      const list = el("div", "cc-edit__list");
+      ctx.draft.connections.forEach((connection, index) => {
+        list.appendChild(renderConnectionRow(connection, index, ctx));
+      });
+      if (ctx.draft.connections.length === 0) {
+        list.appendChild(
+          el(
+            "div",
+            "cc-edit__hint",
+            "No connections yet. Add one below, then build a Work stream from it.",
+          ),
+        );
+      }
+      section.appendChild(list);
+      section.appendChild(renderAddConnection(ctx));
+    },
+  );
 }
 
 function renderConnectionRow(

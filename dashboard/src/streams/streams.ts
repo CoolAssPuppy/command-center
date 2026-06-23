@@ -49,6 +49,7 @@ function renderStream(
 ): HTMLDetailsElement {
   const details = document.createElement("details");
   details.className = "cc-stream";
+  details.dataset.flipId = `stream:${stream.id}`;
   details.open = isOpen(stream, model.expanded);
 
   const connection = model.connections.find((item) => item.id === stream.connectionId);

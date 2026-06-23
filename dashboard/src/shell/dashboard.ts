@@ -7,6 +7,7 @@ import { renderStreams } from "../streams/streams";
 import { resolveActiveTheme } from "../theme/resolve";
 import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
+import { captureFlipRects, playFlip } from "./flip";
 import { renderHomeClock, type HomeClockModel } from "./homeClock";
 import { renderMeetingWindow } from "./meetingWindow";
 import { renderZoneRow, type ZoneRowModel } from "./zoneRow";
@@ -47,6 +48,10 @@ export function renderDashboard(
 ): HTMLElement {
   const theme = deps.theme ?? resolveActiveTheme(model.config, model.now);
   const reducedMotion = deps.reducedMotion ?? false;
+  // Snapshot widget positions before the rebuild so survivors can animate to
+  // their new spots (a deleted zone/stream, the re-centred stage).
+  const flipRects = captureFlipRects(root);
+  const flipDisabled = reducedMotion || !theme.tokens.motion.enabled;
   applyTokens(root, theme.tokens, { reducedMotion });
   root.replaceChildren();
   root.classList.add("cc-dashboard");
@@ -164,6 +169,8 @@ export function renderDashboard(
     edit.addEventListener("click", deps.onEdit);
   }
   root.appendChild(edit);
+
+  if (!flipDisabled) playFlip(root, flipRects, { reducedMotion: false });
 
   return root;
 }

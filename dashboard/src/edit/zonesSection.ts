@@ -1,7 +1,7 @@
 import { homeZone, type Zone } from "../config/schema";
 import { el } from "../render/helpers";
 import { newId } from "../util/id";
-import { iconButton, moveInArray } from "./controls";
+import { collapsibleSection, iconButton, moveInArray } from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -10,21 +10,22 @@ import type { SectionContext } from "./editPane";
  * dashboard, so exactly one zone carries isHome.
  */
 export function renderZonesSection(host: HTMLElement, ctx: SectionContext): void {
-  const section = el("section", "cc-edit__section");
-  section.appendChild(el("h3", "cc-edit__section-title", "Timezones"));
-
-  const list = el("div", "cc-edit__list");
-  const home = homeZone(ctx.draft);
-  ctx.draft.zones.forEach((zone, index) => {
-    list.appendChild(renderZoneRow(zone, index, home?.id === zone.id, ctx));
-  });
-  if (ctx.draft.zones.length === 0) {
-    list.appendChild(el("div", "cc-edit__hint", "No zones yet. Add one below."));
-  }
-  section.appendChild(list);
-
-  section.appendChild(renderAddZone(ctx));
-  host.appendChild(section);
+  collapsibleSection(
+    host,
+    { title: "Timezones", key: "zones", collapsed: ctx.collapsed },
+    (section) => {
+      const list = el("div", "cc-edit__list");
+      const home = homeZone(ctx.draft);
+      ctx.draft.zones.forEach((zone, index) => {
+        list.appendChild(renderZoneRow(zone, index, home?.id === zone.id, ctx));
+      });
+      if (ctx.draft.zones.length === 0) {
+        list.appendChild(el("div", "cc-edit__hint", "No zones yet. Add one below."));
+      }
+      section.appendChild(list);
+      section.appendChild(renderAddZone(ctx));
+    },
+  );
 }
 
 function renderZoneRow(

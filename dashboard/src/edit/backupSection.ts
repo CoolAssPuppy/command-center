@@ -1,5 +1,6 @@
 import { parseConfig, type Config } from "../config/schema";
 import { el } from "../render/helpers";
+import { collapsibleSection } from "./controls";
 import type { SectionContext } from "./editPane";
 
 /**
@@ -20,9 +21,14 @@ function exportConfig(config: Config): void {
 }
 
 export function renderBackupSection(host: HTMLElement, ctx: SectionContext): void {
-  const section = el("section", "cc-edit__section");
-  section.appendChild(el("h3", "cc-edit__section-title", "Backup"));
+  collapsibleSection(
+    host,
+    { title: "Backup", key: "backup", collapsed: ctx.collapsed },
+    (section) => buildBackup(section, ctx),
+  );
+}
 
+function buildBackup(section: HTMLElement, ctx: SectionContext): void {
   const row = el("div", "cc-edit__add-form cc-edit__add-form--stack");
 
   const exportButton = el("button", "cc-edit__add-btn", "Export settings");
@@ -71,5 +77,4 @@ export function renderBackupSection(host: HTMLElement, ctx: SectionContext): voi
       "Export downloads your settings as JSON (secrets are not included). Import replaces them.",
     ),
   );
-  host.appendChild(section);
 }
