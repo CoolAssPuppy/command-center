@@ -63,7 +63,29 @@ export function defaultConfig(options: DefaultConfigOptions = {}): Config {
         collapsedByDefault: false,
         content: {
           type: "static",
-          body: "Welcome to Command Center. Open Edit (top-right) to add timezones, dock links, work streams, a wallpaper, and a Notion database.",
+          body: "Welcome to Command Center. Open Edit (top-right) to connect your services, add timezones and dock links, and pick a wallpaper.",
+        },
+      },
+      {
+        id: "today",
+        title: "Today",
+        collapsedByDefault: true,
+        content: { type: "integration", integrationId: "google-calendar", config: {} },
+      },
+      {
+        id: "inbox",
+        title: "Inbox",
+        collapsedByDefault: true,
+        content: { type: "integration", integrationId: "linear", config: {} },
+      },
+      {
+        id: "docs",
+        title: "Docs",
+        collapsedByDefault: true,
+        content: {
+          type: "integration",
+          integrationId: "notion",
+          config: { databaseId: "", pageSize: 8 },
         },
       },
     ],

@@ -28,17 +28,35 @@ Open a new tab, move the mouse to the top-right, and click Edit.
 
 - **Timezones**: add a city (searched live), set the home zone, reorder, or remove.
 - **Dock links**: add a link (a bare host becomes `https://`), reorder, or remove.
-- **Work streams**: add a Notes, Links group, or Notion database stream; rename, reorder, and set whether it starts collapsed.
-- **Connections**: paste your Notion token.
+- **Work streams**: add a Notes, Links group, Google Calendar, Linear, or Notion stream; rename, reorder, and set whether it starts collapsed.
+- **Connections**: connect Google Calendar, and paste your Linear and Notion keys.
 - **Wallpaper**: turn it on, set search terms, adjust the darkening, and paste your Unsplash access key.
-- **Appearance**: your name, the theme, and the clock format.
+- **Appearance**: your name, the theme (including Auto, which follows the home zone between Mineral by day and Twilight by night), and the clock format.
 - **Backup**: export or import your settings as JSON.
+
+## Connecting services
+
+All three are serverless: there is no broker to run. Keys live in `chrome.storage.local` and never sync.
+
+### Google Calendar (OAuth)
+
+This uses Chrome's native OAuth (`chrome.identity`), so it needs a one-time Google Cloud setup:
+
+1. In the [Google Cloud console](https://console.cloud.google.com), create (or pick) a project and enable the **Google Calendar API**.
+2. Configure the OAuth consent screen (External, add yourself as a test user) with the `.../auth/calendar.readonly` scope.
+3. Create an OAuth client ID of type **Chrome Extension**, using your extension's ID (shown at `chrome://extensions` after loading it unpacked; pin the ID with a `key` in the manifest if you want it stable across reloads).
+4. Put that client ID into `manifest.json` under `oauth2.client_id` (it currently holds a placeholder), then rebuild and reload the extension.
+5. In the edit pane, under Connections, click **Connect Google Calendar** and approve. The Today stream then lists your upcoming events.
+
+### Linear
+
+Create a personal API key in Linear (Settings, API), and paste it under Connections. The Inbox stream lists your open assigned issues.
 
 ### Notion
 
 1. Create an internal integration in your Notion settings and copy its token.
 2. Share the database you want to show with that integration.
-3. In the edit pane, paste the token under Connections, add a "Notion database" stream, and set its database id. Optionally set a title property, item count, and a raw Notion filter as JSON.
+3. Paste the token under Connections, add a Notion stream, and set its database id (optionally a title property, item count, and a raw Notion filter as JSON).
 
 ### Unsplash
 

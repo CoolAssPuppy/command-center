@@ -27,12 +27,14 @@ describe("defaultConfig", () => {
     expect(newYorkZones[0]?.isHome).toBe(true);
   });
 
-  it("seeds a few starter links and a welcome notes stream, wallpaper off", () => {
+  it("seeds starter links, a welcome note, and the three service streams", () => {
     const config = defaultConfig({ timeZone: "UTC" });
     expect(config.links.map((link) => link.title)).toContain("GitHub");
-    expect(config.streams).toHaveLength(1);
     expect(config.streams[0]?.content.type).toBe("static");
-    expect(config.streams[0]?.collapsedByDefault).toBe(false);
+    const integrationIds = config.streams.flatMap((stream) =>
+      stream.content.type === "integration" ? [stream.content.integrationId] : [],
+    );
+    expect(integrationIds).toEqual(["google-calendar", "linear", "notion"]);
     expect(config.wallpaper.enabled).toBe(false);
   });
 });
