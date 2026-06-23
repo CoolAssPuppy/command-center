@@ -55,7 +55,7 @@ export function renderDashboard(
   const wallpaper = el("div", "cc-wallpaper");
   const imageUrl = model.wallpaper?.imageUrl;
   const showImage =
-    model.config.wallpaper.enabled &&
+    model.config.wallpaper.source !== "gradient" &&
     imageUrl !== undefined &&
     isSafeUrl(imageUrl, ["https:"]) &&
     !imageUrl.includes('"');

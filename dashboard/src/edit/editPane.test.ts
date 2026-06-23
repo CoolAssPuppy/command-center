@@ -148,20 +148,23 @@ describe("edit pane — streams", () => {
 });
 
 describe("edit pane — wallpaper", () => {
-  it("enables the wallpaper", () => {
+  const clickChip = (root: HTMLElement, label: string): void => {
+    const chip = [...root.querySelectorAll<HTMLButtonElement>(".cc-edit__chips .cc-edit__chip")].find(
+      (node) => node.textContent === label,
+    );
+    if (chip === undefined) throw new Error(`no chip ${label}`);
+    chip.click();
+  };
+
+  it("selects the Unsplash source", () => {
     const harness = open(twoZones());
-    const label = [
-      ...harness.root.querySelectorAll<HTMLElement>("label.cc-edit__check"),
-    ].find((node) => node.textContent?.includes("wallpaper"));
-    const toggle = label?.querySelector<HTMLInputElement>('input[type="checkbox"]');
-    if (toggle === null || toggle === undefined) throw new Error("no wallpaper toggle");
-    toggle.checked = true;
-    toggle.dispatchEvent(new Event("change"));
-    expect(harness.applied()?.wallpaper.enabled).toBe(true);
+    clickChip(harness.root, "Unsplash");
+    expect(harness.applied()?.wallpaper.source).toBe("unsplash");
   });
 
-  it("stores the access key in secrets", () => {
+  it("stores the access key once Unsplash is the source", () => {
     const harness = open(twoZones());
+    clickChip(harness.root, "Unsplash");
     const key = harness.root.querySelector<HTMLInputElement>(
       'input[aria-label="Unsplash access key"]',
     );
@@ -169,6 +172,18 @@ describe("edit pane — wallpaper", () => {
     key.value = "unsplash-key";
     key.dispatchEvent(new Event("change"));
     expect(harness.appliedSecrets()?.unsplashAccessKey).toBe("unsplash-key");
+  });
+
+  it("stores a custom image URL", () => {
+    const harness = open(twoZones());
+    clickChip(harness.root, "Custom");
+    const url = harness.root.querySelector<HTMLInputElement>(
+      'input[aria-label="Custom image URL"]',
+    );
+    if (url === null) throw new Error("no custom URL field");
+    url.value = "https://images.example.com/p.jpg";
+    url.dispatchEvent(new Event("change"));
+    expect(harness.applied()?.wallpaper.customUrl).toBe("https://images.example.com/p.jpg");
   });
 });
 

@@ -57,11 +57,17 @@ export const StreamSchema = z.object({
 });
 export type Stream = z.infer<typeof StreamSchema>;
 
-/** Background wallpaper sourced from Unsplash by search terms. */
+/**
+ * The background. "gradient" uses the active theme's gradient (the default);
+ * "unsplash" pulls a photo by search terms; "custom" uses a supplied image URL.
+ * A photo sits over the gradient under a readability scrim.
+ */
 export const WallpaperSchema = z.object({
-  enabled: z.boolean().default(false),
-  /** Search terms, one image picked per day/tab, e.g. ["San Francisco", "Lisbon"]. */
+  source: z.enum(["gradient", "unsplash", "custom"]).default("gradient"),
+  /** Unsplash search terms, one image per day/tab, e.g. ["San Francisco"]. */
   terms: z.array(z.string()).default([]),
+  /** A direct image URL for the "custom" source. */
+  customUrl: z.string().optional(),
   /** 0 = no darkening, 1 = black. A readability scrim over the photo. */
   scrim: z.number().min(0).max(1).default(0.4),
 });
@@ -87,7 +93,7 @@ export const ConfigSchema = z.object({
   zones: z.array(ZoneSchema).default([]),
   links: z.array(DockLinkSchema).default([]),
   streams: z.array(StreamSchema).default([]),
-  wallpaper: WallpaperSchema.default({ enabled: false, terms: [], scrim: 0.4 }),
+  wallpaper: WallpaperSchema.default({ source: "gradient", terms: [], scrim: 0.4 }),
   appearance: AppearanceSchema.default({ hour12: true }),
 });
 export type Config = z.infer<typeof ConfigSchema>;

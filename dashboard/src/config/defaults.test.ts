@@ -35,7 +35,7 @@ describe("defaultConfig", () => {
       stream.content.type === "integration" ? [stream.content.integrationId] : [],
     );
     expect(integrationIds).toEqual(["google-calendar", "linear", "notion"]);
-    expect(config.wallpaper.enabled).toBe(false);
+    expect(config.wallpaper.source).toBe("gradient");
   });
 });
 

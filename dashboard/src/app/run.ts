@@ -86,7 +86,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
   let config: Config | undefined;
   let streamExpanded = loadStreamState();
   let wallpaperPhoto:
-    | { imageUrl: string; authorName: string; authorUrl: string }
+    | { imageUrl: string; authorName?: string; authorUrl?: string }
     | undefined;
   let integrationResults: Record<string, IntegrationResult> = {};
   const weatherByZone: Record<string, Weather> = {};
@@ -157,21 +157,42 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     });
   }
 
+  function clearWallpaper(): void {
+    if (wallpaperPhoto !== undefined) {
+      wallpaperPhoto = undefined;
+      paint();
+    }
+  }
+
   async function resolveAndPaintWallpaper(secretsOverride?: Secrets): Promise<void> {
     if (config === undefined) return;
-    if (!config.wallpaper.enabled || config.wallpaper.terms.length === 0) {
-      if (wallpaperPhoto !== undefined) {
-        wallpaperPhoto = undefined;
+    const wallpaper = config.wallpaper;
+
+    if (wallpaper.source === "custom") {
+      const url = wallpaper.customUrl;
+      if (url !== undefined && url.length > 0) {
+        wallpaperPhoto = { imageUrl: url };
         paint();
+      } else {
+        clearWallpaper();
       }
       return;
     }
+
+    if (wallpaper.source !== "unsplash" || wallpaper.terms.length === 0) {
+      clearWallpaper();
+      return;
+    }
+
     const secrets = secretsOverride ?? (await deps.store.loadSecrets());
     const accessKey = secrets.unsplashAccessKey;
-    if (accessKey === undefined || accessKey.length === 0) return;
+    if (accessKey === undefined || accessKey.length === 0) {
+      clearWallpaper();
+      return;
+    }
     const dateKey = deps.now().toISOString().slice(0, 10);
     const photo = await resolveWallpaper(
-      { terms: config.wallpaper.terms, accessKey, dateKey },
+      { terms: wallpaper.terms, accessKey, dateKey },
       { fetch: deps.unsplashFetch ?? ((url) => fetch(url)) },
     );
     if (photo !== undefined) {

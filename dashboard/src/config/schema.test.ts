@@ -23,7 +23,7 @@ describe("config parsing", () => {
     const config = parseConfig({});
     expect(config.version).toBe(1);
     expect(config.zones).toEqual([]);
-    expect(config.wallpaper.enabled).toBe(false);
+    expect(config.wallpaper.source).toBe("gradient");
     expect(config.appearance.hour12).toBe(true);
   });
 

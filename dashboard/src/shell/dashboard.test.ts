@@ -49,7 +49,7 @@ describe("renderDashboard", () => {
 
   it("paints the wallpaper image and Unsplash credit when resolved", () => {
     const config = ConfigSchema.parse({
-      wallpaper: { enabled: true, terms: ["Lisbon"], scrim: 0.5 },
+      wallpaper: { source: "unsplash", terms: ["Lisbon"], scrim: 0.5 },
       zones: [{ id: "h", label: "Home", timeZone: "UTC", isHome: true }],
     });
     const root = host();
@@ -76,7 +76,7 @@ describe("renderDashboard", () => {
 
   it("ignores a wallpaper image with an unsafe url", () => {
     const config = ConfigSchema.parse({
-      wallpaper: { enabled: true, terms: ["x"], scrim: 0.4 },
+      wallpaper: { source: "unsplash", terms: ["x"], scrim: 0.4 },
       zones: [{ id: "h", label: "Home", timeZone: "UTC", isHome: true }],
     });
     const root = host();
