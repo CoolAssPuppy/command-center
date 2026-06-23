@@ -661,6 +661,42 @@ body {
   flex-shrink: 0;
 }
 
+/* Drag-to-reorder rows: a grip handle that surfaces on hover. */
+.cc-edit__row--drag {
+  cursor: default;
+}
+
+.cc-edit__grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  color: var(--cc-color-muted, #6a6e76);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cc-edit__row--drag:hover .cc-edit__grip,
+.cc-edit__row--drag:focus-within .cc-edit__grip {
+  opacity: 0.7;
+}
+
+.cc-edit__grip:active {
+  cursor: grabbing;
+}
+
+.cc-edit__row--drag.is-dragging {
+  opacity: 0.45;
+}
+
+.cc-edit__row--drag.is-drop-target {
+  border-color: color-mix(in srgb, var(--cc-color-accent, #3ecf8e) 60%, transparent);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--cc-color-accent, #3ecf8e) 40%, transparent);
+}
+
 .cc-edit__chip {
   font: inherit;
   font-size: 11px;

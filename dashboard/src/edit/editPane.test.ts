@@ -105,6 +105,41 @@ describe("edit pane — zones", () => {
   });
 });
 
+const withLinks = (): Config =>
+  ConfigSchema.parse({
+    zones: [{ id: "ny", label: "New York", timeZone: "America/New_York", isHome: true }],
+    links: [
+      { id: "l1", title: "GitHub", url: "https://github.com" },
+      { id: "l2", title: "Linear", url: "https://linear.app" },
+    ],
+  });
+
+const linkRow = (root: HTMLElement, title: string): HTMLElement => {
+  const input = [
+    ...root.querySelectorAll<HTMLInputElement>('input[aria-label="Link title"]'),
+  ].find((node) => node.value === title);
+  const row = input?.closest<HTMLElement>(".cc-edit__row");
+  if (row === null || row === undefined) throw new Error(`no link row for ${title}`);
+  return row;
+};
+
+/** A DataTransfer stand-in: jsdom drag events carry no real one. */
+const fakeTransfer = (): DataTransfer => {
+  const store: Record<string, string> = {};
+  return {
+    setData: (type: string, value: string) => {
+      store[type] = value;
+    },
+    getData: (type: string) => store[type] ?? "",
+  } as unknown as DataTransfer;
+};
+
+const dragEvent = (type: string, transfer: DataTransfer): Event => {
+  const event = new Event(type, { cancelable: true, bubbles: true });
+  Object.defineProperty(event, "dataTransfer", { value: transfer });
+  return event;
+};
+
 describe("edit pane — dock", () => {
   it("adds a dock link, normalizing a bare host to https", () => {
     const harness = open(twoZones());
@@ -125,6 +160,41 @@ describe("edit pane — dock", () => {
     expect(
       harness.applied()?.links.some((link) => link.url === "https://github.com"),
     ).toBe(true);
+  });
+
+  it("edits a link's title in place", () => {
+    const harness = open(withLinks());
+    const title = linkRow(harness.root, "GitHub").querySelector<HTMLInputElement>(
+      'input[aria-label="Link title"]',
+    );
+    if (title === null) throw new Error("no title input");
+    title.value = "Source";
+    title.dispatchEvent(new Event("change"));
+    expect(harness.applied()?.links.find((l) => l.id === "l1")?.title).toBe("Source");
+  });
+
+  it("edits a link's url in place, normalizing a bare host", () => {
+    const harness = open(withLinks());
+    const url = linkRow(harness.root, "GitHub").querySelector<HTMLInputElement>(
+      'input[aria-label="Link URL"]',
+    );
+    if (url === null) throw new Error("no url input");
+    url.value = "example.com";
+    url.dispatchEvent(new Event("change"));
+    expect(harness.applied()?.links.find((l) => l.id === "l1")?.url).toBe(
+      "https://example.com",
+    );
+  });
+
+  it("reorders links by dropping one row onto another", () => {
+    const harness = open(withLinks());
+    const rows = [...harness.root.querySelectorAll<HTMLElement>(".cc-edit__row--drag")];
+    const [first, second] = rows;
+    if (first === undefined || second === undefined) throw new Error("missing rows");
+    const transfer = fakeTransfer();
+    first.dispatchEvent(dragEvent("dragstart", transfer));
+    second.dispatchEvent(dragEvent("drop", transfer));
+    expect(harness.applied()?.links.map((l) => l.id)).toEqual(["l2", "l1"]);
   });
 });
 

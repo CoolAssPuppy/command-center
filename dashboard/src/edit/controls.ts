@@ -43,3 +43,12 @@ export function moveInArray<T>(items: T[], index: number, delta: number): void {
   items[index] = swapped;
   items[target] = moved;
 }
+
+/** Move an item from one index to another, in place (for drag reordering). */
+export function reorderInArray<T>(items: T[], from: number, to: number): void {
+  if (from === to) return;
+  if (from < 0 || from >= items.length || to < 0 || to >= items.length) return;
+  const moved = items.splice(from, 1)[0];
+  if (moved === undefined) return;
+  items.splice(to, 0, moved);
+}
