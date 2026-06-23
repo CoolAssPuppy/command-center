@@ -118,10 +118,22 @@ User direction: implement the Paper "Twilight/Mineral" design in the app, plus r
 
 - [x] D1 Day/night themes: new Twilight (night) theme + Mineral (day) gradient backgrounds; `resolveActiveTheme` auto-switches by the home zone's local time; "Auto · day & night" option in the edit pane. Tests + live (Twilight verified).
 - [x] D2 Layout to match the Paper design: hero (big home clock + compact meeting-window widget with the honest "no single hour reaches all N" verdict, peak-overlap band, now cursor), left-aligned wider stage, place-card row, and integration streams as a panel grid with Google Calendar / Linear / Notion brand tiles. New `time/meetingWindow` peak-overlap math. Empty Notion db reads as needs-auth, not an error. Tests + live (Twilight + Mineral).
-- [ ] D3 Wallpaper source picker: gradient | Unsplash terms | custom URL (+ rotation), in config + edit pane.
+- [x] D3 Wallpaper source picker: gradient (theme), Unsplash (terms + key), or custom (https URL); source chips + matching fields in the edit pane; attribution only for Unsplash. Tests.
 - [x] D4 Google Calendar integration: OAuth via `chrome.identity` (no server), `calendar.readonly`, upcoming events normalized to items; `Connect Google Calendar` button in the edit pane; manifest `oauth2` + identity permission (client id is a placeholder the user fills). Injected-fetch tests.
 - [x] D5 Linear integration: personal API key (local secret), GraphQL `viewer.assignedIssues` (open) normalized to items; key field in Connections. Injected-fetch tests. Both registered; streams gain Google Calendar / Linear types.
-- [ ] D6 Wire Calendar/Linear/Notion as default panels; settings; tests; build; README/docs.
+- [x] D6 Default config seeds Today/Inbox/Docs integration streams; README covers the new layout (meeting window, day/night, wallpaper sources) and the per-service setup. Package builds (115 KB). 171 tests green, lint clean.
+
+### Review (Paper redesign epic, 2026-06-23)
+
+All of D1–D6 landed on `build/chrome-pivot`. The app now implements the Paper "Twilight/Mineral" design and the three real integrations.
+
+- Day/night Mineral (limestone) and Twilight (dusk) gradient themes, auto-switching by the home zone's clock.
+- Hero: big home clock + a compact meeting-window widget that finds the peak overlap and states honestly when no single hour catches everyone.
+- Place-card zone row, dock, and integration streams as a brand-marked panel grid.
+- Google Calendar (chrome.identity OAuth), Linear (personal key), Notion (token) — all serverless; CSP/host permissions extended.
+- Wallpaper source picker: gradient / Unsplash / custom.
+
+Needs the user's credentials to light up live: Google OAuth client id (manifest), Linear key, Notion token, Unsplash key (steps in the README). Verified live in both schemes; integrations are unit-tested (the live round-trips need those keys). Nothing pushed; commits are local on `build/chrome-pivot`.
 
 ## Standing quality mandate
 

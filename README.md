@@ -1,15 +1,17 @@
 # Command Center
 
-A calm Chrome new tab page. It shows world clocks, a dock of links, collapsible work streams, an optional Unsplash wallpaper, and pluggable integrations (Notion first). Inspired by Sean Oliver's [solstice](https://github.com/seanoliver/solstice).
+A calm Chrome new tab page. World clocks, a meeting-window finder, a dock of links, work streams, a wallpaper, and real integrations with Google Calendar, Linear, and Notion. The whole surface shifts with the time of day. Inspired by Sean Oliver's [solstice](https://github.com/seanoliver/solstice).
 
 ## What it does
 
 - A big local clock for your home timezone, with a row of other zones showing the offset, day or night, and current weather.
+- A **meeting-window** widget that finds the best overlap across your zones and tells you honestly when there is no single hour that catches everyone.
+- A **day/night** theme that auto-switches with your home zone: Mineral by day, Twilight by night (or pick a theme).
 - A macOS-style dock of favicon links with hover magnification.
-- Collapsible work streams: free text notes, a group of links, or a live integration feed.
-- An optional full-screen wallpaper from Unsplash, chosen by your search terms.
-- A Notion integration that shows a database with custom filters.
-- Themes (Mineral, Aurora, Paper, Mono), a 12 or 24 hour clock, and settings import and export.
+- Work streams: notes, a group of links, or a live integration panel.
+- **Integrations**: Google Calendar (OAuth), Linear (API key), and Notion (token), each shown as a panel with its brand mark.
+- A **wallpaper** that is the theme gradient, an Unsplash photo by search terms, or a custom image.
+- A 12 or 24 hour clock, and settings import and export.
 
 ## Install (load unpacked)
 
