@@ -4,6 +4,7 @@ import type { ConfigStore } from "../config/store";
 import type { ParseResult } from "../domain/result";
 import { openEditPane } from "../edit/editPane";
 import { searchCities as geoSearch, type GeoResult } from "../geo/geocode";
+import { connectGoogle, getGoogleToken } from "../integrations/googleAuth";
 import { realHttpFetch } from "../integrations/http";
 import { integrationById } from "../integrations/registry";
 import {
@@ -62,6 +63,8 @@ export interface RunDeps {
   unsplashFetch?: FetchLike;
   /** HTTP client used by integrations. Defaults to the real one. */
   httpFetch?: HttpFetch;
+  /** OAuth token getter for integrations. Defaults to chrome.identity (Google). */
+  getAuthToken?: (provider: string) => Promise<string | undefined>;
 }
 
 interface LocatedZone {
@@ -143,7 +146,13 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         onClose: () => {
           /* nothing to do; the dashboard already reflects the latest config */
         },
-        runtime: { searchCities },
+        runtime: {
+          searchCities,
+          connectGoogle: async () => {
+            const token = await connectGoogle();
+            if (token !== undefined) await refreshIntegrations();
+          },
+        },
       });
     });
   }
@@ -189,10 +198,15 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     }
 
     const secrets = await deps.store.loadSecrets();
+    const getAuthToken =
+      deps.getAuthToken ??
+      ((provider: string): Promise<string | undefined> =>
+        provider === "google" ? getGoogleToken() : Promise.resolve(undefined));
     const ctx: IntegrationContext = {
       secrets,
       fetch: deps.httpFetch ?? realHttpFetch,
       now: deps.now(),
+      getAuthToken,
     };
 
     // Keep any already-loaded results, mark the rest loading, drop stale streams.

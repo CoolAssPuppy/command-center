@@ -11,16 +11,22 @@
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "identity"],
   "host_permissions": [
     "https://api.open-meteo.com/*",
     "https://geocoding-api.open-meteo.com/*",
     "https://api.unsplash.com/*",
     "https://images.unsplash.com/*",
     "https://api.notion.com/*",
+    "https://api.linear.app/*",
+    "https://www.googleapis.com/*",
     "https://www.google.com/s2/favicons*"
   ],
+  "oauth2": {
+    "client_id": "REPLACE_WITH_YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/calendar.readonly"]
+  },
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; connect-src 'self' https://api.open-meteo.com https://api.unsplash.com https://api.notion.com https://geocoding-api.open-meteo.com; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    "extension_pages": "default-src 'self'; connect-src 'self' https://api.open-meteo.com https://api.unsplash.com https://api.notion.com https://geocoding-api.open-meteo.com https://www.googleapis.com https://api.linear.app; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
   }
 }

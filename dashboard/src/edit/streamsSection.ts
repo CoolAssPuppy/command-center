@@ -146,7 +146,11 @@ function renderContentEditor(stream: Stream, ctx: SectionContext): HTMLElement {
   }
 
   if (content.integrationId === "notion") return renderNotionEditor(stream, ctx);
-  return el("div", "cc-edit__hint", `Integration: ${content.integrationId}`);
+  return el(
+    "div",
+    "cc-edit__hint",
+    "Connect this service under Connections; it uses sensible defaults.",
+  );
 }
 
 function updateNotionConfig(
@@ -243,6 +247,9 @@ function contentForType(type: string): StreamContent {
       config: { databaseId: "", pageSize: 10 },
     };
   }
+  if (type === "google-calendar" || type === "linear") {
+    return { type: "integration", integrationId: type, config: {} };
+  }
   return { type: "static", body: "" };
 }
 
@@ -259,6 +266,8 @@ function renderAddStream(ctx: SectionContext): HTMLElement {
   const streamTypes: ReadonlyArray<readonly [string, string]> = [
     ["static", "Notes"],
     ["links", "Links group"],
+    ["google-calendar", "Google Calendar"],
+    ["linear", "Linear inbox"],
     ["notion", "Notion database"],
   ];
   for (const [value, text] of streamTypes) {

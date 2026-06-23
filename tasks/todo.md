@@ -119,8 +119,8 @@ User direction: implement the Paper "Twilight/Mineral" design in the app, plus r
 - [x] D1 Day/night themes: new Twilight (night) theme + Mineral (day) gradient backgrounds; `resolveActiveTheme` auto-switches by the home zone's local time; "Auto · day & night" option in the edit pane. Tests + live (Twilight verified).
 - [ ] D2 Meeting-window widget (compact, honest "no single hour" verdict) + place-card / integration-panel restyle with brand icons.
 - [ ] D3 Wallpaper source picker: gradient | Unsplash terms | custom URL (+ rotation), in config + edit pane.
-- [ ] D4 Google Calendar integration via `chrome.identity` OAuth (Today panel) + setup doc.
-- [ ] D5 Linear integration via personal API key (Inbox panel).
+- [x] D4 Google Calendar integration: OAuth via `chrome.identity` (no server), `calendar.readonly`, upcoming events normalized to items; `Connect Google Calendar` button in the edit pane; manifest `oauth2` + identity permission (client id is a placeholder the user fills). Injected-fetch tests.
+- [x] D5 Linear integration: personal API key (local secret), GraphQL `viewer.assignedIssues` (open) normalized to items; key field in Connections. Injected-fetch tests. Both registered; streams gain Google Calendar / Linear types.
 - [ ] D6 Wire Calendar/Linear/Notion as default panels; settings; tests; build; README/docs.
 
 ## Standing quality mandate

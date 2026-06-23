@@ -96,6 +96,7 @@ export type Config = z.infer<typeof ConfigSchema>;
 export const SecretsSchema = z.object({
   unsplashAccessKey: z.string().optional(),
   notionToken: z.string().optional(),
+  linearApiKey: z.string().optional(),
 });
 export type Secrets = z.infer<typeof SecretsSchema>;
 

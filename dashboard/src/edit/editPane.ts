@@ -19,6 +19,8 @@ import { renderZonesSection } from "./zonesSection";
 export interface EditPaneRuntimeDeps {
   /** City search for adding a zone. Returns matches (empty on failure). */
   searchCities: (query: string) => Promise<GeoResult[]>;
+  /** Prompt for Google consent (chrome.identity). Absent outside the extension. */
+  connectGoogle?: () => Promise<void>;
 }
 
 export interface EditPaneDeps {
