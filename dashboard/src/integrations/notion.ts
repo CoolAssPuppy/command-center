@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { Connection } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
 import {
   NEEDS_AUTH,
@@ -9,26 +10,13 @@ import {
 } from "./types";
 
 /**
- * The Notion integration. It queries a database with the user's integration
- * token (kept in local secrets) and a stable API version, applies the optional
- * filter and sorts from the stream config, and normalizes each page into a
- * text-only item that links back to Notion. Property shapes in Notion are
- * dynamic, so the title is extracted defensively without trusting the schema.
+ * The Notion integration. It queries the connection's database with the
+ * connection's token (a secret) and a stable API version, applies the optional
+ * filter, and normalizes each page into a text-only item linking to Notion.
+ * Property shapes are dynamic, so the title is extracted defensively.
  */
 const NOTION_VERSION = "2022-06-28";
 const QUERY_BASE = "https://api.notion.com/v1/databases";
-
-export const NotionConfigSchema = z.object({
-  databaseId: z.string().default(""),
-  /** Which property holds the title; defaults to the title-typed property. */
-  titleProperty: z.string().optional(),
-  /** A raw Notion filter object, passed through verbatim. */
-  filter: z.unknown().optional(),
-  /** Raw Notion sorts, passed through verbatim. */
-  sorts: z.array(z.unknown()).optional(),
-  pageSize: z.number().int().positive().max(50).default(10),
-});
-export type NotionConfig = z.infer<typeof NotionConfigSchema>;
 
 const ResultSchema = z.object({
   id: z.string(),
@@ -36,9 +24,7 @@ const ResultSchema = z.object({
   properties: z.record(z.unknown()).optional(),
 });
 
-const QueryResponseSchema = z.object({
-  results: z.array(ResultSchema),
-});
+const QueryResponseSchema = z.object({ results: z.array(ResultSchema) });
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return typeof value === "object" && value !== null
@@ -51,7 +37,7 @@ function plainTextFromTitle(property: unknown): string | undefined {
   if (prop === undefined || prop.type !== "title") return undefined;
   const segments = prop.title;
   if (!Array.isArray(segments)) return undefined;
-  const text = segments
+  return segments
     .map((segment) => {
       const record = asRecord(segment);
       return record !== undefined && typeof record.plain_text === "string"
@@ -59,7 +45,6 @@ function plainTextFromTitle(property: unknown): string | undefined {
         : "";
     })
     .join("");
-  return text;
 }
 
 function extractTitle(
@@ -83,33 +68,28 @@ export const notionIntegration: Integration = {
   displayName: "Notion",
 
   async fetch(
-    rawConfig: unknown,
+    connection: Connection,
+    secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>> {
-    const parsed = NotionConfigSchema.safeParse(rawConfig);
-    if (!parsed.success) {
-      return { ok: false, error: firstIssue(parsed.error, "Set a Notion database") };
+    if (secret === undefined || secret.trim().length === 0) {
+      return { ok: false, error: NEEDS_AUTH };
     }
-    const token = ctx.secrets.notionToken;
-    if (token === undefined || token.trim().length === 0) {
+    const databaseId = connection.databaseId?.trim() ?? "";
+    if (databaseId.length === 0) {
       return { ok: false, error: NEEDS_AUTH };
     }
 
-    const config = parsed.data;
-    if (config.databaseId.trim().length === 0) {
-      return { ok: false, error: NEEDS_AUTH };
-    }
-    const body: Record<string, unknown> = { page_size: config.pageSize };
-    if (config.filter !== undefined) body.filter = config.filter;
-    if (config.sorts !== undefined) body.sorts = config.sorts;
+    const body: Record<string, unknown> = { page_size: connection.count ?? 10 };
+    if (connection.filter !== undefined) body.filter = connection.filter;
 
     let payload: unknown;
     try {
       const response = await ctx.fetch({
-        url: `${QUERY_BASE}/${encodeURIComponent(config.databaseId)}/query`,
+        url: `${QUERY_BASE}/${encodeURIComponent(databaseId)}/query`,
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${secret}`,
           "Notion-Version": NOTION_VERSION,
           "Content-Type": "application/json",
         },
@@ -133,7 +113,7 @@ export const notionIntegration: Integration = {
     const items: NormalizedItem[] = result.data.results.map((page) => {
       const item: NormalizedItem = {
         id: page.id,
-        title: extractTitle(page.properties, config.titleProperty),
+        title: extractTitle(page.properties, connection.titleProperty),
       };
       if (page.url !== undefined) item.url = page.url;
       return item;

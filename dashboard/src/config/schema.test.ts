@@ -39,27 +39,31 @@ describe("config parsing", () => {
     expect(result.success).toBe(false);
   });
 
-  it("parses each stream content variant", () => {
+  it("parses connections and a stream that references one", () => {
     const config = parseConfig({
-      streams: [
-        { id: "a", title: "Notes", content: { type: "static", body: "hi" } },
-        { id: "b", title: "Pins", content: { type: "links", linkIds: ["x"] } },
-        {
-          id: "c",
-          title: "Notion",
-          content: { type: "integration", integrationId: "notion", config: {} },
-        },
+      connections: [
+        { id: "c1", name: "Work Calendar", service: "google-calendar" },
+        { id: "c2", name: "Roadmap", service: "notion", databaseId: "db1" },
       ],
+      streams: [{ id: "s1", title: "Today", connectionId: "c1" }],
     });
-    expect(config.streams).toHaveLength(3);
-    expect(config.streams[1]?.content.type).toBe("links");
+    expect(config.connections).toHaveLength(2);
+    expect(config.connections[1]?.service).toBe("notion");
+    expect(config.streams[0]?.connectionId).toBe("c1");
   });
 
-  it("defaults a stream to collapsed", () => {
-    const config = parseConfig({
-      streams: [{ id: "a", title: "Notes", content: { type: "static", body: "" } }],
+  it("rejects a connection with an unknown service", () => {
+    const result = ConfigSchema.safeParse({
+      connections: [{ id: "c1", name: "X", service: "slack" }],
     });
-    expect(config.streams[0]?.collapsedByDefault).toBe(true);
+    expect(result.success).toBe(false);
+  });
+
+  it("defaults a stream to open", () => {
+    const config = parseConfig({
+      streams: [{ id: "s1", title: "Today", connectionId: "c1" }],
+    });
+    expect(config.streams[0]?.collapsedByDefault).toBe(false);
   });
 });
 
@@ -84,13 +88,13 @@ describe("zone selectors", () => {
 });
 
 describe("secrets parsing", () => {
-  it("returns an empty object for missing secrets", () => {
-    expect(parseSecrets(undefined)).toEqual({});
+  it("defaults connectionSecrets for missing secrets", () => {
+    expect(parseSecrets(undefined)).toEqual({ connectionSecrets: {} });
   });
 
   it("keeps known secret fields", () => {
-    expect(parseSecrets({ notionToken: "tok", extra: 1 })).toEqual({
-      notionToken: "tok",
-    });
+    expect(
+      parseSecrets({ unsplashAccessKey: "k", connectionSecrets: { c1: "tok" }, extra: 1 }),
+    ).toEqual({ unsplashAccessKey: "k", connectionSecrets: { c1: "tok" } });
   });
 });

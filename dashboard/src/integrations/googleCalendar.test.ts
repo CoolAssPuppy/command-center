@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { Connection } from "../config/schema";
 import { googleCalendarIntegration } from "./googleCalendar";
 import {
   NEEDS_AUTH,
@@ -14,21 +15,26 @@ const json = (body: unknown): HttpResponseLike => ({
   json: () => Promise.resolve(body),
 });
 
-function context(overrides: Partial<IntegrationContext> = {}): IntegrationContext {
-  return {
-    secrets: {},
-    now: new Date("2026-06-23T09:00:00Z"),
-    fetch: () => Promise.resolve(json({ items: [] })),
-    getAuthToken: () => Promise.resolve("tok"),
-    ...overrides,
-  };
-}
+const ctx = (overrides: Partial<IntegrationContext> = {}): IntegrationContext => ({
+  fetch: () => Promise.resolve(json({ items: [] })),
+  now: new Date("2026-06-23T09:00:00Z"),
+  getAuthToken: () => Promise.resolve("tok"),
+  ...overrides,
+});
+
+const connection = (overrides: Partial<Connection> = {}): Connection => ({
+  id: "c1",
+  name: "Today",
+  service: "google-calendar",
+  ...overrides,
+});
 
 describe("googleCalendarIntegration", () => {
   it("returns needs-auth without a token", async () => {
     const result = await googleCalendarIntegration.fetch(
-      {},
-      context({ getAuthToken: () => Promise.resolve(undefined) }),
+      connection(),
+      undefined,
+      ctx({ getAuthToken: () => Promise.resolve(undefined) }),
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe(NEEDS_AUTH);
@@ -53,8 +59,9 @@ describe("googleCalendarIntegration", () => {
       );
     };
     const result = await googleCalendarIntegration.fetch(
-      { maxResults: 5 },
-      context({ fetch }),
+      connection({ count: 5 }),
+      undefined,
+      ctx({ fetch }),
     );
 
     expect(result.ok).toBe(true);
@@ -72,8 +79,9 @@ describe("googleCalendarIntegration", () => {
 
   it("falls back to (no title) and labels all-day events", async () => {
     const result = await googleCalendarIntegration.fetch(
-      {},
-      context({
+      connection(),
+      undefined,
+      ctx({
         fetch: () => Promise.resolve(json({ items: [{ id: "e2", start: { date: "2026-06-24" } }] })),
       }),
     );
@@ -85,10 +93,10 @@ describe("googleCalendarIntegration", () => {
 
   it("maps 401 to needs-auth", async () => {
     const result = await googleCalendarIntegration.fetch(
-      {},
-      context({
-        fetch: () =>
-          Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({}) }),
+      connection(),
+      undefined,
+      ctx({
+        fetch: () => Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({}) }),
       }),
     );
     expect(result.ok).toBe(false);

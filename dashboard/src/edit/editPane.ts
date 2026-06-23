@@ -50,8 +50,8 @@ export type SectionRenderer = (host: HTMLElement, ctx: SectionContext) => void;
 const SECTIONS: SectionRenderer[] = [
   renderZonesSection,
   renderDockSection,
-  renderStreamsSection,
   renderConnectionsSection,
+  renderStreamsSection,
   renderWallpaperSection,
   renderAppearanceSection,
   renderBackupSection,

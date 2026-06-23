@@ -207,10 +207,12 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
 
   async function refreshIntegrations(): Promise<void> {
     if (config === undefined) return;
-    const integrationStreams = config.streams.filter(
-      (stream) => stream.content.type === "integration",
+    // Only fetch connections a stream actually shows. Keyed by connection id.
+    const usedIds = new Set(config.streams.map((stream) => stream.connectionId));
+    const connections = config.connections.filter((connection) =>
+      usedIds.has(connection.id),
     );
-    if (integrationStreams.length === 0) {
+    if (connections.length === 0) {
       if (Object.keys(integrationResults).length > 0) {
         integrationResults = {};
         paint();
@@ -224,38 +226,33 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       ((provider: string): Promise<string | undefined> =>
         provider === "google" ? getGoogleToken() : Promise.resolve(undefined));
     const ctx: IntegrationContext = {
-      secrets,
       fetch: deps.httpFetch ?? realHttpFetch,
       now: deps.now(),
       getAuthToken,
     };
 
-    // Keep any already-loaded results, mark the rest loading, drop stale streams.
     const next: Record<string, IntegrationResult> = {};
-    for (const stream of integrationStreams) {
-      next[stream.id] = integrationResults[stream.id] ?? { status: "loading" };
+    for (const connection of connections) {
+      next[connection.id] = integrationResults[connection.id] ?? { status: "loading" };
     }
     integrationResults = next;
     paint();
 
     await Promise.all(
-      integrationStreams.map(async (stream) => {
-        if (stream.content.type !== "integration") return;
-        const integration = integrationById(stream.content.integrationId);
+      connections.map(async (connection) => {
+        const integration = integrationById(connection.service);
         if (integration === undefined) {
-          integrationResults[stream.id] = {
-            status: "error",
-            error: "Unknown integration",
-          };
+          integrationResults[connection.id] = { status: "error", error: "Unknown service" };
           return;
         }
-        const result = await integration.fetch(stream.content.config, ctx);
+        const secret = secrets.connectionSecrets[connection.id];
+        const result = await integration.fetch(connection, secret, ctx);
         if (result.ok) {
-          integrationResults[stream.id] = { status: "ok", items: result.value };
+          integrationResults[connection.id] = { status: "ok", items: result.value };
         } else if (result.error === NEEDS_AUTH) {
-          integrationResults[stream.id] = { status: "needs_auth" };
+          integrationResults[connection.id] = { status: "needs_auth" };
         } else {
-          integrationResults[stream.id] = { status: "error", error: result.error };
+          integrationResults[connection.id] = { status: "error", error: result.error };
         }
       }),
     );

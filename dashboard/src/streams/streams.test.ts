@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { DockLink, Stream } from "../config/schema";
+import type { Connection, Service, Stream } from "../config/schema";
 import { host } from "../test/dom";
 import { renderStreams } from "./streams";
 
@@ -8,140 +8,98 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-const links: DockLink[] = [{ id: "gh", title: "GitHub", url: "https://github.com" }];
-
-const staticStream = (id: string, body: string, collapsed = true): Stream => ({
+const connection = (id: string, service: Service): Connection => ({
+  id,
+  name: id,
+  service,
+});
+const stream = (id: string, connectionId: string, collapsed = false): Stream => ({
   id,
   title: `Stream ${id}`,
+  connectionId,
   collapsedByDefault: collapsed,
-  content: { type: "static", body },
 });
-
-const linksStream = (id: string, linkIds: string[]): Stream => ({
-  id,
-  title: "Links",
-  collapsedByDefault: false,
-  content: { type: "links", linkIds },
-});
-
-const integrationStream = (id: string): Stream => ({
-  id,
-  title: "Notion",
-  collapsedByDefault: true,
-  content: { type: "integration", integrationId: "notion", config: {} },
-});
-
 const noop = (): void => {};
 
 describe("renderStreams", () => {
-  it("renders a collapsible section per stream, collapsed by default", () => {
+  it("renders a panel per stream, open by default, with the brand mark", () => {
     const root = host();
     renderStreams(
       root,
-      { streams: [staticStream("a", "hello")], links, expanded: {} },
-      { navigate: noop, onToggle: noop },
-    );
-    const details = root.querySelector<HTMLDetailsElement>(".cc-stream");
-    expect(details).not.toBeNull();
-    expect(details?.open).toBe(false);
-  });
-
-  it("opens a stream when the expanded override says so", () => {
-    const root = host();
-    renderStreams(
-      root,
-      { streams: [staticStream("a", "hello")], links, expanded: { a: true } },
+      { streams: [stream("s1", "c1")], connections: [connection("c1", "notion")], expanded: {} },
       { navigate: noop, onToggle: noop },
     );
     expect(root.querySelector<HTMLDetailsElement>(".cc-stream")?.open).toBe(true);
+    expect(root.querySelector(".cc-brand")).not.toBeNull();
   });
 
-  it("shows static text", () => {
+  it("collapses when the stream says so", () => {
     const root = host();
     renderStreams(
       root,
-      { streams: [staticStream("a", "remember the milk")], links, expanded: {} },
+      { streams: [stream("s1", "c1", true)], connections: [connection("c1", "linear")], expanded: {} },
       { navigate: noop, onToggle: noop },
     );
-    expect(root.querySelector(".cc-stream__text")?.textContent).toBe(
-      "remember the milk",
-    );
+    expect(root.querySelector<HTMLDetailsElement>(".cc-stream")?.open).toBe(false);
   });
 
-  it("navigates from a links stream", () => {
-    const navigate = vi.fn();
+  it("shows a loading note before a result arrives", () => {
     const root = host();
     renderStreams(
       root,
-      { streams: [linksStream("a", ["gh"])], links, expanded: {} },
-      { navigate, onToggle: noop },
-    );
-    root.querySelector<HTMLButtonElement>(".cc-stream__link")?.click();
-    expect(navigate).toHaveBeenCalledWith("https://github.com");
-  });
-
-  it("shows a loading note for an integration with no result yet", () => {
-    const root = host();
-    renderStreams(
-      root,
-      { streams: [integrationStream("a")], links, expanded: {} },
+      { streams: [stream("s1", "c1")], connections: [connection("c1", "notion")], expanded: {} },
       { navigate: noop, onToggle: noop },
     );
     expect(root.querySelector(".cc-stream__empty")?.textContent).toBe("Loading…");
   });
 
-  it("prompts to connect when the integration needs auth", () => {
+  it("prompts to connect when the connection needs auth", () => {
     const root = host();
     renderStreams(
       root,
       {
-        streams: [integrationStream("a")],
-        links,
+        streams: [stream("s1", "c1")],
+        connections: [connection("c1", "notion")],
         expanded: {},
-        integrationResults: { a: { status: "needs_auth" } },
+        integrationResults: { c1: { status: "needs_auth" } },
       },
       { navigate: noop, onToggle: noop },
     );
     expect(root.querySelector(".cc-stream__empty")?.textContent).toContain("Connect");
   });
 
-  it("renders integration items and navigates", () => {
+  it("renders items and navigates", () => {
     const navigate = vi.fn();
     const root = host();
     renderStreams(
       root,
       {
-        streams: [integrationStream("a")],
-        links,
+        streams: [stream("s1", "c1")],
+        connections: [connection("c1", "notion")],
         expanded: {},
         integrationResults: {
-          a: {
-            status: "ok",
-            items: [{ id: "1", title: "Roadmap item", url: "https://notion.so/x" }],
-          },
+          c1: { status: "ok", items: [{ id: "1", title: "Roadmap item", url: "https://notion.so/x" }] },
         },
       },
       { navigate, onToggle: noop },
     );
-    expect(root.querySelector(".cc-stream__item-title")?.textContent).toBe(
-      "Roadmap item",
-    );
+    expect(root.querySelector(".cc-stream__item-title")?.textContent).toBe("Roadmap item");
     root.querySelector<HTMLButtonElement>(".cc-stream__item")?.click();
     expect(navigate).toHaveBeenCalledWith("https://notion.so/x");
   });
 
-  it("reports toggles", () => {
+  it("reports toggles by stream id", () => {
     const onToggle = vi.fn();
     const root = host();
     renderStreams(
       root,
-      { streams: [staticStream("a", "x")], links, expanded: {} },
+      { streams: [stream("s1", "c1")], connections: [connection("c1", "notion")], expanded: {} },
       { navigate: noop, onToggle },
     );
     const details = root.querySelector<HTMLDetailsElement>(".cc-stream");
     if (details === null) throw new Error("no details");
-    details.open = true;
+    details.open = false;
     details.dispatchEvent(new Event("toggle"));
-    expect(onToggle).toHaveBeenCalledWith("a", true);
+    expect(onToggle).toHaveBeenCalledWith("s1", false);
   });
 });

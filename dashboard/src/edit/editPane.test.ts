@@ -42,7 +42,7 @@ function open(config: Config, search: GeoResult[] = []): Harness {
   const root = host();
   openEditPane(root, {
     config,
-    secrets: {},
+    secrets: { connectionSecrets: {} },
     applyConfig: (next) => {
       applied = next;
     },
@@ -128,22 +128,50 @@ describe("edit pane — dock", () => {
   });
 });
 
-describe("edit pane — streams", () => {
-  it("adds a notes stream collapsed by default", () => {
-    const harness = open(twoZones());
-    const forms = [
-      ...harness.root.querySelectorAll<HTMLFormElement>(".cc-edit__add-form--stack"),
-    ];
-    const streamForm = forms.find((form) => form.querySelector("select") !== null);
-    if (streamForm === undefined) throw new Error("missing stream form");
-    const input = streamForm.querySelector<HTMLInputElement>("input");
-    if (input === null) throw new Error("missing stream input");
-    input.value = "Today";
-    streamForm.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+const withConnection = (): Config =>
+  ConfigSchema.parse({
+    zones: [{ id: "ny", label: "New York", timeZone: "America/New_York", isHome: true }],
+    connections: [{ id: "c1", name: "Roadmap", service: "notion", databaseId: "db1" }],
+  });
 
-    const stream = harness.applied()?.streams.find((s) => s.title === "Today");
-    expect(stream?.content.type).toBe("static");
-    expect(stream?.collapsedByDefault).toBe(true);
+const formWithOption = (root: HTMLElement, optionText: string): HTMLFormElement => {
+  const form = [...root.querySelectorAll<HTMLFormElement>(".cc-edit__add-form")].find((node) =>
+    [...node.querySelectorAll("option")].some((option) => option.textContent === optionText),
+  );
+  if (form === undefined) throw new Error(`no form with option ${optionText}`);
+  return form;
+};
+
+describe("edit pane — connections & streams", () => {
+  it("adds a connection for a service", () => {
+    const harness = open(twoZones());
+    const form = formWithOption(harness.root, "Google Calendar");
+    const name = form.querySelector<HTMLInputElement>("input");
+    if (name === null) throw new Error("no connection name input");
+    name.value = "Work Calendar";
+    form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+    const connection = harness.applied()?.connections.find((c) => c.name === "Work Calendar");
+    expect(connection?.service).toBe("google-calendar");
+  });
+
+  it("stores a connection's Notion token keyed by id", () => {
+    const harness = open(withConnection());
+    const token = harness.root.querySelector<HTMLInputElement>('input[aria-label="Notion token"]');
+    if (token === null) throw new Error("no token field");
+    token.value = "secret_notion";
+    token.dispatchEvent(new Event("change"));
+    expect(harness.appliedSecrets()?.connectionSecrets["c1"]).toBe("secret_notion");
+  });
+
+  it("adds a work stream pointing at a connection", () => {
+    const harness = open(withConnection());
+    const form = formWithOption(harness.root, "Roadmap");
+    const title = form.querySelector<HTMLInputElement>("input");
+    if (title === null) throw new Error("no stream title input");
+    title.value = "Docs";
+    form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+    const stream = harness.applied()?.streams.find((s) => s.title === "Docs");
+    expect(stream?.connectionId).toBe("c1");
   });
 });
 
@@ -184,19 +212,6 @@ describe("edit pane — wallpaper", () => {
     url.value = "https://images.example.com/p.jpg";
     url.dispatchEvent(new Event("change"));
     expect(harness.applied()?.wallpaper.customUrl).toBe("https://images.example.com/p.jpg");
-  });
-});
-
-describe("edit pane — connections", () => {
-  it("stores the Notion token in secrets", () => {
-    const harness = open(twoZones());
-    const token = harness.root.querySelector<HTMLInputElement>(
-      'input[aria-label="Notion integration token"]',
-    );
-    if (token === null) throw new Error("no Notion token field");
-    token.value = "secret_notion";
-    token.dispatchEvent(new Event("change"));
-    expect(harness.appliedSecrets()?.notionToken).toBe("secret_notion");
   });
 });
 
@@ -242,7 +257,7 @@ describe("edit pane — shell", () => {
     const root = host();
     openEditPane(root, {
       config: ConfigSchema.parse({}),
-      secrets: {},
+      secrets: { connectionSecrets: {} },
       applyConfig: vi.fn(),
       applySecrets: vi.fn(),
       onClose,

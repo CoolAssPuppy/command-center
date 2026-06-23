@@ -41,16 +41,21 @@ describe("ConfigStore", () => {
     const secretArea = memoryArea();
     const store = createConfigStore(configArea, secretArea);
 
-    await store.saveSecrets({ notionToken: "secret-token" });
+    await store.saveSecrets({ connectionSecrets: { c1: "secret-token" } });
 
     expect(await configArea.get("secrets")).toBeUndefined();
     expect(await configArea.get("config")).toBeUndefined();
-    expect(await secretArea.get("secrets")).toEqual({ notionToken: "secret-token" });
+    expect(await secretArea.get("secrets")).toEqual({
+      connectionSecrets: { c1: "secret-token" },
+    });
   });
 
   it("round-trips secrets", async () => {
     const store = createConfigStore(memoryArea(), memoryArea());
-    await store.saveSecrets({ unsplashAccessKey: "abc" });
-    expect(await store.loadSecrets()).toEqual({ unsplashAccessKey: "abc" });
+    await store.saveSecrets({ unsplashAccessKey: "abc", connectionSecrets: {} });
+    expect(await store.loadSecrets()).toEqual({
+      unsplashAccessKey: "abc",
+      connectionSecrets: {},
+    });
   });
 });

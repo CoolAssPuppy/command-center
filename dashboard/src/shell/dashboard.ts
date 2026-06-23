@@ -143,7 +143,7 @@ export function renderDashboard(
   if (model.config.streams.length > 0) {
     const streamsModel = {
       streams: model.config.streams,
-      links: model.config.links,
+      connections: model.config.connections,
       expanded: model.streamExpanded ?? {},
       ...(model.integrationResults !== undefined
         ? { integrationResults: model.integrationResults }

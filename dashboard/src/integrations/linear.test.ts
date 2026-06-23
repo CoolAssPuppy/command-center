@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { Connection } from "../config/schema";
 import { linearIntegration } from "./linear";
 import {
   NEEDS_AUTH,
@@ -18,18 +19,24 @@ const issuesBody = (nodes: unknown[]): unknown => ({
   data: { viewer: { assignedIssues: { nodes } } },
 });
 
-function context(overrides: Partial<IntegrationContext> = {}): IntegrationContext {
-  return {
-    secrets: { linearApiKey: "lin_key" },
-    now: new Date("2026-06-23T00:00:00Z"),
-    fetch: () => Promise.resolve(json(issuesBody([]))),
-    ...overrides,
-  };
-}
+const ctx = (
+  fetch: (request: HttpRequest) => Promise<HttpResponseLike>,
+): IntegrationContext => ({ fetch, now: new Date("2026-06-23T00:00:00Z") });
+
+const connection = (overrides: Partial<Connection> = {}): Connection => ({
+  id: "c1",
+  name: "Inbox",
+  service: "linear",
+  ...overrides,
+});
 
 describe("linearIntegration", () => {
   it("returns needs-auth without a key", async () => {
-    const result = await linearIntegration.fetch({}, context({ secrets: {} }));
+    const result = await linearIntegration.fetch(
+      connection(),
+      undefined,
+      ctx(() => Promise.resolve(json(issuesBody([])))),
+    );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe(NEEDS_AUTH);
   });
@@ -51,7 +58,11 @@ describe("linearIntegration", () => {
         ),
       );
     };
-    const result = await linearIntegration.fetch({ limit: 5 }, context({ fetch }));
+    const result = await linearIntegration.fetch(
+      connection({ count: 5 }),
+      "lin_key",
+      ctx(fetch),
+    );
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -69,11 +80,9 @@ describe("linearIntegration", () => {
 
   it("maps 401 to needs-auth", async () => {
     const result = await linearIntegration.fetch(
-      {},
-      context({
-        fetch: () =>
-          Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({}) }),
-      }),
+      connection(),
+      "lin_key",
+      ctx(() => Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({}) })),
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe(NEEDS_AUTH);
@@ -81,8 +90,9 @@ describe("linearIntegration", () => {
 
   it("surfaces a GraphQL error", async () => {
     const result = await linearIntegration.fetch(
-      {},
-      context({ fetch: () => Promise.resolve(json({ errors: [{ message: "Bad query" }] })) }),
+      connection(),
+      "lin_key",
+      ctx(() => Promise.resolve(json({ errors: [{ message: "Bad query" }] }))),
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe("Bad query");

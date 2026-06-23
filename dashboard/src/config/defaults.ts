@@ -56,29 +56,7 @@ export function defaultConfig(options: DefaultConfigOptions = {}): Config {
       { id: "calendar", title: "Calendar", url: "https://calendar.google.com" },
       { id: "github", title: "GitHub", url: "https://github.com" },
     ],
-    streams: [
-      {
-        id: "today",
-        title: "Today",
-        collapsedByDefault: false,
-        content: { type: "integration", integrationId: "google-calendar", config: {} },
-      },
-      {
-        id: "inbox",
-        title: "Inbox",
-        collapsedByDefault: false,
-        content: { type: "integration", integrationId: "linear", config: {} },
-      },
-      {
-        id: "docs",
-        title: "Docs",
-        collapsedByDefault: false,
-        content: {
-          type: "integration",
-          integrationId: "notion",
-          config: { databaseId: "", pageSize: 8 },
-        },
-      },
-    ],
+    // Connections and work streams start empty; the user adds them in the
+    // edit pane.
   });
 }

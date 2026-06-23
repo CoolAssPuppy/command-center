@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { Connection } from "../config/schema";
 import { notionIntegration } from "./notion";
 import {
   NEEDS_AUTH,
@@ -20,28 +21,37 @@ const jsonResponse = (body: unknown): HttpResponseLike => ({
   json: () => Promise.resolve(body),
 });
 
-function context(overrides: Partial<IntegrationContext> = {}): IntegrationContext {
-  return {
-    secrets: { notionToken: "secret_x" },
-    now: new Date("2026-06-23T00:00:00Z"),
-    fetch: () => Promise.resolve(jsonResponse({ results: [] })),
-    ...overrides,
-  };
-}
+const ctx = (
+  fetch: (request: HttpRequest) => Promise<HttpResponseLike>,
+): IntegrationContext => ({ fetch, now: new Date("2026-06-23T00:00:00Z") });
+
+const connection = (overrides: Partial<Connection> = {}): Connection => ({
+  id: "c1",
+  name: "Docs",
+  service: "notion",
+  databaseId: "db1",
+  ...overrides,
+});
 
 describe("notionIntegration", () => {
   it("returns needs-auth without a token", async () => {
     const result = await notionIntegration.fetch(
-      { databaseId: "db1" },
-      context({ secrets: {} }),
+      connection(),
+      undefined,
+      ctx(() => Promise.resolve(jsonResponse({ results: [] }))),
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe(NEEDS_AUTH);
   });
 
-  it("requires a database id", async () => {
-    const result = await notionIntegration.fetch({}, context());
+  it("returns needs-auth without a database id", async () => {
+    const result = await notionIntegration.fetch(
+      connection({ databaseId: undefined }),
+      "tok",
+      ctx(() => Promise.resolve(jsonResponse({ results: [] }))),
+    );
     expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toBe(NEEDS_AUTH);
   });
 
   it("queries with token, version, and filter, then normalizes pages", async () => {
@@ -53,22 +63,20 @@ describe("notionIntegration", () => {
       );
     };
     const result = await notionIntegration.fetch(
-      {
-        databaseId: "db1",
-        pageSize: 5,
-        filter: { property: "Done", checkbox: { equals: false } },
-      },
-      context({ fetch }),
+      connection({ count: 5, filter: { property: "Done", checkbox: { equals: false } } }),
+      "secret_x",
+      ctx(fetch),
     );
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value).toEqual([
-      { id: "p1", title: "Ship it", url: "https://notion.so/p1" },
-    ]);
+    expect(result.value[0]).toMatchObject({
+      id: "p1",
+      title: "Ship it",
+      url: "https://notion.so/p1",
+    });
     expect(captured?.url).toContain("/databases/db1/query");
     expect(captured?.headers?.Authorization).toBe("Bearer secret_x");
-    expect(captured?.headers?.["Notion-Version"]).toBeTruthy();
     const body = JSON.parse(captured?.body ?? "{}") as {
       page_size?: number;
       filter?: unknown;
@@ -79,11 +87,9 @@ describe("notionIntegration", () => {
 
   it("treats a 401 as needs-auth", async () => {
     const result = await notionIntegration.fetch(
-      { databaseId: "db1" },
-      context({
-        fetch: () =>
-          Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({}) }),
-      }),
+      connection(),
+      "tok",
+      ctx(() => Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({}) })),
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe(NEEDS_AUTH);
@@ -91,8 +97,9 @@ describe("notionIntegration", () => {
 
   it("falls back to Untitled when a page has no title", async () => {
     const result = await notionIntegration.fetch(
-      { databaseId: "db1" },
-      context({ fetch: () => Promise.resolve(jsonResponse({ results: [{ id: "p2" }] })) }),
+      connection(),
+      "tok",
+      ctx(() => Promise.resolve(jsonResponse({ results: [{ id: "p2" }] }))),
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;

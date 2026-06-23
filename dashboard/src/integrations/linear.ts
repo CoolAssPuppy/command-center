@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { Connection } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
 import {
   NEEDS_AUTH,
@@ -9,17 +10,11 @@ import {
 } from "./types";
 
 /**
- * The Linear integration. Linear OAuth needs a client secret, which a public
- * extension can't hold, so this uses a personal API key (kept in local secrets)
- * sent straight in the Authorization header. It queries the viewer's open
- * assigned issues and normalizes each into a text-only item linking to Linear.
+ * The Linear integration. Uses the connection's personal API key (a secret) in
+ * the Authorization header and queries the viewer's open assigned issues,
+ * normalizing each into a text-only item linking to Linear.
  */
 const ENDPOINT = "https://api.linear.app/graphql";
-
-export const LinearConfigSchema = z.object({
-  limit: z.number().int().positive().max(25).default(10),
-});
-export type LinearConfig = z.infer<typeof LinearConfigSchema>;
 
 const QUERY = `query CommandCenterInbox($first: Int!) {
   viewer {
@@ -54,15 +49,11 @@ export const linearIntegration: Integration = {
   displayName: "Linear",
 
   async fetch(
-    rawConfig: unknown,
+    connection: Connection,
+    secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>> {
-    const parsed = LinearConfigSchema.safeParse(rawConfig ?? {});
-    if (!parsed.success) {
-      return { ok: false, error: firstIssue(parsed.error, "invalid Linear config") };
-    }
-    const key = ctx.secrets.linearApiKey;
-    if (key === undefined || key.trim().length === 0) {
+    if (secret === undefined || secret.trim().length === 0) {
       return { ok: false, error: NEEDS_AUTH };
     }
 
@@ -71,8 +62,11 @@ export const linearIntegration: Integration = {
       const response = await ctx.fetch({
         url: ENDPOINT,
         method: "POST",
-        headers: { Authorization: key, "Content-Type": "application/json" },
-        body: JSON.stringify({ query: QUERY, variables: { first: parsed.data.limit } }),
+        headers: { Authorization: secret, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: QUERY,
+          variables: { first: connection.count ?? 10 },
+        }),
       });
       if (response.status === 401 || response.status === 400) {
         return { ok: false, error: NEEDS_AUTH };
@@ -91,8 +85,7 @@ export const linearIntegration: Integration = {
       return { ok: false, error: firstIssue(result.error, "invalid Linear response") };
     }
     if (result.data.errors !== undefined && result.data.errors.length > 0) {
-      const first = result.data.errors[0];
-      return { ok: false, error: first?.message ?? "Linear returned an error" };
+      return { ok: false, error: result.data.errors[0]?.message ?? "Linear error" };
     }
     if (result.data.data === undefined) {
       return { ok: false, error: "Linear returned no data" };

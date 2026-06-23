@@ -33,27 +33,39 @@ export const DockLinkSchema = z.object({
 export type DockLink = z.infer<typeof DockLinkSchema>;
 
 /**
- * What a work stream shows. Static text and a links group ship now; the
- * integration variant (Notion and friends) plugs in later without touching the
- * stream shell.
+ * The services a connection can be an instance of.
  */
-export const StreamContentSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("static"), body: z.string().default("") }),
-  z.object({ type: z.literal("links"), linkIds: z.array(z.string()).default([]) }),
-  z.object({
-    type: z.literal("integration"),
-    integrationId: z.string().min(1),
-    config: z.record(z.unknown()).default({}),
-  }),
-]);
-export type StreamContent = z.infer<typeof StreamContentSchema>;
+export const SERVICES = ["google-calendar", "linear", "notion"] as const;
+export const ServiceSchema = z.enum(SERVICES);
+export type Service = z.infer<typeof ServiceSchema>;
 
-/** A collapsible titled section, collapsed by default. */
+/**
+ * A named connection to a service. You can have several of the same service
+ * (a "Work" and a "Personal" Google Calendar, say), each with its own settings
+ * and credential. The credential is a secret kept out of here (see Secrets);
+ * only the non-secret settings live on the connection.
+ */
+export const ConnectionSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  service: ServiceSchema,
+  /** Google Calendar: which calendar (default "primary"). */
+  calendarId: z.string().optional(),
+  /** Notion: which database, and how to read it. */
+  databaseId: z.string().optional(),
+  titleProperty: z.string().optional(),
+  filter: z.unknown().optional(),
+  /** How many items to show. */
+  count: z.number().int().positive().max(50).optional(),
+});
+export type Connection = z.infer<typeof ConnectionSchema>;
+
+/** A work-stream panel: a title and the connection it displays. */
 export const StreamSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
-  collapsedByDefault: z.boolean().default(true),
-  content: StreamContentSchema,
+  connectionId: z.string().min(1),
+  collapsedByDefault: z.boolean().default(false),
 });
 export type Stream = z.infer<typeof StreamSchema>;
 
@@ -92,6 +104,7 @@ export const ConfigSchema = z.object({
   profile: ProfileSchema.default({}),
   zones: z.array(ZoneSchema).default([]),
   links: z.array(DockLinkSchema).default([]),
+  connections: z.array(ConnectionSchema).default([]),
   streams: z.array(StreamSchema).default([]),
   wallpaper: WallpaperSchema.default({ source: "gradient", terms: [], scrim: 0.4 }),
   appearance: AppearanceSchema.default({ hour12: true }),
@@ -101,8 +114,8 @@ export type Config = z.infer<typeof ConfigSchema>;
 /** Secrets live in chrome.storage.local and are never synced. */
 export const SecretsSchema = z.object({
   unsplashAccessKey: z.string().optional(),
-  notionToken: z.string().optional(),
-  linearApiKey: z.string().optional(),
+  /** Per-connection credential (Linear key / Notion token), keyed by connection id. */
+  connectionSecrets: z.record(z.string()).default({}),
 });
 export type Secrets = z.infer<typeof SecretsSchema>;
 
@@ -114,7 +127,7 @@ export function parseConfig(raw: unknown): Config {
 
 export function parseSecrets(raw: unknown): Secrets {
   const result = SecretsSchema.safeParse(raw ?? {});
-  return result.success ? result.data : {};
+  return result.success ? result.data : SecretsSchema.parse({});
 }
 
 /** The home zone: the one flagged isHome, else the first, else undefined. */

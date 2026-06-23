@@ -1,4 +1,4 @@
-import type { Secrets } from "../config/schema";
+import type { Connection } from "../config/schema";
 import type { ParseResult } from "../domain/result";
 
 /**
@@ -35,7 +35,6 @@ export interface HttpResponseLike {
 export type HttpFetch = (request: HttpRequest) => Promise<HttpResponseLike>;
 
 export interface IntegrationContext {
-  secrets: Secrets;
   fetch: HttpFetch;
   now: Date;
   /**
@@ -49,11 +48,17 @@ export interface IntegrationContext {
 export const NEEDS_AUTH = "needs_auth";
 
 export interface Integration {
+  /** Matches Connection.service. */
   id: string;
   displayName: string;
-  /** Validate the raw stream config and fetch items, or return an error. */
+  /**
+   * Fetch items for a connection. `secret` is the connection's credential (a
+   * Linear key or Notion token); Google Calendar ignores it and uses
+   * ctx.getAuthToken instead.
+   */
   fetch(
-    rawConfig: unknown,
+    connection: Connection,
+    secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>>;
 }

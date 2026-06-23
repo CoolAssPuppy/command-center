@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { Connection } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
 import {
   NEEDS_AUTH,
@@ -9,18 +10,12 @@ import {
 } from "./types";
 
 /**
- * The Google Calendar integration. Google supports proper OAuth from an
- * extension with no server via chrome.identity, so the platform supplies an
- * access token through ctx.getAuthToken("google"); no secret is stored. It lists
- * upcoming events from a calendar and normalizes each into a text-only item.
+ * The Google Calendar integration. Google supports OAuth from an extension with
+ * no server via chrome.identity, so the platform supplies a token through
+ * ctx.getAuthToken("google") and the connection's secret is unused. It lists
+ * upcoming events from the connection's calendar and normalizes each.
  */
 const API_BASE = "https://www.googleapis.com/calendar/v3/calendars";
-
-export const GoogleCalendarConfigSchema = z.object({
-  calendarId: z.string().default("primary"),
-  maxResults: z.number().int().positive().max(20).default(6),
-});
-export type GoogleCalendarConfig = z.infer<typeof GoogleCalendarConfigSchema>;
 
 const EventSchema = z.object({
   id: z.string(),
@@ -48,10 +43,11 @@ function formatWhen(start: z.infer<typeof EventSchema>["start"]): string | undef
   return undefined;
 }
 
-function buildUrl(config: GoogleCalendarConfig, now: Date): string {
-  const url = new URL(`${API_BASE}/${encodeURIComponent(config.calendarId)}/events`);
+function buildUrl(connection: Connection, now: Date): string {
+  const calendarId = connection.calendarId ?? "primary";
+  const url = new URL(`${API_BASE}/${encodeURIComponent(calendarId)}/events`);
   url.searchParams.set("timeMin", now.toISOString());
-  url.searchParams.set("maxResults", String(config.maxResults));
+  url.searchParams.set("maxResults", String(connection.count ?? 6));
   url.searchParams.set("singleEvents", "true");
   url.searchParams.set("orderBy", "startTime");
   return url.toString();
@@ -62,13 +58,10 @@ export const googleCalendarIntegration: Integration = {
   displayName: "Google Calendar",
 
   async fetch(
-    rawConfig: unknown,
+    connection: Connection,
+    _secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>> {
-    const parsed = GoogleCalendarConfigSchema.safeParse(rawConfig ?? {});
-    if (!parsed.success) {
-      return { ok: false, error: firstIssue(parsed.error, "invalid calendar config") };
-    }
     const token = await ctx.getAuthToken?.("google");
     if (token === undefined || token.length === 0) {
       return { ok: false, error: NEEDS_AUTH };
@@ -77,7 +70,7 @@ export const googleCalendarIntegration: Integration = {
     let payload: unknown;
     try {
       const response = await ctx.fetch({
-        url: buildUrl(parsed.data, ctx.now),
+        url: buildUrl(connection, ctx.now),
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });

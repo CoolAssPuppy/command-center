@@ -1036,3 +1036,15 @@ button.cc-stream__item:hover {
     transition-duration: 0.001ms !important;
   }
 }
+
+.cc-edit__row-fields {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cc-edit__row-fields > * {
+  flex: 1;
+  min-width: 0;
+}

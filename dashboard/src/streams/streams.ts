@@ -1,23 +1,21 @@
-import type { DockLink, Stream } from "../config/schema";
-import { fallbackGlyph, faviconUrl } from "../dock/favicon";
+import type { Connection, Stream } from "../config/schema";
 import type { IntegrationResult, NormalizedItem } from "../integrations/types";
 import { el } from "../render/helpers";
-import { brandIcon } from "../shell/brandIcons";
 import { isSafeUrl } from "../security/url";
+import { brandIcon } from "../shell/brandIcons";
 
 /**
- * Work streams: collapsible titled sections, collapsed by default. Built on
- * native <details>/<summary> so keyboard and accessibility come for free. The
- * content is a discriminated union: static text, a group of dock links, or an
- * integration feed (the integration renderer is injected by the platform; until
- * one is wired the stream shows a gentle placeholder).
+ * Work-stream panels. Each stream names a connection and shows that connection's
+ * items: a collapsible titled panel with the service's brand mark in the header
+ * and a loading / needs-auth / error / items body. Built on native <details> so
+ * keyboard and accessibility come for free.
  */
 export interface StreamsModel {
   streams: Stream[];
-  links: DockLink[];
+  connections: Connection[];
   /** Per-stream open override; absent means use collapsedByDefault. */
   expanded: Record<string, boolean>;
-  /** Resolved integration data, keyed by stream id. */
+  /** Resolved integration data, keyed by connection id. */
   integrationResults?: Record<string, IntegrationResult>;
 }
 
@@ -53,62 +51,33 @@ function renderStream(
   details.className = "cc-stream";
   details.open = isOpen(stream, model.expanded);
 
+  const connection = model.connections.find((item) => item.id === stream.connectionId);
+
   const summary = document.createElement("summary");
   summary.className = "cc-stream__summary";
   summary.appendChild(el("span", "cc-stream__chevron", "›"));
-  if (stream.content.type === "integration") {
-    const icon = brandIcon(stream.content.integrationId);
+  if (connection !== undefined) {
+    const icon = brandIcon(connection.service);
     if (icon !== undefined) summary.appendChild(icon);
   }
   summary.appendChild(el("span", "cc-stream__title", stream.title));
   details.appendChild(summary);
 
   const body = el("div", "cc-stream__body");
-  renderContent(body, stream, model, deps);
+  if (connection === undefined) {
+    body.appendChild(el("div", "cc-stream__empty", "This connection was removed."));
+  } else {
+    renderResult(body, model.integrationResults?.[connection.id], deps);
+  }
   details.appendChild(body);
 
   details.addEventListener("toggle", () => {
     deps.onToggle(stream.id, details.open);
   });
-
   return details;
 }
 
-function renderContent(
-  body: HTMLElement,
-  stream: Stream,
-  model: StreamsModel,
-  deps: StreamsDeps,
-): void {
-  const content = stream.content;
-
-  if (content.type === "static") {
-    if (content.body.trim().length === 0) {
-      body.appendChild(el("div", "cc-stream__empty", "Nothing here yet."));
-    } else {
-      body.appendChild(el("div", "cc-stream__text", content.body));
-    }
-    return;
-  }
-
-  if (content.type === "links") {
-    const chosen = content.linkIds
-      .map((id) => model.links.find((link) => link.id === id))
-      .filter((link): link is DockLink => link !== undefined);
-    if (chosen.length === 0) {
-      body.appendChild(el("div", "cc-stream__empty", "No links in this stream."));
-      return;
-    }
-    const list = el("div", "cc-stream__links");
-    for (const link of chosen) list.appendChild(renderStreamLink(link, deps));
-    body.appendChild(list);
-    return;
-  }
-
-  renderIntegration(body, model.integrationResults?.[stream.id], deps);
-}
-
-function renderIntegration(
+function renderResult(
   body: HTMLElement,
   result: IntegrationResult | undefined,
   deps: StreamsDeps,
@@ -118,15 +87,11 @@ function renderIntegration(
     return;
   }
   if (result.status === "needs_auth") {
-    body.appendChild(
-      el("div", "cc-stream__empty", "Connect this integration in the edit pane."),
-    );
+    body.appendChild(el("div", "cc-stream__empty", "Connect this service in the edit pane."));
     return;
   }
   if (result.status === "error") {
-    body.appendChild(
-      el("div", "cc-stream__empty", result.error ?? "Could not load this stream."),
-    );
+    body.appendChild(el("div", "cc-stream__empty", result.error ?? "Could not load this stream."));
     return;
   }
   const items = result.items ?? [];
@@ -159,30 +124,5 @@ function renderItem(item: NormalizedItem, deps: StreamsDeps): HTMLElement {
   if (item.meta !== undefined) {
     row.appendChild(el("span", "cc-stream__item-meta", item.meta));
   }
-  return row;
-}
-
-function renderStreamLink(link: DockLink, deps: StreamsDeps): HTMLElement {
-  const row = el("button", "cc-stream__link");
-  row.setAttribute("type", "button");
-
-  const icon = faviconUrl(link);
-  if (icon.length > 0) {
-    const img = document.createElement("img");
-    img.className = "cc-stream__link-icon";
-    img.src = icon;
-    img.alt = "";
-    img.addEventListener("error", () => {
-      img.replaceWith(el("span", "cc-stream__link-glyph", fallbackGlyph(link.title)));
-    });
-    row.appendChild(img);
-  } else {
-    row.appendChild(el("span", "cc-stream__link-glyph", fallbackGlyph(link.title)));
-  }
-
-  row.appendChild(el("span", "cc-stream__link-title", link.title));
-  row.addEventListener("click", () => {
-    if (isSafeUrl(link.url)) deps.navigate(link.url);
-  });
   return row;
 }
