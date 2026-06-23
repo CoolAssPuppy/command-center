@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ConfigSchema, homeZone, type Config } from "../config/schema";
+import { ConfigSchema, homeZone, type Config, type Secrets } from "../config/schema";
 import type { GeoResult } from "../geo/geocode";
 import { host } from "../test/dom";
 import { openEditPane } from "./editPane";
@@ -32,10 +32,12 @@ const tokyoMatch: GeoResult = {
 interface Harness {
   root: HTMLElement;
   applied: () => Config | undefined;
+  appliedSecrets: () => Secrets | undefined;
 }
 
 function open(config: Config, search: GeoResult[] = []): Harness {
   let applied: Config | undefined;
+  let appliedSecrets: Secrets | undefined;
   const root = host();
   openEditPane(root, {
     config,
@@ -43,11 +45,13 @@ function open(config: Config, search: GeoResult[] = []): Harness {
     applyConfig: (next) => {
       applied = next;
     },
-    applySecrets: vi.fn(),
+    applySecrets: (next) => {
+      appliedSecrets = next;
+    },
     onClose: vi.fn(),
     runtime: { searchCities: () => Promise.resolve(search) },
   });
-  return { root, applied: () => applied };
+  return { root, applied: () => applied, appliedSecrets: () => appliedSecrets };
 }
 
 function rowFor(root: HTMLElement, label: string): HTMLElement {
@@ -139,6 +143,29 @@ describe("edit pane — streams", () => {
     const stream = harness.applied()?.streams.find((s) => s.title === "Today");
     expect(stream?.content.type).toBe("static");
     expect(stream?.collapsedByDefault).toBe(true);
+  });
+});
+
+describe("edit pane — wallpaper", () => {
+  it("enables the wallpaper", () => {
+    const harness = open(twoZones());
+    const label = [
+      ...harness.root.querySelectorAll<HTMLElement>("label.cc-edit__check"),
+    ].find((node) => node.textContent?.includes("wallpaper"));
+    const toggle = label?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (toggle === null || toggle === undefined) throw new Error("no wallpaper toggle");
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event("change"));
+    expect(harness.applied()?.wallpaper.enabled).toBe(true);
+  });
+
+  it("stores the access key in secrets", () => {
+    const harness = open(twoZones());
+    const key = harness.root.querySelector<HTMLInputElement>('input[type="password"]');
+    if (key === null) throw new Error("no access key field");
+    key.value = "unsplash-key";
+    key.dispatchEvent(new Event("change"));
+    expect(harness.appliedSecrets()?.unsplashAccessKey).toBe("unsplash-key");
   });
 });
 

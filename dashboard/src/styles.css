@@ -61,6 +61,22 @@ body {
   background: rgba(12, 14, 20, var(--cc-wallpaper-scrim, 0.4));
 }
 
+.cc-credit {
+  position: fixed;
+  left: 16px;
+  bottom: 12px;
+  z-index: 1;
+  font-size: 12px;
+  color: rgba(247, 245, 240, 0.82);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.cc-credit__link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 .cc-stage {
   position: relative;
   z-index: 1;
@@ -599,6 +615,23 @@ body {
   gap: 6px;
   font-size: 13px;
   color: var(--cc-color-text, #21242a);
+}
+
+.cc-edit__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cc-edit__field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cc-color-muted, #6a6e76);
+}
+
+.cc-edit__range {
+  width: 100%;
+  accent-color: var(--cc-color-accent, #2f7a6f);
 }
 
 /* Work streams (display) -------------------------------------------------- */

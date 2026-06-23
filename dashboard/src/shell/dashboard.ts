@@ -1,6 +1,7 @@
 import { homeZone, otherZones, type Config } from "../config/schema";
 import { renderDock } from "../dock/dock";
 import { el } from "../render/helpers";
+import { isSafeUrl } from "../security/url";
 import { renderStreams } from "../streams/streams";
 import { themeById } from "../theme/registry";
 import { applyTokens, type Theme } from "../theme/tokens";
@@ -21,6 +22,8 @@ export interface DashboardModel {
   weatherByZone?: Record<string, Weather>;
   /** Per-stream open override (UI state), keyed by stream id. */
   streamExpanded?: Record<string, boolean>;
+  /** The resolved wallpaper image plus attribution, once Unsplash has answered. */
+  wallpaper?: { imageUrl: string; authorName?: string; authorUrl?: string };
 }
 
 export interface DashboardDeps {
@@ -44,10 +47,43 @@ export function renderDashboard(
   root.replaceChildren();
   root.classList.add("cc-dashboard");
 
-  // Background wallpaper layer. P4 paints it; here it is an empty, themed slot.
+  // Background wallpaper layer.
   const wallpaper = el("div", "cc-wallpaper");
-  wallpaper.setAttribute("data-enabled", String(model.config.wallpaper.enabled));
+  const imageUrl = model.wallpaper?.imageUrl;
+  const showImage =
+    model.config.wallpaper.enabled &&
+    imageUrl !== undefined &&
+    isSafeUrl(imageUrl, ["https:"]) &&
+    !imageUrl.includes('"');
+  wallpaper.setAttribute("data-enabled", String(showImage));
+  if (showImage && imageUrl !== undefined) {
+    wallpaper.style.setProperty("--cc-wallpaper-image", `url("${imageUrl}")`);
+    wallpaper.style.setProperty(
+      "--cc-wallpaper-scrim",
+      String(model.config.wallpaper.scrim),
+    );
+  }
   root.appendChild(wallpaper);
+
+  // Unsplash attribution, required when a photo is shown.
+  if (showImage && model.wallpaper?.authorName !== undefined) {
+    const credit = el("div", "cc-credit");
+    credit.appendChild(el("span", undefined, "Photo by "));
+    const author = model.wallpaper.authorUrl;
+    if (author !== undefined && isSafeUrl(author, ["https:"])) {
+      const link = document.createElement("a");
+      link.className = "cc-credit__link";
+      link.href = author;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = model.wallpaper.authorName;
+      credit.appendChild(link);
+    } else {
+      credit.appendChild(el("span", "cc-credit__link", model.wallpaper.authorName));
+    }
+    credit.appendChild(el("span", undefined, " on Unsplash"));
+    root.appendChild(credit);
+  }
 
   const stage = el("div", "cc-stage");
 

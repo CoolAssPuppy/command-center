@@ -1,5 +1,5 @@
 import { loadCachedConfig, saveCachedConfig } from "../config/cache";
-import { type Config } from "../config/schema";
+import { type Config, type Secrets } from "../config/schema";
 import type { ConfigStore } from "../config/store";
 import type { ParseResult } from "../domain/result";
 import { openEditPane } from "../edit/editPane";
@@ -12,6 +12,8 @@ import {
 } from "../shell/dashboard";
 import { loadStreamState, saveStreamState } from "../streams/streamState";
 import type { Theme } from "../theme/tokens";
+import type { FetchLike } from "../wallpaper/unsplash";
+import { resolveWallpaper } from "../wallpaper/wallpaper";
 import {
   fetchWeather as openMeteoFetch,
   type Weather,
@@ -48,6 +50,8 @@ export interface RunDeps {
   editHost?: HTMLElement;
   /** City search for the edit pane. Defaults to the Open-Meteo geocoder. */
   searchCities?: (query: string) => Promise<GeoResult[]>;
+  /** Fetch used for the Unsplash wallpaper. Defaults to the global fetch. */
+  unsplashFetch?: FetchLike;
 }
 
 interface LocatedZone {
@@ -68,6 +72,9 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
 
   let config: Config | undefined;
   let streamExpanded = loadStreamState();
+  let wallpaperPhoto:
+    | { imageUrl: string; authorName: string; authorUrl: string }
+    | undefined;
   const weatherByZone: Record<string, Weather> = {};
 
   const searchCities =
@@ -84,6 +91,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       model.weatherByZone = { ...weatherByZone };
     }
     model.streamExpanded = streamExpanded;
+    if (wallpaperPhoto !== undefined) model.wallpaper = wallpaperPhoto;
     const renderDeps: DashboardDeps = {
       navigate: deps.navigate,
       reducedMotion,
@@ -110,9 +118,11 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
           void deps.store.save(next);
           saveCache(next);
           paint();
+          void resolveAndPaintWallpaper();
         },
         applySecrets: (next) => {
           void deps.store.saveSecrets(next);
+          void resolveAndPaintWallpaper(next);
         },
         onClose: () => {
           /* nothing to do; the dashboard already reflects the latest config */
@@ -120,6 +130,33 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         runtime: { searchCities },
       });
     });
+  }
+
+  async function resolveAndPaintWallpaper(secretsOverride?: Secrets): Promise<void> {
+    if (config === undefined) return;
+    if (!config.wallpaper.enabled || config.wallpaper.terms.length === 0) {
+      if (wallpaperPhoto !== undefined) {
+        wallpaperPhoto = undefined;
+        paint();
+      }
+      return;
+    }
+    const secrets = secretsOverride ?? (await deps.store.loadSecrets());
+    const accessKey = secrets.unsplashAccessKey;
+    if (accessKey === undefined || accessKey.length === 0) return;
+    const dateKey = deps.now().toISOString().slice(0, 10);
+    const photo = await resolveWallpaper(
+      { terms: config.wallpaper.terms, accessKey, dateKey },
+      { fetch: deps.unsplashFetch ?? ((url) => fetch(url)) },
+    );
+    if (photo !== undefined) {
+      wallpaperPhoto = {
+        imageUrl: photo.imageUrl,
+        authorName: photo.authorName,
+        authorUrl: photo.authorUrl,
+      };
+      paint();
+    }
   }
 
   // 1. Instant paint from the cached config, if any (runs before the first await).
@@ -139,7 +176,10 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     deps.scheduleTick(paint);
   }
 
-  // 4. Weather for zones that carry coordinates.
+  // 4. Wallpaper, when enabled and an Unsplash key is set.
+  await resolveAndPaintWallpaper();
+
+  // 5. Weather for zones that carry coordinates.
   const located: LocatedZone[] = config.zones.flatMap((zone) =>
     zone.lat !== undefined && zone.lon !== undefined
       ? [{ id: zone.id, label: zone.label, lat: zone.lat, lon: zone.lon }]

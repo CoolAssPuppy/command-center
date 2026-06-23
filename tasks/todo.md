@@ -84,9 +84,9 @@ Settings model: `chrome.storage.sync` for non-secret config (zones, links, strea
 
 ## Phase 4: Unsplash wallpaper
 
-- [ ] P4.1 Unsplash client: search by terms via the official API (access key required; `source.unsplash.com` is deprecated), pick deterministically from results, honor required attribution + download trigger. Injected-fetch tests.
-- [ ] P4.2 Wallpaper render: full-bleed background with a readability scrim so foreground stays legible across themes. Cache the chosen image; rotate per day (or per tab). Tests.
-- [ ] P4.3 Edit pane (wallpaper): comma-separated search terms (e.g. "San Francisco, Lisbon, Puppies"), refresh, scrim/opacity control, and a field for the Unsplash access key (stored in `chrome.storage.local`). Persistence tests.
+- [x] P4.1 Unsplash client: official random-photo API by terms (access key via local secrets), attribution + download-trigger per the API guidelines. Injected-fetch tests.
+- [x] P4.2 Wallpaper render: full-bleed background + readability scrim, light foreground over photo, per-day cache keyed by terms (falls back to last good photo on failure), Unsplash credit. Tests + live screenshot.
+- [x] P4.3 Edit pane (wallpaper): enable toggle, comma-separated terms, scrim slider, and the access key (stored in local secrets, never synced). Live-refetch on change. Tests.
 
 ## Phase 5: integration platform (lean) + Notion first
 

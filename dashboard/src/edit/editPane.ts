@@ -3,6 +3,7 @@ import type { GeoResult } from "../geo/geocode";
 import { el } from "../render/helpers";
 import { renderDockSection } from "./dockSection";
 import { renderStreamsSection } from "./streamsSection";
+import { renderWallpaperSection } from "./wallpaperSection";
 import { renderZonesSection } from "./zonesSection";
 
 /**
@@ -45,6 +46,7 @@ const SECTIONS: SectionRenderer[] = [
   renderZonesSection,
   renderDockSection,
   renderStreamsSection,
+  renderWallpaperSection,
 ];
 
 function clone<T>(value: T): T {

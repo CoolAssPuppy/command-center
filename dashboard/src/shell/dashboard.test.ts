@@ -47,6 +47,49 @@ describe("renderDashboard", () => {
     );
   });
 
+  it("paints the wallpaper image and Unsplash credit when resolved", () => {
+    const config = ConfigSchema.parse({
+      wallpaper: { enabled: true, terms: ["Lisbon"], scrim: 0.5 },
+      zones: [{ id: "h", label: "Home", timeZone: "UTC", isHome: true }],
+    });
+    const root = host();
+    renderDashboard(
+      root,
+      {
+        now,
+        config,
+        wallpaper: {
+          imageUrl: "https://images.unsplash.com/x.jpg",
+          authorName: "Ansel",
+          authorUrl: "https://unsplash.com/@ansel",
+        },
+      },
+      { navigate: () => {} },
+    );
+    const wallpaper = root.querySelector<HTMLElement>(".cc-wallpaper");
+    expect(wallpaper?.getAttribute("data-enabled")).toBe("true");
+    expect(wallpaper?.style.getPropertyValue("--cc-wallpaper-image")).toContain(
+      "x.jpg",
+    );
+    expect(root.querySelector(".cc-credit__link")?.textContent).toBe("Ansel");
+  });
+
+  it("ignores a wallpaper image with an unsafe url", () => {
+    const config = ConfigSchema.parse({
+      wallpaper: { enabled: true, terms: ["x"], scrim: 0.4 },
+      zones: [{ id: "h", label: "Home", timeZone: "UTC", isHome: true }],
+    });
+    const root = host();
+    renderDashboard(
+      root,
+      { now, config, wallpaper: { imageUrl: "javascript:alert(1)" } },
+      { navigate: () => {} },
+    );
+    expect(root.querySelector(".cc-wallpaper")?.getAttribute("data-enabled")).toBe(
+      "false",
+    );
+  });
+
   it("greets with the profile name", () => {
     const config = ConfigSchema.parse({
       profile: { name: "Sam" },
