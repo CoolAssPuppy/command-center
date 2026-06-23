@@ -46,7 +46,7 @@ function renderZoneRow(
 
   const homeBtn = el(
     "button",
-    `cc-edit__chip${isHome ? " is-active" : ""}`,
+    `cc-edit__chip cc-edit__chip--home${isHome ? " is-active" : ""}`,
     isHome ? "Home" : "Set home",
   );
   homeBtn.setAttribute("type", "button");

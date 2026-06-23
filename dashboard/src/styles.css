@@ -640,6 +640,11 @@ body {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  /* Grow so the name sits flush left next to the grip and the controls go
+     right, instead of the label floating mid-row under space-between. */
+  flex: 1;
+  text-align: left;
+  align-items: flex-start;
 }
 
 .cc-edit__row-name {
@@ -724,6 +729,12 @@ body {
   color: var(--cc-color-bg, #fff);
   background: var(--cc-color-accent, #2f7a6f);
   border-color: transparent;
+}
+
+/* Fixed width so "Set home" and "Home" line up as a column across rows. */
+.cc-edit__chip--home {
+  min-width: 76px;
+  text-align: center;
 }
 
 .cc-edit__icon-btn {
