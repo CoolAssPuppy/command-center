@@ -190,7 +190,32 @@ export function renderDashboard(
   }
   root.appendChild(edit);
 
+  equalizeStreamHeights(root);
   if (!flipDisabled) playFlip(root, flipRects, { reducedMotion: false });
 
   return root;
+}
+
+/** A floor so panels never collapse to a one-line "connect" body. */
+const MIN_STREAM_BODY_PX = 96;
+
+/**
+ * Make every open work-stream panel as tall as the shortest, and scroll the
+ * taller ones inside, so the row's height is set by the smallest stream rather
+ * than the largest. Measured synchronously here (after layout, before paint),
+ * so there is no flicker. Collapsed panels (zero-height bodies) are skipped.
+ */
+function equalizeStreamHeights(root: HTMLElement): void {
+  const open = [...root.querySelectorAll<HTMLElement>(".cc-stream__body")].filter(
+    (body) => body.scrollHeight > 0,
+  );
+  if (open.length < 2) return;
+  const target = Math.max(
+    MIN_STREAM_BODY_PX,
+    Math.min(...open.map((body) => body.scrollHeight)),
+  );
+  for (const body of open) {
+    body.style.height = `${String(target)}px`;
+    body.style.overflowY = "auto";
+  }
 }

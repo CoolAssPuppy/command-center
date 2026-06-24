@@ -20,8 +20,8 @@ export interface DockDeps {
   onReorder?: ReorderHandler;
 }
 
-const MAX_SCALE = 1.6;
-const RANGE_PX = 90;
+const MAX_SCALE = 1.3;
+const RANGE_PX = 70;
 
 export function renderDock(
   host: HTMLElement,

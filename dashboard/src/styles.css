@@ -90,7 +90,9 @@ body {
 
 .cc-hero {
   display: flex;
-  align-items: flex-start;
+  /* Equal-height columns: when the forecast strip makes the clock taller, the
+     meeting window grows to match instead of leaving a lopsided gap. */
+  align-items: stretch;
   justify-content: space-between;
   gap: 40px;
   width: 100%;
@@ -192,6 +194,9 @@ body {
   flex: 0 1 470px;
   display: flex;
   flex-direction: column;
+  /* Centre the content so the box looks balanced when it stretches to match a
+     taller hero (the forecast strip under the clock). */
+  justify-content: center;
   gap: 16px;
   padding: 20px 22px;
   border-radius: 18px;
