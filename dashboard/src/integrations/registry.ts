@@ -1,3 +1,4 @@
+import { githubIntegration } from "./github";
 import { googleCalendarIntegration } from "./googleCalendar";
 import { linearIntegration } from "./linear";
 import { notionIntegration } from "./notion";
@@ -11,6 +12,7 @@ export const INTEGRATIONS: Integration[] = [
   googleCalendarIntegration,
   linearIntegration,
   notionIntegration,
+  githubIntegration,
 ];
 
 export function integrationById(id: string): Integration | undefined {

@@ -35,7 +35,7 @@ export type DockLink = z.infer<typeof DockLinkSchema>;
 /**
  * The services a connection can be an instance of.
  */
-export const SERVICES = ["google-calendar", "linear", "notion"] as const;
+export const SERVICES = ["google-calendar", "linear", "notion", "github"] as const;
 export const ServiceSchema = z.enum(SERVICES);
 export type Service = z.infer<typeof ServiceSchema>;
 
@@ -64,6 +64,8 @@ export const ConnectionSchema = z.object({
   databaseId: z.string().optional(),
   titleProperty: z.string().optional(),
   filter: z.unknown().optional(),
+  /** GitHub: a search query, e.g. "is:open is:pr review-requested:@me". */
+  query: z.string().optional(),
   /** How many items to show. */
   count: z.number().int().positive().max(50).optional(),
 });

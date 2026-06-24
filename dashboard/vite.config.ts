@@ -20,6 +20,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/__cc-proxy\/linear/, ""),
       },
+      "/__cc-proxy/github": {
+        target: "https://api.github.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/github/, ""),
+      },
       "/__cc-proxy/google": {
         target: "https://www.googleapis.com",
         changeOrigin: true,

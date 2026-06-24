@@ -89,6 +89,17 @@
       "id": "conn-linear",
       "name": "Linear Inbox",
       "service": "linear"
+    },
+    {
+      "id": "conn-gh-reviews",
+      "name": "Reviews",
+      "service": "github"
+    },
+    {
+      "id": "conn-gh-mine",
+      "name": "My PRs",
+      "service": "github",
+      "query": "is:open is:pr author:@me"
     }
   ],
   "streams": [
@@ -108,6 +119,18 @@
       "id": "stream-linear",
       "title": "Linear Inbox",
       "connectionId": "conn-linear",
+      "collapsedByDefault": false
+    },
+    {
+      "id": "stream-gh-reviews",
+      "title": "Needs my review",
+      "connectionId": "conn-gh-reviews",
+      "collapsedByDefault": false
+    },
+    {
+      "id": "stream-gh-mine",
+      "title": "My PRs",
+      "connectionId": "conn-gh-mine",
       "collapsedByDefault": false
     }
   ],

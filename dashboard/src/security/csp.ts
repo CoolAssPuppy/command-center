@@ -16,6 +16,7 @@ export const CONNECT_HOSTS = [
   "https://geocoding-api.open-meteo.com",
   "https://www.googleapis.com",
   "https://api.linear.app",
+  "https://api.github.com",
 ] as const;
 
 interface CspDirectives {

@@ -22,6 +22,7 @@ const SERVICE_LABELS: ReadonlyArray<readonly [Service, string]> = [
   ["google-calendar", "Google Calendar"],
   ["linear", "Linear"],
   ["notion", "Notion"],
+  ["github", "GitHub"],
 ];
 
 function serviceFromValue(value: string): Service {
@@ -182,7 +183,12 @@ function renderConnectionFields(
     const key = document.createElement("input");
     key.type = "password";
     key.className = "cc-edit__input";
-    const keyLabel = connection.service === "linear" ? "Linear API key" : "Notion token";
+    const placeholders: Partial<Record<Service, string>> = {
+      linear: "Linear API key",
+      github: "GitHub token",
+      notion: "Notion token",
+    };
+    const keyLabel = placeholders[connection.service] ?? "Token";
     key.placeholder = keyLabel;
     key.setAttribute("aria-label", keyLabel);
     key.value = ctx.draftSecrets.connectionSecrets[connection.id] ?? "";
@@ -208,6 +214,27 @@ function renderConnectionFields(
       });
     });
     wrap.appendChild(field("Database", database));
+  }
+
+  if (connection.service === "github") {
+    const query = textInput("is:open is:pr review-requested:@me");
+    query.value = connection.query ?? "";
+    query.setAttribute("aria-label", "GitHub search query");
+    query.addEventListener("change", () => {
+      updateConnection(ctx, connection.id, (item) => {
+        const value = query.value.trim();
+        if (value.length > 0) item.query = value;
+        else delete item.query;
+      });
+    });
+    wrap.appendChild(field("Search", query));
+    wrap.appendChild(
+      el(
+        "div",
+        "cc-edit__hint",
+        "A GitHub search. Blank shows pull requests awaiting your review. Try is:open is:pr author:@me for your own, or is:open assignee:@me for issues.",
+      ),
+    );
   }
 
   const count = textInput("6", "number");
@@ -284,6 +311,21 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
       fieldsBox.appendChild(
         el("div", "cc-edit__hint", "A personal API key from Linear settings. Stored locally."),
       );
+    } else if (service === "github") {
+      const token = secretField("GitHub token (github_pat_… or ghp_…)");
+      secretInput = token;
+      fieldsBox.appendChild(field("Token", token));
+      const query = textInput("is:open is:pr review-requested:@me");
+      query.setAttribute("aria-label", "GitHub search query");
+      targetInput = query;
+      fieldsBox.appendChild(field("Search (optional)", query));
+      fieldsBox.appendChild(
+        el(
+          "div",
+          "cc-edit__hint",
+          "A fine-grained personal access token with read access to pull requests and issues. Stored locally. Leave search blank for PRs awaiting your review.",
+        ),
+      );
     } else {
       const token = secretField("Notion token (starts with ntn_)");
       secretInput = token;
@@ -335,6 +377,9 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
       }
       if (service === "notion" && target !== undefined && target.length > 0) {
         connection.databaseId = target;
+      }
+      if (service === "github" && target !== undefined && target.length > 0) {
+        connection.query = target;
       }
       config.connections.push(connection);
       // Also create a work stream for it, so the connection shows on the

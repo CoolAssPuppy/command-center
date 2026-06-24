@@ -5,3 +5,4 @@ export { connectGoogle, getGoogleToken } from "./googleAuth";
 export { notionIntegration } from "./notion";
 export { linearIntegration } from "./linear";
 export { googleCalendarIntegration } from "./googleCalendar";
+export { githubIntegration } from "./github";
