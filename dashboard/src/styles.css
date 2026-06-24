@@ -78,51 +78,111 @@ body {
 
 .cc-fluid__blob {
   position: absolute;
-  width: 70vmax;
-  height: 70vmax;
+  width: 62vmax;
+  height: 62vmax;
   border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.28;
+  filter: blur(72px);
+  opacity: 0.34;
   will-change: transform;
 }
 
+/* Each blob wanders its own multi-stop loop, at its own pace, so no two ever
+   line up the same way twice. Loops return to the start for a seamless cycle. */
 .cc-fluid__blob--1 {
-  top: -25%;
-  left: -15%;
+  top: -24%;
+  left: -16%;
   background: var(--cc-color-accent, #2f7a6f);
-  animation: cc-fluid-drift-1 34s ease-in-out infinite alternate;
+  animation: cc-fluid-drift-1 26s ease-in-out infinite;
 }
 
 .cc-fluid__blob--2 {
-  right: -18%;
-  bottom: -28%;
+  right: -20%;
+  bottom: -26%;
   background: var(--cc-color-accent-2, #c9a267);
-  animation: cc-fluid-drift-2 44s ease-in-out infinite alternate;
+  animation: cc-fluid-drift-2 32s ease-in-out infinite;
 }
 
 .cc-fluid__blob--3 {
-  top: 28%;
-  right: 12%;
-  opacity: 0.16;
+  top: 22%;
+  right: 6%;
+  opacity: 0.22;
   background: var(--cc-color-accent-3, var(--cc-color-accent, #2f7a6f));
-  animation: cc-fluid-drift-3 52s ease-in-out infinite alternate;
+  animation: cc-fluid-drift-3 38s ease-in-out infinite;
+}
+
+.cc-fluid__blob--4 {
+  bottom: 6%;
+  left: 10%;
+  width: 48vmax;
+  height: 48vmax;
+  opacity: 0.2;
+  background: var(--cc-color-accent, #2f7a6f);
+  animation: cc-fluid-drift-4 30s ease-in-out infinite;
 }
 
 @keyframes cc-fluid-drift-1 {
-  to {
-    transform: translate(24vw, 18vh) scale(1.15);
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20vw, 14vh) scale(1.14);
+  }
+  50% {
+    transform: translate(6vw, 30vh) scale(0.92);
+  }
+  75% {
+    transform: translate(26vw, 8vh) scale(1.08);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
   }
 }
 
 @keyframes cc-fluid-drift-2 {
-  to {
-    transform: translate(-22vw, -15vh) scale(1.1);
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(-18vw, -10vh) scale(1.12);
+  }
+  50% {
+    transform: translate(-28vw, 8vh) scale(0.95);
+  }
+  75% {
+    transform: translate(-8vw, -18vh) scale(1.18);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
   }
 }
 
 @keyframes cc-fluid-drift-3 {
-  to {
-    transform: translate(-18vw, 20vh) scale(0.9);
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-22vw, 16vh) scale(1.1);
+  }
+  66% {
+    transform: translate(-30vw, -12vh) scale(0.88);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes cc-fluid-drift-4 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  30% {
+    transform: translate(24vw, -16vh) scale(1.2);
+  }
+  60% {
+    transform: translate(34vw, 6vh) scale(0.9);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
   }
 }
 

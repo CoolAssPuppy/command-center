@@ -70,7 +70,7 @@ export function renderDashboard(
   // Fluid background: a slow, muted drifting gradient, behind everything.
   if (model.config.wallpaper.source === "fluid" && !reducedMotion) {
     const fluid = el("div", "cc-fluid");
-    for (let i = 1; i <= 3; i += 1) fluid.appendChild(el("span", `cc-fluid__blob cc-fluid__blob--${String(i)}`));
+    for (let i = 1; i <= 4; i += 1) fluid.appendChild(el("span", `cc-fluid__blob cc-fluid__blob--${String(i)}`));
     root.appendChild(fluid);
   } else if (model.config.wallpaper.source === "fluid") {
     // Reduced motion: a static muted wash, no animation.
