@@ -382,14 +382,6 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
         connection.query = target;
       }
       config.connections.push(connection);
-      // Also create a work stream for it, so the connection shows on the
-      // dashboard right away. It can be renamed, removed, or joined by more.
-      config.streams.push({
-        id: newId("stream"),
-        title: nameValue,
-        connectionId: id,
-        collapsedByDefault: false,
-      });
     });
     if (secret !== undefined && secret.length > 0) {
       ctx.updateSecrets((secrets) => {

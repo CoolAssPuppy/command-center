@@ -238,7 +238,7 @@ describe("edit pane — connections & streams", () => {
     expect(connection?.service).toBe("google-calendar");
   });
 
-  it("creates a work stream for a new connection so it shows on the dashboard", () => {
+  it("adds a connection without creating a data card for it", () => {
     const harness = open(twoZones());
     const form = formWithOption(harness.root, "Google Calendar");
     const name = form.querySelector<HTMLInputElement>("input");
@@ -246,7 +246,8 @@ describe("edit pane — connections & streams", () => {
     name.value = "Work Calendar";
     form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
     const connection = harness.applied()?.connections.find((c) => c.name === "Work Calendar");
-    expect(harness.applied()?.streams.some((s) => s.connectionId === connection?.id)).toBe(true);
+    expect(connection).toBeDefined();
+    expect(harness.applied()?.streams.some((s) => s.connectionId === connection?.id)).toBe(false);
   });
 
   it("stores a connection's Notion token keyed by id", () => {
