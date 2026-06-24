@@ -31,7 +31,7 @@ describe("renderDashboard", () => {
       { navigate: () => {}, onEdit },
     );
 
-    getByRole(root, "button", { name: "Edit dashboard" }).click();
+    getByRole(root, "button", { name: "Customize dashboard" }).click();
     expect(onEdit).toHaveBeenCalledOnce();
   });
 
