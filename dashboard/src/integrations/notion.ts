@@ -26,6 +26,17 @@ const ResultSchema = z.object({
 
 const QueryResponseSchema = z.object({ results: z.array(ResultSchema) });
 
+/**
+ * Accept either a raw Notion id (with or without dashes) or a pasted database
+ * URL, and return the bare 32-character id. The view (?v=...) is dropped first,
+ * so a "Copy link" url resolves to the database, not the view.
+ */
+export function normalizeNotionId(raw: string): string {
+  const path = (raw.split("?")[0] ?? raw).replace(/-/g, "");
+  const ids = path.match(/[0-9a-f]{32}/gi);
+  return ids !== null && ids.length > 0 ? ids[ids.length - 1]! : raw.trim();
+}
+
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return typeof value === "object" && value !== null
     ? (value as Record<string, unknown>)
@@ -75,10 +86,11 @@ export const notionIntegration: Integration = {
     if (secret === undefined || secret.trim().length === 0) {
       return { ok: false, error: NEEDS_AUTH };
     }
-    const databaseId = connection.databaseId?.trim() ?? "";
-    if (databaseId.length === 0) {
+    const rawDatabaseId = connection.databaseId?.trim() ?? "";
+    if (rawDatabaseId.length === 0) {
       return { ok: false, error: NEEDS_AUTH };
     }
+    const databaseId = normalizeNotionId(rawDatabaseId);
 
     const body: Record<string, unknown> = { page_size: connection.count ?? 10 };
     if (connection.filter !== undefined) body.filter = connection.filter;
@@ -96,6 +108,12 @@ export const notionIntegration: Integration = {
         body: JSON.stringify(body),
       });
       if (response.status === 401) return { ok: false, error: NEEDS_AUTH };
+      if (response.status === 404) {
+        return {
+          ok: false,
+          error: "Not found. Share the database with your integration, and check its id.",
+        };
+      }
       if (!response.ok) {
         return { ok: false, error: `Notion request failed (${response.status})` };
       }

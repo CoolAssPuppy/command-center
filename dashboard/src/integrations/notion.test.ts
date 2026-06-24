@@ -85,6 +85,34 @@ describe("notionIntegration", () => {
     expect(body.filter).toEqual({ property: "Done", checkbox: { equals: false } });
   });
 
+  it("accepts a pasted database URL and queries the bare id", async () => {
+    let captured: HttpRequest | undefined;
+    const result = await notionIntegration.fetch(
+      connection({
+        databaseId:
+          "https://www.notion.so/ws/My-Tasks-228be0491f0c4e3da9b1b2c3d4e5f607?v=99998888777766665555444433332222",
+      }),
+      "tok",
+      ctx((request) => {
+        captured = request;
+        return Promise.resolve(jsonResponse({ results: [] }));
+      }),
+    );
+    expect(result.ok).toBe(true);
+    expect(captured?.url).toContain("/databases/228be0491f0c4e3da9b1b2c3d4e5f607/query");
+    expect(captured?.url).not.toContain("9999");
+  });
+
+  it("explains a 404 as a sharing or id problem", async () => {
+    const result = await notionIntegration.fetch(
+      connection(),
+      "tok",
+      ctx(() => Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) })),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("Share the database");
+  });
+
   it("treats a 401 as needs-auth", async () => {
     const result = await notionIntegration.fetch(
       connection(),
