@@ -294,7 +294,10 @@ body {
 .cc-forecast {
   display: flex;
   gap: clamp(12px, 1.8vw, 24px);
-  margin-top: 16px;
+  /* Sink to the bottom of the (stretched) hero column so the strip's baseline
+     lines up with the meeting window's bottom edge, with clear space above it. */
+  margin-top: auto;
+  padding-top: 28px;
 }
 
 .cc-forecast__day {
