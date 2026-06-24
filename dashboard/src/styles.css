@@ -66,6 +66,82 @@ body {
   background: rgba(12, 14, 20, calc(var(--cc-wallpaper-scrim, 0.4) + 0.3));
 }
 
+/* Fluid background: a few large, blurred, muted blobs drifting slowly over the
+   theme ground. Transform-only animation; paused under reduced motion. */
+.cc-fluid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--cc-bg, #ece8e0);
+}
+
+.cc-fluid__blob {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.28;
+  will-change: transform;
+}
+
+.cc-fluid__blob--1 {
+  top: -25%;
+  left: -15%;
+  background: var(--cc-color-accent, #2f7a6f);
+  animation: cc-fluid-drift-1 34s ease-in-out infinite alternate;
+}
+
+.cc-fluid__blob--2 {
+  right: -18%;
+  bottom: -28%;
+  background: var(--cc-color-accent-2, #c9a267);
+  animation: cc-fluid-drift-2 44s ease-in-out infinite alternate;
+}
+
+.cc-fluid__blob--3 {
+  top: 28%;
+  right: 12%;
+  opacity: 0.16;
+  background: var(--cc-color-accent-3, var(--cc-color-accent, #2f7a6f));
+  animation: cc-fluid-drift-3 52s ease-in-out infinite alternate;
+}
+
+@keyframes cc-fluid-drift-1 {
+  to {
+    transform: translate(24vw, 18vh) scale(1.15);
+  }
+}
+
+@keyframes cc-fluid-drift-2 {
+  to {
+    transform: translate(-22vw, -15vh) scale(1.1);
+  }
+}
+
+@keyframes cc-fluid-drift-3 {
+  to {
+    transform: translate(-18vw, 20vh) scale(0.9);
+  }
+}
+
+/* Reduced motion: a static muted wash, no drift. */
+.cc-fluid--static {
+  background:
+    radial-gradient(
+      55vmax 55vmax at 12% 8%,
+      color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 22%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      55vmax 55vmax at 88% 92%,
+      color-mix(in srgb, var(--cc-color-accent-2, #c9a267) 18%, transparent),
+      transparent 60%
+    ),
+    var(--cc-bg, #ece8e0);
+}
+
 .cc-credit {
   position: fixed;
   left: 16px;

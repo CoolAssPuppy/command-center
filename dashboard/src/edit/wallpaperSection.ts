@@ -54,9 +54,20 @@ function buildWallpaper(section: HTMLElement, ctx: SectionContext): void {
     chips.appendChild(chip);
   };
   addChip("gradient", "Gradient");
+  addChip("fluid", "Fluid");
   addChip("unsplash", "Unsplash");
   addChip("custom", "Custom");
   section.appendChild(field("Source", chips));
+
+  if (current === "fluid") {
+    section.appendChild(
+      el(
+        "div",
+        "cc-edit__hint",
+        "A slow, muted gradient that drifts behind everything, like a quiet lava lamp.",
+      ),
+    );
+  }
 
   if (current === "unsplash") {
     const terms = textInput("San Francisco, Lisbon, Puppies");

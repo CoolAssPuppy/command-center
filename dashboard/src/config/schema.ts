@@ -82,7 +82,7 @@ export type Stream = z.infer<typeof StreamSchema>;
  * A photo sits over the gradient under a readability scrim.
  */
 export const WallpaperSchema = z.object({
-  source: z.enum(["gradient", "unsplash", "custom"]).default("gradient"),
+  source: z.enum(["gradient", "fluid", "unsplash", "custom"]).default("gradient"),
   /** How often a new photo is picked (Unsplash). */
   frequency: z.enum(["never", "newtab", "hourly", "daily"]).default("daily"),
   /** Unsplash search terms, one image per day/tab, e.g. ["San Francisco"]. */

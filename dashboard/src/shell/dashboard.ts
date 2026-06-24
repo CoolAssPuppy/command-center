@@ -67,6 +67,16 @@ export function renderDashboard(
   root.replaceChildren();
   root.classList.add("cc-dashboard");
 
+  // Fluid background: a slow, muted drifting gradient, behind everything.
+  if (model.config.wallpaper.source === "fluid" && !reducedMotion) {
+    const fluid = el("div", "cc-fluid");
+    for (let i = 1; i <= 3; i += 1) fluid.appendChild(el("span", `cc-fluid__blob cc-fluid__blob--${String(i)}`));
+    root.appendChild(fluid);
+  } else if (model.config.wallpaper.source === "fluid") {
+    // Reduced motion: a static muted wash, no animation.
+    root.appendChild(el("div", "cc-fluid cc-fluid--static"));
+  }
+
   // Background wallpaper layer.
   const wallpaper = el("div", "cc-wallpaper");
   const imageUrl = model.wallpaper?.imageUrl;
