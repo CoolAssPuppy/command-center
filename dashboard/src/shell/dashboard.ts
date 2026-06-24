@@ -135,7 +135,7 @@ export function renderDashboard(
     }
     renderHomeClock(hero, clockModel);
 
-    if (model.config.zones.length >= 2) {
+    if (model.config.appearance.showMeetingWindow !== false && model.config.zones.length >= 2) {
       renderMeetingWindow(hero, {
         now: model.now,
         zones: model.config.zones,

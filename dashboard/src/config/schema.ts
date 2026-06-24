@@ -101,6 +101,8 @@ export const AppearanceSchema = z.object({
   theme: z.string().optional(),
   /** 12-hour clock when true, 24-hour when false. */
   hour12: z.boolean().default(true),
+  /** Show the meeting-overlap window beside the home clock. */
+  showMeetingWindow: z.boolean().default(true),
 });
 export type Appearance = z.infer<typeof AppearanceSchema>;
 

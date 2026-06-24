@@ -25,8 +25,24 @@ export function renderZonesSection(host: HTMLElement, ctx: SectionContext): void
       }
       section.appendChild(list);
       section.appendChild(renderAddZone(ctx));
+      section.appendChild(renderMeetingWindowToggle(ctx));
     },
   );
+}
+
+function renderMeetingWindowToggle(ctx: SectionContext): HTMLElement {
+  const row = el("label", "cc-edit__check");
+  const box = document.createElement("input");
+  box.type = "checkbox";
+  box.checked = ctx.draft.appearance.showMeetingWindow !== false;
+  box.addEventListener("change", () => {
+    ctx.update((config) => {
+      config.appearance.showMeetingWindow = box.checked;
+    });
+  });
+  row.appendChild(box);
+  row.appendChild(el("span", undefined, "Display meeting availability window"));
+  return row;
 }
 
 function renderZoneRow(
