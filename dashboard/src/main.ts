@@ -3,6 +3,7 @@ import "./styles.css";
 
 import { runDashboard } from "./app/run";
 import { createEnvironmentStore } from "./config/store";
+import { devProxyFetch } from "./integrations/devProxy";
 import { measureFirstPaint } from "./perf/perf";
 
 /**
@@ -25,6 +26,8 @@ if (mount) {
       scheduleTick: (cb) => {
         window.setInterval(cb, 60_000);
       },
+      // In dev, route Notion/Linear/Google through the Vite proxy to dodge CORS.
+      ...(import.meta.env.DEV ? { httpFetch: devProxyFetch } : {}),
     });
   });
   if (!withinBudget) {
