@@ -126,6 +126,14 @@ function renderConnectionFields(
         void connect();
       });
       wrap.appendChild(field("Account", button));
+    } else {
+      wrap.appendChild(
+        el(
+          "div",
+          "cc-edit__hint",
+          "Google sign-in works only in the installed extension, not the dev server. Load the unpacked extension to connect.",
+        ),
+      );
     }
     const calendarId = textInput("primary");
     calendarId.value = connection.calendarId ?? "";

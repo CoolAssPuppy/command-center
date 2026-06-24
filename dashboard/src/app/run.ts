@@ -4,7 +4,11 @@ import type { ConfigStore } from "../config/store";
 import type { ParseResult } from "../domain/result";
 import { openEditPane } from "../edit/editPane";
 import { searchCities as geoSearch, type GeoResult } from "../geo/geocode";
-import { connectGoogle, getGoogleToken } from "../integrations/googleAuth";
+import {
+  connectGoogle,
+  getGoogleToken,
+  isGoogleAuthAvailable,
+} from "../integrations/googleAuth";
 import { realHttpFetch } from "../integrations/http";
 import { integrationById } from "../integrations/registry";
 import {
@@ -150,10 +154,16 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         },
         runtime: {
           searchCities,
-          connectGoogle: async () => {
-            const token = await connectGoogle();
-            if (token !== undefined) await refreshIntegrations();
-          },
+          // Only offer Google sign-in where chrome.identity exists (the
+          // installed extension). On the dev server the section shows a hint.
+          ...(isGoogleAuthAvailable()
+            ? {
+                connectGoogle: async (): Promise<void> => {
+                  const token = await connectGoogle();
+                  if (token !== undefined) await refreshIntegrations();
+                },
+              }
+            : {}),
         },
       });
     });

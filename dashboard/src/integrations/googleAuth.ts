@@ -40,6 +40,11 @@ async function fetchToken(interactive: boolean): Promise<string | undefined> {
   }
 }
 
+/** Whether chrome.identity exists, i.e. we are in the installed extension. */
+export function isGoogleAuthAvailable(): boolean {
+  return getChromeIdentity() !== undefined;
+}
+
 /** A token without prompting; undefined if the user hasn't connected yet. */
 export function getGoogleToken(): Promise<string | undefined> {
   return fetchToken(false);
