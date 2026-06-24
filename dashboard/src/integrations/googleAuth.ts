@@ -35,7 +35,14 @@ async function fetchToken(interactive: boolean): Promise<string | undefined> {
     const result = await identity.getAuthToken({ interactive });
     if (typeof result === "string") return result;
     return result?.token;
-  } catch {
+  } catch (cause) {
+    // Surface the real reason; a swallowed error here looks like "nothing
+    // happened". Common: a bad client id (extension ID does not match the
+    // OAuth client's Item ID), or no Google account signed into Chrome.
+    if (interactive) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      console.warn(`Google sign-in failed: ${message}`);
+    }
     return undefined;
   }
 }

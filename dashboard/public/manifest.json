@@ -23,7 +23,7 @@
     "https://www.google.com/s2/favicons*"
   ],
   "oauth2": {
-    "client_id": "REPLACE_WITH_YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+    "client_id": "180895780616-8bkq115onih2tu3020go6c03vj42jpbb.apps.googleusercontent.com",
     "scopes": ["https://www.googleapis.com/auth/calendar.readonly"]
   },
   "content_security_policy": {
