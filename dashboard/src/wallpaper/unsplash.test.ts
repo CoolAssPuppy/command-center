@@ -29,9 +29,9 @@ describe("buildRandomUrl", () => {
 });
 
 describe("fetchWallpaper", () => {
-  it("requires terms and a key", async () => {
+  it("requires a key but allows empty terms (a random photo)", async () => {
     const deps = { fetch: () => Promise.resolve(response(photoBody)) };
-    expect((await fetchWallpaper({ terms: [], accessKey: "k" }, deps)).ok).toBe(false);
+    expect((await fetchWallpaper({ terms: [], accessKey: "k" }, deps)).ok).toBe(true);
     expect((await fetchWallpaper({ terms: ["x"], accessKey: "" }, deps)).ok).toBe(false);
   });
 

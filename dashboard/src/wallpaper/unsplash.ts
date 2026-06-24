@@ -39,7 +39,9 @@ const PhotoSchema = z.object({
 
 export function buildRandomUrl(terms: string[], accessKey: string): string {
   const url = new URL(RANDOM_BASE);
-  url.searchParams.set("query", terms.join(","));
+  const cleaned = terms.map((term) => term.trim()).filter((term) => term.length > 0);
+  // With no terms, omit the query so Unsplash returns any random landscape.
+  if (cleaned.length > 0) url.searchParams.set("query", cleaned.join(","));
   url.searchParams.set("orientation", "landscape");
   url.searchParams.set("content_filter", "high");
   url.searchParams.set("client_id", accessKey);
@@ -51,7 +53,6 @@ export async function fetchWallpaper(
   deps: { fetch: FetchLike },
 ): Promise<ParseResult<WallpaperPhoto>> {
   const terms = options.terms.map((term) => term.trim()).filter((term) => term.length > 0);
-  if (terms.length === 0) return { ok: false, error: "no search terms" };
   if (options.accessKey.trim().length === 0) {
     return { ok: false, error: "missing Unsplash access key" };
   }

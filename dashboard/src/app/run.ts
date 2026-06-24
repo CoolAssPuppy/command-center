@@ -137,6 +137,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
           paint();
           void resolveAndPaintWallpaper();
           void refreshIntegrations();
+          void refreshWeather();
         },
         applySecrets: (next) => {
           void deps.store.saveSecrets(next);
@@ -179,7 +180,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       return;
     }
 
-    if (wallpaper.source !== "unsplash" || wallpaper.terms.length === 0) {
+    if (wallpaper.source !== "unsplash") {
       clearWallpaper();
       return;
     }
@@ -259,6 +260,41 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     paint();
   }
 
+  /**
+   * Fetch weather for every located zone and repaint. Re-run whenever the zones
+   * change (a new home city, an added zone), since a zone added after first
+   * paint has no weather yet. A zone without coordinates is skipped.
+   */
+  async function refreshWeather(): Promise<void> {
+    if (config === undefined) return;
+    const located: LocatedZone[] = config.zones.flatMap((zone) =>
+      zone.lat !== undefined && zone.lon !== undefined
+        ? [{ id: zone.id, label: zone.label, lat: zone.lat, lon: zone.lon }]
+        : [],
+    );
+    if (located.length === 0) return;
+
+    const units: WeatherUnits = deps.units ?? "fahrenheit";
+    const results = await Promise.all(
+      located.map(async (zone) => {
+        const result = await fetchWeather(
+          { label: zone.label, lat: zone.lat, lon: zone.lon },
+          units,
+        );
+        return { id: zone.id, result };
+      }),
+    );
+
+    let changed = false;
+    for (const { id, result } of results) {
+      if (result.ok) {
+        weatherByZone[id] = result.value;
+        changed = true;
+      }
+    }
+    if (changed) paint();
+  }
+
   // 1. Instant paint from the cached config, if any (runs before the first await).
   const cached = loadCache();
   if (cached !== undefined) {
@@ -283,30 +319,5 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
   void refreshIntegrations();
 
   // 6. Weather for zones that carry coordinates.
-  const located: LocatedZone[] = config.zones.flatMap((zone) =>
-    zone.lat !== undefined && zone.lon !== undefined
-      ? [{ id: zone.id, label: zone.label, lat: zone.lat, lon: zone.lon }]
-      : [],
-  );
-  if (located.length === 0) return;
-
-  const units: WeatherUnits = deps.units ?? "fahrenheit";
-  const results = await Promise.all(
-    located.map(async (zone) => {
-      const result = await fetchWeather(
-        { label: zone.label, lat: zone.lat, lon: zone.lon },
-        units,
-      );
-      return { id: zone.id, result };
-    }),
-  );
-
-  let changed = false;
-  for (const { id, result } of results) {
-    if (result.ok) {
-      weatherByZone[id] = result.value;
-      changed = true;
-    }
-  }
-  if (changed) paint();
+  await refreshWeather();
 }
