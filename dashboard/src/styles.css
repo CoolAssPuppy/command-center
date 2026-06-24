@@ -925,13 +925,15 @@ body {
 .cc-streams {
   width: 100%;
   display: grid;
-  /* Fill the row at any stream count, so one or two panels don't leave dead
-     columns. Collapses to a single column on narrow viewports on its own. */
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  /* auto-fit (not auto-fill) collapses empty tracks, so the panels share the
+     whole row and widen or narrow with the count instead of clustering on the
+     left. Wraps to more rows once each would fall below ~260px. */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   grid-auto-rows: auto;
-  /* Size each panel to its content; don't stretch a connect/empty panel to
-     match a data-filled neighbour, which left it a big near-empty box. */
+  /* Top-align so a connect/empty panel doesn't stretch to a tall neighbour;
+     centre horizontally so a capped panel sits centred in a wide track. */
   align-items: start;
+  justify-items: center;
   gap: 16px;
 }
 
@@ -944,6 +946,10 @@ body {
 .cc-stream {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  /* Fill narrow tracks, but cap the width so one or two streams read as
+     panels, not a full-bleed band. justify-items centres the capped panel. */
+  max-width: 540px;
   border: 1px solid var(--cc-hairline);
   border-radius: 16px;
   background: color-mix(in srgb, var(--cc-color-surface, #fff) 78%, transparent);
