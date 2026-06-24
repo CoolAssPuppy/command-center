@@ -1,4 +1,5 @@
 import { el } from "../render/helpers";
+import { sectionIcon } from "./sectionIcons";
 
 /**
  * Small form controls shared by the edit-pane sections, so reorder buttons,
@@ -50,6 +51,12 @@ export function collapsibleSection(
 
   const summary = document.createElement("summary");
   summary.className = "cc-edit__section-summary";
+  const mark = sectionIcon(options.key);
+  if (mark !== undefined) {
+    const wrap = el("span", "cc-edit__section-icon");
+    wrap.appendChild(mark);
+    summary.appendChild(wrap);
+  }
   summary.appendChild(el("span", "cc-edit__section-title", options.title));
   summary.appendChild(el("span", "cc-edit__section-caret", "›"));
   details.appendChild(summary);

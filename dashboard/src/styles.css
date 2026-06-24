@@ -657,7 +657,14 @@ body {
   display: none;
 }
 
+.cc-edit__section-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--cc-color-accent, #2f7a6f);
+}
+
 .cc-edit__section-title {
+  flex: 1;
   margin: 0;
   font-size: 12px;
   font-weight: 600;
