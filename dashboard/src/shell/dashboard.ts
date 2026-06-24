@@ -107,6 +107,10 @@ export function renderDashboard(
     if (model.config.profile.name !== undefined) {
       clockModel.name = model.config.profile.name;
     }
+    const homeWeather = model.weatherByZone?.[home.id];
+    if (model.config.weather.showForHome && homeWeather !== undefined) {
+      clockModel.weather = homeWeather;
+    }
     renderHomeClock(hero, clockModel);
 
     if (model.config.zones.length >= 2) {
@@ -127,7 +131,7 @@ export function renderDashboard(
         zones: others,
         hour12: model.config.appearance.hour12,
       };
-      if (model.weatherByZone !== undefined) {
+      if (model.config.weather.showForZones && model.weatherByZone !== undefined) {
         rowModel.weatherByZone = model.weatherByZone;
       }
       renderZoneRow(stage, rowModel);

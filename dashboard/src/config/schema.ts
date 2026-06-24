@@ -98,6 +98,14 @@ export const ProfileSchema = z.object({
 });
 export type Profile = z.infer<typeof ProfileSchema>;
 
+export const WeatherSettingsSchema = z.object({
+  /** Show the current temperature on the home clock. */
+  showForHome: z.boolean().default(false),
+  /** Show the current temperature on the other timezone cards. */
+  showForZones: z.boolean().default(true),
+});
+export type WeatherSettings = z.infer<typeof WeatherSettingsSchema>;
+
 export const ConfigSchema = z.object({
   /** Schema version, for future migrations. */
   version: z.number().int().positive().default(1),
@@ -108,6 +116,7 @@ export const ConfigSchema = z.object({
   streams: z.array(StreamSchema).default([]),
   wallpaper: WallpaperSchema.default({ source: "gradient", terms: [], scrim: 0.4 }),
   appearance: AppearanceSchema.default({ hour12: true }),
+  weather: WeatherSettingsSchema.default({ showForHome: false, showForZones: true }),
 });
 export type Config = z.infer<typeof ConfigSchema>;
 

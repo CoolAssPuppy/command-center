@@ -270,6 +270,33 @@ describe("edit pane — connections & streams", () => {
   });
 });
 
+describe("edit pane — weather", () => {
+  const checkFor = (root: HTMLElement, text: string): HTMLInputElement => {
+    const label = [...root.querySelectorAll<HTMLElement>("label.cc-edit__check")].find(
+      (node) => node.textContent?.includes(text),
+    );
+    const box = label?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (box === null || box === undefined) throw new Error(`no weather toggle for ${text}`);
+    return box;
+  };
+
+  it("turns weather on for the home clock", () => {
+    const harness = open(twoZones());
+    const box = checkFor(harness.root, "for main");
+    box.checked = true;
+    box.dispatchEvent(new Event("change"));
+    expect(harness.applied()?.weather.showForHome).toBe(true);
+  });
+
+  it("turns weather off for the timezones", () => {
+    const harness = open(twoZones());
+    const box = checkFor(harness.root, "for timezones");
+    box.checked = false;
+    box.dispatchEvent(new Event("change"));
+    expect(harness.applied()?.weather.showForZones).toBe(false);
+  });
+});
+
 describe("edit pane — wallpaper", () => {
   const clickChip = (root: HTMLElement, label: string): void => {
     const chip = [...root.querySelectorAll<HTMLButtonElement>(".cc-edit__chips .cc-edit__chip")].find(

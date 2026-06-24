@@ -7,6 +7,7 @@ import { renderConnectionsSection } from "./connectionsSection";
 import { renderDockSection } from "./dockSection";
 import { renderStreamsSection } from "./streamsSection";
 import { renderWallpaperSection } from "./wallpaperSection";
+import { renderWeatherSection } from "./weatherSection";
 import { renderZonesSection } from "./zonesSection";
 
 /**
@@ -51,6 +52,7 @@ export type SectionRenderer = (host: HTMLElement, ctx: SectionContext) => void;
 
 const SECTIONS: SectionRenderer[] = [
   renderZonesSection,
+  renderWeatherSection,
   renderDockSection,
   renderConnectionsSection,
   renderStreamsSection,

@@ -65,6 +65,12 @@ describe("config parsing", () => {
     });
     expect(config.streams[0]?.collapsedByDefault).toBe(false);
   });
+
+  it("defaults weather to on for zones and off for the home clock", () => {
+    const config = parseConfig({});
+    expect(config.weather.showForZones).toBe(true);
+    expect(config.weather.showForHome).toBe(false);
+  });
 });
 
 describe("zone selectors", () => {

@@ -2,6 +2,7 @@ import type { Zone } from "../config/schema";
 import { el } from "../render/helpers";
 import { formatClock, zonedTime } from "../time/clock";
 import { phaseLabel } from "../time/solar";
+import type { Weather } from "../weather/openMeteo";
 
 /**
  * The centered, prominent home clock: a greeting, the big current time for the
@@ -13,6 +14,8 @@ export interface HomeClockModel {
   zone: Zone;
   name?: string;
   hour12?: boolean;
+  /** Current weather for the home zone, shown when present. */
+  weather?: Weather;
 }
 
 function greetingFor(hour: number): string {
@@ -53,6 +56,12 @@ export function renderHomeClock(host: HTMLElement, model: HomeClockModel): HTMLE
   meta.appendChild(el("span", "cc-home__date", formatDate(model.now, model.zone.timeZone)));
   meta.appendChild(el("span", "cc-home__dot", "·"));
   meta.appendChild(el("span", "cc-home__place", model.zone.label));
+  if (model.weather !== undefined) {
+    meta.appendChild(el("span", "cc-home__dot", "·"));
+    meta.appendChild(
+      el("span", "cc-home__weather", `${Math.round(model.weather.temperature)}°`),
+    );
+  }
   root.appendChild(meta);
 
   host.appendChild(root);
