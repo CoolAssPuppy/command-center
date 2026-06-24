@@ -177,6 +177,45 @@ describe("googleCalendarIntegration", () => {
     expect(result.value[0]?.subtitle).toBe("All day");
   });
 
+  it("merges events from extra calendars, sorted by start time", async () => {
+    const fetch = (request: HttpRequest): Promise<HttpResponseLike> => {
+      const onPrimary = request.url.includes("/calendars/primary/");
+      return Promise.resolve(
+        json({
+          items: onPrimary
+            ? [{ id: "p1", summary: "Primary", start: { dateTime: "2026-06-23T15:00:00Z" } }]
+            : [{ id: "w1", summary: "Work", start: { dateTime: "2026-06-23T09:00:00Z" } }],
+        }),
+      );
+    };
+    const result = await googleCalendarIntegration.fetch(
+      connection({ calendarIds: ["work@group.calendar.google.com"] }),
+      undefined,
+      ctx({ fetch }),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // 09:00 (work) sorts before 15:00 (primary).
+    expect(result.value.map((item) => item.id)).toEqual(["w1", "p1"]);
+  });
+
+  it("keeps the card alive when a merged calendar cannot be read", async () => {
+    const fetch = (request: HttpRequest): Promise<HttpResponseLike> =>
+      request.url.includes("/calendars/primary/")
+        ? Promise.resolve(
+            json({ items: [{ id: "p1", summary: "Primary", start: { dateTime: "2026-06-23T15:00:00Z" } }] }),
+          )
+        : Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) });
+    const result = await googleCalendarIntegration.fetch(
+      connection({ calendarIds: ["missing@group.calendar.google.com"] }),
+      undefined,
+      ctx({ fetch }),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.map((item) => item.id)).toEqual(["p1"]);
+  });
+
   it("maps 401 to needs-auth", async () => {
     const result = await googleCalendarIntegration.fetch(
       connection(),

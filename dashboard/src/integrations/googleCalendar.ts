@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { Connection } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
+import { parseGoogleCalendarIds } from "./googleCalendarLink";
 import {
   NEEDS_AUTH,
   type Integration,
@@ -13,7 +14,8 @@ import {
  * The Google Calendar integration. Google supports OAuth from an extension with
  * no server via chrome.identity, so the platform supplies a token through
  * ctx.getAuthToken("google") and the connection's secret is unused. It lists
- * upcoming events from the connection's calendar and normalizes each.
+ * today's events from the connection's calendar, plus any extra calendars added
+ * by share link, merged and sorted by start time.
  */
 const API_BASE = "https://www.googleapis.com/calendar/v3/calendars";
 
@@ -98,8 +100,7 @@ function windowEnd(now: Date): Date {
   return end;
 }
 
-function buildUrl(connection: Connection, now: Date): string {
-  const calendarId = connection.calendarId ?? "primary";
+function buildUrl(calendarId: string, connection: Connection, now: Date): string {
   const url = new URL(`${API_BASE}/${encodeURIComponent(calendarId)}/events`);
   // Start at the top of today, not the current moment, so events earlier today
   // still show. Cap the window at today (and tomorrow after 5pm) so the card
@@ -110,6 +111,65 @@ function buildUrl(connection: Connection, now: Date): string {
   url.searchParams.set("singleEvents", "true");
   url.searchParams.set("orderBy", "startTime");
   return url.toString();
+}
+
+/**
+ * The calendars this connection reads: its main one (default "primary") plus
+ * any merged in by id or share link. Deduplicated, main first.
+ */
+function calendarIdsFor(connection: Connection): string[] {
+  const main = connection.calendarId?.trim();
+  const extras = (connection.calendarIds ?? []).flatMap(parseGoogleCalendarIds);
+  return [...new Set([main !== undefined && main.length > 0 ? main : "primary", ...extras])];
+}
+
+type CalendarFetch =
+  | { kind: "ok"; items: NormalizedItem[] }
+  | { kind: "auth" }
+  | { kind: "error"; error: string };
+
+function toItem(event: z.infer<typeof EventSchema>, now: Date): NormalizedItem {
+  const item: NormalizedItem = {
+    id: event.id,
+    title: event.summary ?? "(no title)",
+  };
+  const when = formatWhen(event.start, now);
+  if (when !== undefined) item.subtitle = when;
+  if (event.htmlLink !== undefined) item.url = event.htmlLink;
+  if (event.location !== undefined) item.meta = event.location;
+  const startKey = event.start?.dateTime ?? event.start?.date;
+  if (startKey !== undefined) item.sortKey = startKey;
+  return item;
+}
+
+async function fetchCalendar(
+  calendarId: string,
+  token: string,
+  connection: Connection,
+  ctx: IntegrationContext,
+): Promise<CalendarFetch> {
+  let payload: unknown;
+  try {
+    const response = await ctx.fetch({
+      url: buildUrl(calendarId, connection, ctx.now),
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.status === 401 || response.status === 403) return { kind: "auth" };
+    if (!response.ok) {
+      return { kind: "error", error: `Calendar request failed (${response.status})` };
+    }
+    payload = await response.json();
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : "Calendar request failed";
+    return { kind: "error", error: message };
+  }
+
+  const result = ResponseSchema.safeParse(payload);
+  if (!result.success) {
+    return { kind: "error", error: firstIssue(result.error, "invalid calendar response") };
+  }
+  return { kind: "ok", items: (result.data.items ?? []).map((event) => toItem(event, ctx.now)) };
 }
 
 export const googleCalendarIntegration: Integration = {
@@ -126,43 +186,28 @@ export const googleCalendarIntegration: Integration = {
       return { ok: false, error: NEEDS_AUTH };
     }
 
-    let payload: unknown;
-    try {
-      const response = await ctx.fetch({
-        url: buildUrl(connection, ctx.now),
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.status === 401 || response.status === 403) {
-        return { ok: false, error: NEEDS_AUTH };
-      }
-      if (!response.ok) {
-        return { ok: false, error: `Calendar request failed (${response.status})` };
-      }
-      payload = await response.json();
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "Calendar request failed";
-      return { ok: false, error: message };
-    }
+    const fetched = await Promise.all(
+      calendarIdsFor(connection).map((calendarId) =>
+        fetchCalendar(calendarId, token, connection, ctx),
+      ),
+    );
 
-    const result = ResponseSchema.safeParse(payload);
-    if (!result.success) {
-      return { ok: false, error: firstIssue(result.error, "invalid calendar response") };
+    // Optimistic merge: as long as one calendar loaded, show it. A calendar the
+    // account cannot read (a bad link) is skipped rather than blanking the card.
+    if (fetched.some((result) => result.kind === "ok")) {
+      const items = fetched
+        .flatMap((result) => (result.kind === "ok" ? result.items : []))
+        .sort((a, b) => (a.sortKey ?? "").localeCompare(b.sortKey ?? ""))
+        .slice(0, connection.count ?? 6);
+      return { ok: true, value: items };
     }
-
-    const items: NormalizedItem[] = (result.data.items ?? []).map((event) => {
-      const item: NormalizedItem = {
-        id: event.id,
-        title: event.summary ?? "(no title)",
-      };
-      const when = formatWhen(event.start, ctx.now);
-      if (when !== undefined) item.subtitle = when;
-      if (event.htmlLink !== undefined) item.url = event.htmlLink;
-      if (event.location !== undefined) item.meta = event.location;
-      const startKey = event.start?.dateTime ?? event.start?.date;
-      if (startKey !== undefined) item.sortKey = startKey;
-      return item;
-    });
-    return { ok: true, value: items };
+    if (fetched.some((result) => result.kind === "auth")) {
+      return { ok: false, error: NEEDS_AUTH };
+    }
+    const failure = fetched.find((result) => result.kind === "error");
+    return {
+      ok: false,
+      error: failure?.kind === "error" ? failure.error : "Calendar request failed",
+    };
   },
 };

@@ -58,6 +58,8 @@ export const ConnectionSchema = z.object({
   service: ServiceSchema,
   /** Google Calendar: which calendar (default "primary"). */
   calendarId: z.string().optional(),
+  /** Google Calendar: extra calendars to merge in, by id or share link. */
+  calendarIds: z.array(z.string()).optional(),
   /** Notion: which database, and how to read it. */
   databaseId: z.string().optional(),
   titleProperty: z.string().optional(),

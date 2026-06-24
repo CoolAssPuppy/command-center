@@ -953,6 +953,12 @@ body {
   border: 1px solid var(--cc-hairline);
 }
 
+.cc-edit__textarea {
+  resize: vertical;
+  min-height: 64px;
+  line-height: 1.4;
+}
+
 .cc-edit__add-btn {
   font: inherit;
   font-size: 13px;

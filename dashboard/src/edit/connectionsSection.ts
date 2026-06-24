@@ -153,6 +153,31 @@ function renderConnectionFields(
         "Leave blank for your main calendar. For another, paste its ID from Google Calendar settings, Integrate calendar.",
       ),
     );
+
+    const merge = document.createElement("textarea");
+    merge.className = "cc-edit__input cc-edit__textarea";
+    merge.rows = 3;
+    merge.placeholder = "Paste a calendar link or id, one per line";
+    merge.value = (connection.calendarIds ?? []).join("\n");
+    merge.setAttribute("aria-label", "Calendars to merge");
+    merge.addEventListener("change", () => {
+      updateConnection(ctx, connection.id, (item) => {
+        const lines = merge.value
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        if (lines.length > 0) item.calendarIds = lines;
+        else delete item.calendarIds;
+      });
+    });
+    wrap.appendChild(field("Merge calendars (optional)", merge));
+    wrap.appendChild(
+      el(
+        "div",
+        "cc-edit__hint",
+        "Paste a calendar's share link or id, one per line, to merge its events into this card. From Google Calendar settings, Integrate calendar, copy the Public URL, the Embed src, or the Calendar ID. You can only see calendars your signed-in account can access.",
+      ),
+    );
   } else {
     const key = document.createElement("input");
     key.type = "password";
