@@ -295,6 +295,15 @@ describe("edit pane — weather", () => {
     box.dispatchEvent(new Event("change"));
     expect(harness.applied()?.weather.showForZones).toBe(false);
   });
+
+  it("switches the temperature unit to Celsius", () => {
+    const harness = open(twoZones());
+    const chip = [
+      ...harness.root.querySelectorAll<HTMLButtonElement>(".cc-edit__chip"),
+    ].find((node) => node.textContent === "°C");
+    chip?.click();
+    expect(harness.applied()?.weather.unit).toBe("celsius");
+  });
 });
 
 describe("edit pane — wallpaper", () => {

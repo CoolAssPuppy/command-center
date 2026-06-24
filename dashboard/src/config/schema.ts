@@ -103,6 +103,8 @@ export const WeatherSettingsSchema = z.object({
   showForHome: z.boolean().default(false),
   /** Show the current temperature on the other timezone cards. */
   showForZones: z.boolean().default(true),
+  /** Temperature unit for every weather reading. */
+  unit: z.enum(["fahrenheit", "celsius"]).default("fahrenheit"),
 });
 export type WeatherSettings = z.infer<typeof WeatherSettingsSchema>;
 
@@ -116,7 +118,11 @@ export const ConfigSchema = z.object({
   streams: z.array(StreamSchema).default([]),
   wallpaper: WallpaperSchema.default({ source: "gradient", terms: [], scrim: 0.4 }),
   appearance: AppearanceSchema.default({ hour12: true }),
-  weather: WeatherSettingsSchema.default({ showForHome: false, showForZones: true }),
+  weather: WeatherSettingsSchema.default({
+    showForHome: false,
+    showForZones: true,
+    unit: "fahrenheit",
+  }),
 });
 export type Config = z.infer<typeof ConfigSchema>;
 

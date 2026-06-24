@@ -1,6 +1,8 @@
 import { el } from "../render/helpers";
-import { collapsibleSection } from "./controls";
+import { collapsibleSection, field } from "./controls";
 import type { SectionContext } from "./editPane";
+
+type Unit = "fahrenheit" | "celsius";
 
 /**
  * The Weather section: choose where the current temperature appears, on the
@@ -33,6 +35,22 @@ export function renderWeatherSection(host: HTMLElement, ctx: SectionContext): vo
             }),
         ),
       );
+
+      const units = el("div", "cc-edit__chips");
+      const addUnit = (value: Unit, label: string): void => {
+        const active = ctx.draft.weather.unit === value;
+        const chip = el("button", `cc-edit__chip${active ? " is-active" : ""}`, label);
+        chip.setAttribute("type", "button");
+        chip.addEventListener("click", () => {
+          ctx.update((config) => {
+            config.weather.unit = value;
+          });
+        });
+        units.appendChild(chip);
+      };
+      addUnit("fahrenheit", "°F");
+      addUnit("celsius", "°C");
+      section.appendChild(field("Units", units));
     },
   );
 }

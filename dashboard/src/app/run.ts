@@ -285,7 +285,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     );
     if (located.length === 0) return;
 
-    const units: WeatherUnits = deps.units ?? "fahrenheit";
+    const units: WeatherUnits = deps.units ?? config.weather.unit;
     const results = await Promise.all(
       located.map(async (zone) => {
         const result = await fetchWeather(
