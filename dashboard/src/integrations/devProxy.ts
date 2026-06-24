@@ -15,15 +15,26 @@ const PROXIED_HOSTS: ReadonlyArray<readonly [string, string]> = [
   ["https://api.notion.com", "/__cc-proxy/notion"],
   ["https://api.linear.app", "/__cc-proxy/linear"],
   ["https://www.googleapis.com", "/__cc-proxy/google"],
+  ["https://api.unsplash.com", "/__cc-proxy/unsplash"],
 ];
 
-export const devProxyFetch: HttpFetch = (request) => {
-  let url = request.url;
+/** Rewrite a proxied API host to its dev path; pass anything else through. */
+export function devProxyUrl(url: string): string {
   for (const [host, prefix] of PROXIED_HOSTS) {
-    if (url.startsWith(host)) {
-      url = prefix + url.slice(host.length);
-      break;
-    }
+    if (url.startsWith(host)) return prefix + url.slice(host.length);
   }
-  return realHttpFetch({ ...request, url });
-};
+  return url;
+}
+
+export const devProxyFetch: HttpFetch = (request) =>
+  realHttpFetch({ ...request, url: devProxyUrl(request.url) });
+
+/** Dev wallpaper client: same proxy, the url-only shape Unsplash uses. */
+export const devUnsplashFetch = (
+  url: string,
+): Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }> =>
+  fetch(devProxyUrl(url)).then((response) => ({
+    ok: response.ok,
+    status: response.status,
+    json: () => response.json(),
+  }));

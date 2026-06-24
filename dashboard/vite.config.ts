@@ -25,6 +25,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/__cc-proxy\/google/, ""),
       },
+      "/__cc-proxy/unsplash": {
+        target: "https://api.unsplash.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/unsplash/, ""),
+      },
     },
   },
   build: {

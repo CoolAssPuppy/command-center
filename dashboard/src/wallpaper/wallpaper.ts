@@ -92,7 +92,11 @@ export async function resolveWallpaper(
     { terms: options.terms, accessKey: options.accessKey },
     { fetch: deps.fetch },
   );
-  if (!result.ok) return cached?.photo;
+  if (!result.ok) {
+    // Wallpaper failures are otherwise invisible; log so the cause is findable.
+    console.warn(`Unsplash wallpaper failed: ${result.error}`);
+    return cached?.photo;
+  }
 
   saveWallpaperCache(
     { dateKey: options.dateKey, terms: termsKey, photo: result.value },
