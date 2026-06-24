@@ -1,4 +1,5 @@
 import { el, svgEl } from "../render/helpers";
+import { googleCalendarLogo } from "./googleCalendarLogo";
 
 /**
  * Brand-mark tiles for the integration panels. Each is the service's real logo
@@ -23,26 +24,11 @@ function svg(viewBox: string): SVGElement {
 }
 
 function googleCalendar(): HTMLElement {
+  // The real Calendar logo is full color with a white body, so it gets a white
+  // ground instead of the off-white used for the monochrome marks.
   const node = tile();
-  const mark = svg("0 0 24 24");
-  // calendar binding rings
-  mark.appendChild(svgEl("rect", { x: "7.4", y: "2.4", width: "1.5", height: "4", rx: "0.75", fill: "#4285F4" }));
-  mark.appendChild(svgEl("rect", { x: "15.1", y: "2.4", width: "1.5", height: "4", rx: "0.75", fill: "#4285F4" }));
-  // blue header band
-  mark.appendChild(svgEl("rect", { x: "4", y: "4", width: "16", height: "4", rx: "1", fill: "#4285F4" }));
-  // the "31"
-  const text = svgEl("text", {
-    x: "12",
-    y: "18.5",
-    "text-anchor": "middle",
-    "font-family": "Archivo, sans-serif",
-    "font-size": "9.5",
-    "font-weight": "700",
-    fill: "#4285F4",
-  });
-  text.textContent = "31";
-  mark.appendChild(text);
-  node.appendChild(mark);
+  node.style.background = "#ffffff";
+  node.appendChild(googleCalendarLogo(20));
   return node;
 }
 

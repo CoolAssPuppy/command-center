@@ -1,4 +1,5 @@
 import { el, svgEl } from "../render/helpers";
+import { googleCalendarLogo } from "../shell/googleCalendarLogo";
 
 /**
  * Real brand icons for well-known dock links. Google's favicon service returns
@@ -39,22 +40,7 @@ function gmail(): HTMLElement {
 
 function googleCalendar(): HTMLElement {
   const node = tile();
-  const mark = svgEl("svg", { viewBox: "0 0 24 24", width: "20", height: "20", fill: "none" });
-  mark.appendChild(svgEl("rect", { x: "7.4", y: "2.4", width: "1.5", height: "4", rx: "0.75", fill: "#4285F4" }));
-  mark.appendChild(svgEl("rect", { x: "15.1", y: "2.4", width: "1.5", height: "4", rx: "0.75", fill: "#4285F4" }));
-  mark.appendChild(svgEl("rect", { x: "4", y: "4", width: "16", height: "4", rx: "1", fill: "#4285F4" }));
-  const text = svgEl("text", {
-    x: "12",
-    y: "18.5",
-    "text-anchor": "middle",
-    "font-family": "Archivo, sans-serif",
-    "font-size": "9.5",
-    "font-weight": "700",
-    fill: "#4285F4",
-  });
-  text.textContent = "31";
-  mark.appendChild(text);
-  node.appendChild(mark);
+  node.appendChild(googleCalendarLogo(20));
   return node;
 }
 
