@@ -930,10 +930,10 @@ body {
      left. Wraps to more rows once each would fall below ~260px. */
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   grid-auto-rows: auto;
-  /* Top-align so a connect/empty panel doesn't stretch to a tall neighbour;
-     centre horizontally so a capped panel sits centred in a wide track. */
+  /* Top-align so a connect/empty panel doesn't stretch to a tall neighbour.
+     Panels fill their tracks, so the row runs end to end to the margins with
+     even gaps inside, and each panel's width tracks the stream count. */
   align-items: start;
-  justify-items: center;
   gap: 16px;
 }
 
@@ -946,10 +946,6 @@ body {
 .cc-stream {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  /* Fill narrow tracks, but cap the width so one or two streams read as
-     panels, not a full-bleed band. justify-items centres the capped panel. */
-  max-width: 540px;
   border: 1px solid var(--cc-hairline);
   border-radius: 16px;
   background: color-mix(in srgb, var(--cc-color-surface, #fff) 78%, transparent);
