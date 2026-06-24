@@ -1,95 +1,163 @@
 # Command Center
 
-A calm Chrome new tab page. World clocks, a meeting-window finder, a dock of links, work streams, a wallpaper, and real integrations with Google Calendar, Linear, and Notion. The whole surface shifts with the time of day. Inspired by Sean Oliver's [solstice](https://github.com/seanoliver/solstice).
+A calm Chrome new tab page. World clocks, a meeting-window finder, a five-day
+forecast, a dock of links, data cards from Google Calendar, Linear, and Notion,
+and a wallpaper that can be a gradient, a slow fluid drift, or an Unsplash photo.
+The whole surface shifts with the time of day. Inspired by Sean Oliver's
+[solstice](https://github.com/seanoliver/solstice).
 
 ## What it does
 
-- A big local clock for your home timezone, with a row of other zones showing the offset, day or night, and current weather.
-- A **meeting-window** widget that finds the best overlap across your zones and tells you honestly when there is no single hour that catches everyone.
-- A **day/night** theme that auto-switches with your home zone: Mineral by day, Twilight by night (or pick a theme).
-- A macOS-style dock of favicon links with hover magnification.
-- Work streams: notes, a group of links, or a live integration panel.
-- **Integrations**: Google Calendar (OAuth), Linear (API key), and Notion (token), each shown as a panel with its brand mark.
-- A **wallpaper** that is the theme gradient, an Unsplash photo by search terms, or a custom image.
+- A big local clock for your home timezone, with a row of other zones showing the
+  offset, day or night (a corner sun or moon), and current temperature.
+- A **meeting window** that finds the best overlap across your zones and says
+  honestly when no single hour catches everyone.
+- A **five-day forecast** strip under the home clock, with minimalist icons, in
+  Fahrenheit or Celsius.
+- A **day and night theme** that auto-switches with your home zone: Mineral by
+  day, Twilight by night, or pick one of eight.
+- A macOS-style **dock** of links with hover magnification and real brand icons
+  for Gmail and Google Calendar.
+- **Data cards**: titled panels that show a connection's items. A Google
+  Calendar agenda, your Linear inbox, a Notion database, or all your calendars
+  merged into one.
+- A **wallpaper** that is the theme gradient, a slow fluid drift, an Unsplash
+  photo (by random subject, on a frequency you choose), or a custom image.
+- **Drag to rearrange** anything in place: timezone cards, data cards, and dock
+  links reorder on the dashboard and sync to the editor.
 - A 12 or 24 hour clock, and settings import and export.
+
+Everything is serverless. Settings live in `chrome.storage`; your keys never
+leave the browser.
+
+## Themes
+
+Eight token themes plus an auto day/night mode:
+
+- **Mineral** (day default) and **Twilight** (night default).
+- **Hermione** (Harry Potter parchment and Gryffindor scarlet), **Kirk** (1960s
+  Star Trek), **Supa** (Supabase).
+- **Aurora**, **Paper**, **Mono**.
 
 ## Install (load unpacked)
 
-1. `cd dashboard && npm install`
-2. `npm run build:extension`
-3. Open `chrome://extensions`, turn on Developer mode, click Load unpacked, and choose `dashboard/dist-extension`.
-4. Open a new tab.
+```sh
+cd dashboard
+pnpm install
+pnpm run build:extension
+```
 
-## Package for the Chrome Web Store
+Then open `chrome://extensions`, turn on Developer mode, click Load unpacked, and
+choose `dashboard/dist-extension`. Open a new tab.
 
-- `cd dashboard && npm run package` builds the extension and writes `dashboard/command-center.zip`. Upload that zip.
+To ship it (run it permanently for yourself without the Web Store, or publish to
+the store, including the Google OAuth setup), see **[docs/packaging.md](docs/packaging.md)**.
 
 ## Configure
 
-Open a new tab, move the mouse to the top-right, and click Edit.
+Open a new tab and click the gear button in the bottom-right corner. Each section
+has its own icon, and a long pane collapses section by section.
 
-- **Timezones**: add a city (searched live), set the home zone, reorder, or remove.
-- **Dock links**: add a link (a bare host becomes `https://`), reorder, or remove.
-- **Work streams**: add a Notes, Links group, Google Calendar, Linear, or Notion stream; rename, reorder, and set whether it starts collapsed.
-- **Connections**: connect Google Calendar, and paste your Linear and Notion keys.
-- **Wallpaper**: turn it on, set search terms, adjust the darkening, and paste your Unsplash access key.
-- **Appearance**: your name, the theme (including Auto, which follows the home zone between Mineral by day and Twilight by night), and the clock format.
+- **Timezones**: add a city (searched live), set the home zone, drag the grab
+  handle to reorder, or remove.
+- **Weather**: show the forecast for the home clock and the temperature on the
+  zone cards, and pick Fahrenheit or Celsius.
+- **Dock links**: add a link (a bare host becomes `https://`), edit it inline,
+  drag to reorder, or remove.
+- **Connections**: add a named connection to a service (you can have several of
+  each), pick the service first, then fill its setup.
+- **Data cards**: build a card that shows a connection, or "Combine all
+  calendars" when you have more than one Google Calendar. Rename, repoint, drag
+  to reorder.
+- **Wallpaper**: choose the source and how often it changes; for Unsplash set the
+  subjects and the darkening, and paste your access key.
+- **Appearance**: your name, the theme, and the clock format.
 - **Backup**: export or import your settings as JSON.
 
 ## Connecting services
 
-All three are serverless: there is no broker to run. Keys live in `chrome.storage.local` and never sync.
+Connections are named instances of a service. You can have a "Work" and a
+"Personal" Google Calendar, two Linear keys, several Notion databases. A data
+card points at a connection. Credentials live in `chrome.storage.local`, keyed by
+connection, and never sync.
 
-### Google Calendar (OAuth)
+### Google Calendar
 
-This uses Chrome's native OAuth (`chrome.identity`), so it needs a one-time Google Cloud setup:
-
-1. In the [Google Cloud console](https://console.cloud.google.com), create (or pick) a project and enable the **Google Calendar API**.
-2. Configure the OAuth consent screen (External, add yourself as a test user) with the `.../auth/calendar.readonly` scope.
-3. Create an OAuth client ID of type **Chrome Extension**, using your extension's ID (shown at `chrome://extensions` after loading it unpacked; pin the ID with a `key` in the manifest if you want it stable across reloads).
-4. Put that client ID into `manifest.json` under `oauth2.client_id` (it currently holds a placeholder), then rebuild and reload the extension.
-5. In the edit pane, under Connections, click **Connect Google Calendar** and approve. The Today stream then lists your upcoming events.
+Uses Chrome's native OAuth (`chrome.identity`), so it needs a one-time Google
+Cloud setup and the installed extension (it does not work on the dev server). The
+full steps are in [docs/packaging.md](docs/packaging.md). Once set up, add a
+Google Calendar connection and click **Connect Google** on its row; that is the
+sign-in. Leave the calendar field blank for your main calendar, or paste another
+calendar's id from Google Calendar settings.
 
 ### Linear
 
-Create a personal API key in Linear (Settings, API), and paste it under Connections. The Inbox stream lists your open assigned issues.
+Create a personal API key in Linear (Settings, API) and paste it into a Linear
+connection. The card lists your open assigned issues.
 
 ### Notion
 
-1. Create an internal integration in your Notion settings and copy its token.
-2. Share the database you want to show with that integration.
-3. Paste the token under Connections, add a Notion stream, and set its database id (optionally a title property, item count, and a raw Notion filter as JSON).
+Create an internal integration at
+[notion.so/my-integrations](https://www.notion.so/my-integrations), copy its
+token, and share the database or page with it. Paste the token into a Notion
+connection and paste the database's URL (the app keeps the id and drops the `?v=`
+view). Notion uses an internal token, not a client id or secret.
 
 ### Unsplash
 
-Create a free access key at [unsplash.com/developers](https://unsplash.com/developers) and paste it under Wallpaper.
-
-## Settings and privacy
-
-Non-secret settings live in `chrome.storage.sync`. Secrets (the Unsplash key and the Notion token) live in `chrome.storage.local` and never sync. There is no server; the only network calls go to Open-Meteo (weather and geocoding), Unsplash, and Notion. A token in extension storage is fine for a personal tool, but anything with access to your Chrome profile can read it.
+Create a free access key at
+[unsplash.com/developers](https://unsplash.com/developers) and paste it under
+Wallpaper. Only the **Access Key** is needed. Search subjects are comma
+separated, and one is picked at random for each new photo.
 
 ## Develop
 
 ```sh
 cd dashboard
-npm run dev      # localhost; uses localStorage instead of chrome.storage
-npm test         # vitest
-npm run lint     # eslint + tsc
-npm run build:extension
-npm run icons    # regenerate the extension icons
+pnpm run dev             # 127.0.0.1; uses localStorage instead of chrome.storage
+pnpm test                # vitest
+pnpm run lint            # eslint + tsc
+pnpm run build:extension # the unpacked extension in dist-extension/
+pnpm run package         # build and zip for the Web Store
+pnpm run icons           # regenerate the extension icons
 ```
+
+On the dev server, Notion, Linear, and Unsplash are routed through a Vite proxy
+so the browser does not hit CORS from the localhost origin. Google OAuth and the
+real `host_permissions` only exist in the installed extension, so connect Google
+there.
 
 ## Architecture
 
-One Chrome MV3 extension. TypeScript and Vite, vanilla DOM, no UI framework. The whole page is driven by a single validated `Config` (Zod) in `chrome.storage`.
+One Chrome MV3 extension. TypeScript and Vite, vanilla DOM, no UI framework. The
+page is driven by a single validated `Config` (Zod) in `chrome.storage`, painted
+from a cache first so the new tab never flashes empty.
 
 - `src/config` — the config schema, defaults, and the storage-backed store.
-- `src/time`, `src/weather`, `src/geo` — the clock engine, Open-Meteo weather, and city search.
-- `src/dock`, `src/streams`, `src/wallpaper` — the dock, work streams, and Unsplash wallpaper.
-- `src/integrations` — the pluggable integration platform and the Notion integration. Add a source by implementing the `Integration` interface and listing it in `src/integrations/registry.ts`.
-- `src/theme`, `src/edit`, `src/shell`, `src/app` — themes, the edit pane, the page composition, and the run lifecycle.
-- `src/security` — text-only rendering, the URL scheme allowlist, and the content security policy (the single source for the manifest CSP).
+- `src/time`, `src/weather`, `src/geo` — the clock and overlap engine, Open-Meteo
+  weather and forecast, and city search.
+- `src/dock`, `src/streams`, `src/wallpaper` — the dock, the data cards, and the
+  Unsplash and fluid wallpapers.
+- `src/integrations` — the pluggable integration platform plus the Google
+  Calendar, Linear, and Notion integrations. Add a source by implementing the
+  `Integration` interface and listing it in `src/integrations/registry.ts`.
+- `src/theme`, `src/edit`, `src/shell`, `src/app` — themes, the edit pane, the
+  page composition (with a FLIP reflow animation), and the run lifecycle.
+- `src/security` — text-only rendering, the URL scheme allowlist, and the content
+  security policy (the single source for the manifest CSP).
+
+## Privacy and security
+
+Non-secret settings live in `chrome.storage.sync`. Secrets (the Unsplash access
+key and each connection's credential) live in `chrome.storage.local` and never
+sync. There is no server. Network calls go only to the services you connect:
+Open-Meteo (weather and geocoding), Unsplash, Notion, Linear, and Google. A
+credential in extension storage is fine for a personal tool, but anything with
+access to your Chrome profile can read it.
 
 ## History
 
-This project started as a Safari extension plus a native macOS app and an open provider platform. That work is preserved at the git tag `archive/safari-platform-2026-06-23` and the plan at `tasks/archive/`. The current direction is Chrome only; older design docs are in `docs/archive/`.
+This project started as a Safari extension with a native macOS app and an open
+provider platform. That work is preserved at the git tag
+`archive/safari-platform-2026-06-23`, with its plan under `tasks/archive/` and
+older design docs under `docs/archive/`. The current direction is Chrome only.
