@@ -1,8 +1,36 @@
 import type { Zone } from "../config/schema";
-import { el } from "../render/helpers";
+import { el, svgEl } from "../render/helpers";
 import { cityClock, formatClock } from "../time/clock";
 import type { Weather } from "../weather/openMeteo";
 import { makeDashboardReorderable, type ReorderHandler } from "./dashboardReorder";
+
+/** A small sun (day) or crescent moon (night) for a zone card's corner. */
+function dayNightIcon(isNight: boolean): SVGElement {
+  const svg = svgEl("svg", {
+    viewBox: "0 0 24 24",
+    width: "14",
+    height: "14",
+    fill: "none",
+    stroke: "currentColor",
+    "stroke-width": "1.7",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  });
+  if (isNight) {
+    svg.appendChild(svgEl("path", { d: "M20 14.4A8 8 0 0 1 9.6 4 7 7 0 1 0 20 14.4z" }));
+    return svg;
+  }
+  svg.appendChild(svgEl("circle", { cx: "12", cy: "12", r: "4" }));
+  for (const [x1, y1, x2, y2] of [
+    [12, 2, 12, 4], [12, 20, 12, 22], [2, 12, 4, 12], [20, 12, 22, 12],
+    [5, 5, 6.4, 6.4], [17.6, 17.6, 19, 19], [5, 19, 6.4, 17.6], [17.6, 6.4, 19, 5],
+  ] as const) {
+    svg.appendChild(
+      svgEl("line", { x1: String(x1), y1: String(y1), x2: String(x2), y2: String(y2) }),
+    );
+  }
+  return svg;
+}
 
 /**
  * The row of other timezones beneath the home clock. Each card shows the zone's
@@ -46,6 +74,11 @@ export function renderZoneRow(host: HTMLElement, model: ZoneRowModel): HTMLEleme
     const card = el("div", "cc-zone");
     card.setAttribute("data-daynight", clock.dayNight);
     card.dataset.flipId = `zone:${zone.id}`;
+
+    const indicator = el("span", "cc-zone__daynight");
+    indicator.setAttribute("title", clock.dayNight === "night" ? "Night" : "Day");
+    indicator.appendChild(dayNightIcon(clock.dayNight === "night"));
+    card.appendChild(indicator);
 
     const label = el("div", "cc-zone__label", zone.label);
     const badge = dayOffsetBadge(clock.dateOffsetDays);

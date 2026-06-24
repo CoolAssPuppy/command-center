@@ -376,6 +376,7 @@ body {
 }
 
 .cc-zone {
+  position: relative;
   min-width: 116px;
   display: flex;
   flex-direction: column;
@@ -383,12 +384,19 @@ body {
   gap: 4px;
   padding: 14px 18px;
   border-radius: var(--cc-card-radius, 14px);
+  /* All cards share one surface; day vs night is shown by the corner icon, not
+     a different tint, so the row stays even over a wallpaper. */
   background: color-mix(in srgb, var(--cc-color-surface, #fff) 82%, transparent);
   border: 1px solid var(--cc-hairline);
 }
 
-.cc-zone[data-daynight="night"] {
-  background: color-mix(in srgb, var(--cc-color-text, #21242a) 8%, transparent);
+.cc-zone__daynight {
+  position: absolute;
+  top: 9px;
+  right: 11px;
+  display: inline-flex;
+  color: var(--cc-color-muted, #6a6e76);
+  opacity: 0.7;
 }
 
 .cc-zone__label {
