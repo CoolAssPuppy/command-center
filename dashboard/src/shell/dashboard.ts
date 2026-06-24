@@ -239,9 +239,9 @@ function gearIcon(): SVGElement {
 const MIN_STREAM_BODY_PX = 96;
 
 /**
- * Make every open work-stream panel as tall as the shortest, and scroll the
- * taller ones inside, so the row's height is set by the smallest stream rather
- * than the largest. Measured synchronously here (after layout, before paint),
+ * Make every open work-stream panel as tall as the largest, so the cards line
+ * up at a common height set by the fullest one (shorter cards simply have space
+ * below their items). Measured synchronously here (after layout, before paint),
  * so there is no flicker. Collapsed panels (zero-height bodies) are skipped.
  */
 function equalizeStreamHeights(root: HTMLElement): void {
@@ -249,10 +249,7 @@ function equalizeStreamHeights(root: HTMLElement): void {
     (body) => body.scrollHeight > 0,
   );
   if (open.length < 2) return;
-  const target = Math.max(
-    MIN_STREAM_BODY_PX,
-    Math.min(...open.map((body) => body.scrollHeight)),
-  );
+  const target = Math.max(MIN_STREAM_BODY_PX, ...open.map((body) => body.scrollHeight));
   for (const body of open) {
     body.style.height = `${String(target)}px`;
     body.style.overflowY = "auto";

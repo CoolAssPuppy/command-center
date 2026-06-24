@@ -210,8 +210,8 @@ function renderConnectionFields(
     wrap.appendChild(field("Database", database));
   }
 
-  const count = textInput("10", "number");
-  count.value = String(connection.count ?? (connection.service === "google-calendar" ? 6 : 10));
+  const count = textInput("6", "number");
+  count.value = String(connection.count ?? 6);
   count.setAttribute("aria-label", "Item count");
   count.addEventListener("change", () => {
     updateConnection(ctx, connection.id, (item) => {

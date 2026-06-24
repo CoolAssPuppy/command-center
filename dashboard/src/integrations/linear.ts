@@ -65,7 +65,7 @@ export const linearIntegration: Integration = {
         headers: { Authorization: secret, "Content-Type": "application/json" },
         body: JSON.stringify({
           query: QUERY,
-          variables: { first: connection.count ?? 10 },
+          variables: { first: connection.count ?? 6 },
         }),
       });
       if (response.status === 401 || response.status === 400) {

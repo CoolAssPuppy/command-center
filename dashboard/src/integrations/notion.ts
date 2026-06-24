@@ -92,7 +92,7 @@ export const notionIntegration: Integration = {
     }
     const databaseId = normalizeNotionId(rawDatabaseId);
 
-    const body: Record<string, unknown> = { page_size: connection.count ?? 10 };
+    const body: Record<string, unknown> = { page_size: connection.count ?? 6 };
     if (connection.filter !== undefined) body.filter = connection.filter;
 
     let payload: unknown;
