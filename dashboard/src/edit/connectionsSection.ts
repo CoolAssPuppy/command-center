@@ -53,7 +53,7 @@ export function renderConnectionsSection(host: HTMLElement, ctx: SectionContext)
           el(
             "div",
             "cc-edit__hint",
-            "No connections yet. Add one below, then build a Work stream from it.",
+            "No connections yet. Add one below, then build a Data card from it.",
           ),
         );
       }

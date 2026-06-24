@@ -47,14 +47,14 @@ function connectionSelect(
 export function renderStreamsSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Work streams", key: "streams", collapsed: ctx.collapsed },
+    { title: "Data cards", key: "streams", collapsed: ctx.collapsed },
     (section) => {
       if (ctx.draft.connections.length === 0) {
         section.appendChild(
           el(
             "div",
             "cc-edit__hint",
-            "Add a Connection first, then create a Work stream that shows it.",
+            "Add a Connection first, then create a Data card that shows it.",
           ),
         );
         return;
@@ -65,7 +65,7 @@ export function renderStreamsSection(host: HTMLElement, ctx: SectionContext): vo
         list.appendChild(renderStreamRow(stream, index, ctx));
       });
       if (ctx.draft.streams.length === 0) {
-        list.appendChild(el("div", "cc-edit__hint", "No work streams yet. Add one below."));
+        list.appendChild(el("div", "cc-edit__hint", "No data cards yet. Add one below."));
       }
       section.appendChild(list);
       section.appendChild(renderAddStream(ctx));
@@ -81,9 +81,9 @@ function renderStreamRow(
   const row = el("div", "cc-edit__row");
 
   const fields = el("div", "cc-edit__row-fields");
-  const title = textInput("Stream title");
+  const title = textInput("Card title");
   title.value = stream.title;
-  title.setAttribute("aria-label", "Stream title");
+  title.setAttribute("aria-label", "Card title");
   title.addEventListener("change", () => {
     ctx.update((config) => {
       const found = config.streams.find((item) => item.id === stream.id);
@@ -116,7 +116,7 @@ function renderStreamRow(
     index,
     count: ctx.draft.streams.length,
     itemId: stream.id,
-    itemNoun: "work stream",
+    itemNoun: "data card",
     applyReorder: (from, to) =>
       ctx.update((config) => {
         reorderInArray(config.streams, from, to);
@@ -130,10 +130,10 @@ function renderAddStream(ctx: SectionContext): HTMLElement {
   const form = el("form", "cc-edit__add-form cc-edit__add-form--stack");
 
   const select = connectionSelect(ctx.draft.connections, ctx.draft.connections[0]?.id);
-  const title = textInput("Stream title");
-  title.setAttribute("aria-label", "New stream title");
+  const title = textInput("Card title");
+  title.setAttribute("aria-label", "New data card title");
 
-  const submit = el("button", "cc-edit__add-btn", "Add stream");
+  const submit = el("button", "cc-edit__add-btn", "Add card");
   submit.setAttribute("type", "submit");
 
   form.appendChild(field("Connection", select));
