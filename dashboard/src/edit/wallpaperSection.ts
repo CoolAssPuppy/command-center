@@ -4,6 +4,14 @@ import { collapsibleSection, field, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
 type Source = Wallpaper["source"];
+type Frequency = Wallpaper["frequency"];
+
+const FREQUENCIES: ReadonlyArray<readonly [Frequency, string]> = [
+  ["never", "Never change"],
+  ["newtab", "On new tab"],
+  ["hourly", "Every hour"],
+  ["daily", "Every day"],
+];
 
 /**
  * The Wallpaper section: choose the background source (the theme gradient, an
@@ -19,6 +27,20 @@ export function renderWallpaperSection(host: HTMLElement, ctx: SectionContext): 
 }
 
 function buildWallpaper(section: HTMLElement, ctx: SectionContext): void {
+  const frequency = el("div", "cc-edit__chips");
+  for (const [value, label] of FREQUENCIES) {
+    const active = ctx.draft.wallpaper.frequency === value;
+    const chip = el("button", `cc-edit__chip${active ? " is-active" : ""}`, label);
+    chip.setAttribute("type", "button");
+    chip.addEventListener("click", () => {
+      ctx.update((config) => {
+        config.wallpaper.frequency = value;
+      });
+    });
+    frequency.appendChild(chip);
+  }
+  section.appendChild(field("Frequency", frequency));
+
   const current = ctx.draft.wallpaper.source;
   const chips = el("div", "cc-edit__chips");
   const addChip = (value: Source, label: string): void => {

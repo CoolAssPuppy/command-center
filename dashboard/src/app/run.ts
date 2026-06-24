@@ -94,6 +94,9 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     | undefined;
   let integrationResults: Record<string, IntegrationResult> = {};
   const weatherByZone: Record<string, Weather> = {};
+  // Stable for this page load, so the "on new tab" wallpaper holds across config
+  // edits within the same tab and only changes when the tab is reopened.
+  const pageLoadKey = deps.now().toISOString();
 
   const searchCities =
     deps.searchCities ??
@@ -202,7 +205,15 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       clearWallpaper();
       return;
     }
-    const dateKey = deps.now().toISOString().slice(0, 10);
+    const now = deps.now().toISOString();
+    const dateKey =
+      wallpaper.frequency === "never"
+        ? "never"
+        : wallpaper.frequency === "newtab"
+          ? pageLoadKey
+          : wallpaper.frequency === "hourly"
+            ? now.slice(0, 13)
+            : now.slice(0, 10);
     const photo = await resolveWallpaper(
       { terms: wallpaper.terms, accessKey, dateKey },
       { fetch: deps.unsplashFetch ?? ((url) => fetch(url)) },

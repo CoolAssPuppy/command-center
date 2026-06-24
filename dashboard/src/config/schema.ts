@@ -76,6 +76,8 @@ export type Stream = z.infer<typeof StreamSchema>;
  */
 export const WallpaperSchema = z.object({
   source: z.enum(["gradient", "unsplash", "custom"]).default("gradient"),
+  /** How often a new photo is picked (Unsplash). */
+  frequency: z.enum(["never", "newtab", "hourly", "daily"]).default("daily"),
   /** Unsplash search terms, one image per day/tab, e.g. ["San Francisco"]. */
   terms: z.array(z.string()).default([]),
   /** A direct image URL for the "custom" source. */
@@ -116,7 +118,12 @@ export const ConfigSchema = z.object({
   links: z.array(DockLinkSchema).default([]),
   connections: z.array(ConnectionSchema).default([]),
   streams: z.array(StreamSchema).default([]),
-  wallpaper: WallpaperSchema.default({ source: "gradient", terms: [], scrim: 0.4 }),
+  wallpaper: WallpaperSchema.default({
+    source: "gradient",
+    frequency: "daily",
+    terms: [],
+    scrim: 0.4,
+  }),
   appearance: AppearanceSchema.default({ hour12: true }),
   weather: WeatherSettingsSchema.default({
     showForHome: false,
