@@ -29,24 +29,66 @@ const EventSchema = z.object({
 
 const ResponseSchema = z.object({ items: z.array(EventSchema).optional() });
 
-function formatWhen(start: z.infer<typeof EventSchema>["start"]): string | undefined {
+/** Local calendar date as YYYY-MM-DD, for comparing an event's day to today. */
+function localDateKey(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA").format(date);
+}
+
+/**
+ * A short day prefix for events that are not today, so an event two weeks out
+ * never looks like it is happening now. Undefined when the event is today.
+ * Weekday within the coming week, then month and day beyond it.
+ */
+function dayPrefix(eventDate: Date, now: Date): string | undefined {
+  const eventKey = localDateKey(eventDate);
+  if (eventKey === localDateKey(now)) return undefined;
+  const dayMs = 86_400_000;
+  const eventMidnight = new Date(`${eventKey}T00:00:00`).getTime();
+  const todayMidnight = new Date(`${localDateKey(now)}T00:00:00`).getTime();
+  const diffDays = Math.round((eventMidnight - todayMidnight) / dayMs);
+  const options: Intl.DateTimeFormatOptions =
+    diffDays >= 1 && diffDays <= 6
+      ? { weekday: "short" }
+      : { month: "short", day: "numeric" };
+  return new Intl.DateTimeFormat(undefined, options).format(eventDate);
+}
+
+function formatWhen(
+  start: z.infer<typeof EventSchema>["start"],
+  now: Date,
+): string | undefined {
   if (start === undefined) return undefined;
   if (start.dateTime !== undefined) {
     const date = new Date(start.dateTime);
     if (Number.isNaN(date.getTime())) return undefined;
-    return new Intl.DateTimeFormat(undefined, {
+    const time = new Intl.DateTimeFormat(undefined, {
       hour: "numeric",
       minute: "2-digit",
     }).format(date);
+    const prefix = dayPrefix(date, now);
+    return prefix !== undefined ? `${prefix}, ${time}` : time;
   }
-  if (start.date !== undefined) return "All day";
+  if (start.date !== undefined) {
+    // start.date is a bare calendar date; noon avoids time-zone day drift.
+    const prefix = dayPrefix(new Date(`${start.date}T12:00:00`), now);
+    return prefix !== undefined ? `${prefix}, all day` : "All day";
+  }
   return undefined;
+}
+
+/** Midnight at the start of the viewer's local day, as an absolute instant. */
+function startOfLocalDay(now: Date): Date {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  return start;
 }
 
 function buildUrl(connection: Connection, now: Date): string {
   const calendarId = connection.calendarId ?? "primary";
   const url = new URL(`${API_BASE}/${encodeURIComponent(calendarId)}/events`);
-  url.searchParams.set("timeMin", now.toISOString());
+  // Start at the top of today, not the current moment, so events earlier today
+  // still show instead of being skipped in favor of ones days or weeks out.
+  url.searchParams.set("timeMin", startOfLocalDay(now).toISOString());
   url.searchParams.set("maxResults", String(connection.count ?? 6));
   url.searchParams.set("singleEvents", "true");
   url.searchParams.set("orderBy", "startTime");
@@ -96,7 +138,7 @@ export const googleCalendarIntegration: Integration = {
         id: event.id,
         title: event.summary ?? "(no title)",
       };
-      const when = formatWhen(event.start);
+      const when = formatWhen(event.start, ctx.now);
       if (when !== undefined) item.subtitle = when;
       if (event.htmlLink !== undefined) item.url = event.htmlLink;
       if (event.location !== undefined) item.meta = event.location;

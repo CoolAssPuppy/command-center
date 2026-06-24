@@ -77,12 +77,60 @@ describe("googleCalendarIntegration", () => {
     expect(captured?.headers?.Authorization).toBe("Bearer tok");
   });
 
+  it("queries from the start of the local day, not the current moment", async () => {
+    let captured: HttpRequest | undefined;
+    const fetch = (request: HttpRequest): Promise<HttpResponseLike> => {
+      captured = request;
+      return Promise.resolve(json({ items: [] }));
+    };
+    await googleCalendarIntegration.fetch(connection(), undefined, ctx({ fetch }));
+
+    const timeMin = new URL(captured?.url ?? "").searchParams.get("timeMin");
+    expect(timeMin).not.toBeNull();
+    const start = new Date(timeMin ?? "");
+    expect(start.getHours()).toBe(0);
+    expect(start.getMinutes()).toBe(0);
+  });
+
+  it("shows only the time for events today", async () => {
+    const result = await googleCalendarIntegration.fetch(
+      connection(),
+      undefined,
+      ctx({
+        fetch: () =>
+          Promise.resolve(
+            json({ items: [{ id: "e3", summary: "Standup", start: { dateTime: "2026-06-23T12:00:00Z" } }] }),
+          ),
+      }),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // No day prefix, just the time, so it reads as today.
+    expect(result.value[0]?.subtitle).not.toContain(",");
+  });
+
+  it("prefixes events on a later day so they are not mistaken for today", async () => {
+    const result = await googleCalendarIntegration.fetch(
+      connection(),
+      undefined,
+      ctx({
+        fetch: () =>
+          Promise.resolve(
+            json({ items: [{ id: "e4", summary: "Offsite", start: { dateTime: "2026-07-08T16:30:00Z" } }] }),
+          ),
+      }),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value[0]?.subtitle).toMatch(/Jul 8,/);
+  });
+
   it("falls back to (no title) and labels all-day events", async () => {
     const result = await googleCalendarIntegration.fetch(
       connection(),
       undefined,
       ctx({
-        fetch: () => Promise.resolve(json({ items: [{ id: "e2", start: { date: "2026-06-24" } }] })),
+        fetch: () => Promise.resolve(json({ items: [{ id: "e2", start: { date: "2026-06-23" } }] })),
       }),
     );
     expect(result.ok).toBe(true);
