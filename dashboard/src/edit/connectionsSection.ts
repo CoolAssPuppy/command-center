@@ -129,7 +129,7 @@ function renderConnectionFields(
     }
     const calendarId = textInput("primary");
     calendarId.value = connection.calendarId ?? "";
-    calendarId.setAttribute("aria-label", "Calendar id");
+    calendarId.setAttribute("aria-label", "Calendar");
     calendarId.addEventListener("change", () => {
       updateConnection(ctx, connection.id, (item) => {
         const value = calendarId.value.trim();
@@ -137,7 +137,14 @@ function renderConnectionFields(
         else delete item.calendarId;
       });
     });
-    wrap.appendChild(field("Calendar id", calendarId));
+    wrap.appendChild(field("Calendar (optional)", calendarId));
+    wrap.appendChild(
+      el(
+        "div",
+        "cc-edit__hint",
+        "Leave blank for your main calendar. For another, paste its ID from Google Calendar settings, Integrate calendar.",
+      ),
+    );
   } else {
     const key = document.createElement("input");
     key.type = "password";
@@ -230,15 +237,11 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
     const service = serviceFromValue(select.value);
 
     if (service === "google-calendar") {
-      const calendarId = textInput("primary");
-      calendarId.setAttribute("aria-label", "Calendar id");
-      targetInput = calendarId;
-      fieldsBox.appendChild(field("Calendar id", calendarId));
       fieldsBox.appendChild(
         el(
           "div",
           "cc-edit__hint",
-          "Add the connection, then connect your Google account on its row.",
+          "No setup here. Add it, then connect your Google account on its row; it reads your main calendar.",
         ),
       );
     } else if (service === "linear") {
