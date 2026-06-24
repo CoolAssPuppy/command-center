@@ -1,5 +1,6 @@
 {
   "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApyAMYjTsXs06fClbm9Sb8rFv7pmNb9ndk2/UmvmrX53GkLPEdL/VYNqz7zGSEaGS9yeeBeB5p3/2Uj/7qUvopOEBzVk5lyLxiT6/oicriaaGwqhKUldpDaOi5FKPU3wrqU9Jgm5r0QEiphmhx/PqG9ONoTocj3LDjBnc0JzY/LfZEc0gWn1tQ4pLWEXh/dqSGHWmRSY6H/uhV/XUxcUt1pHxqDQ5oKKiM2kz8KzjQ4VOr8l1fKAwmf7BB0wXayIiEYZOx0P14TiVaIQW1Tb0jrTgCsNm6fm+TT3j7l33bLEzcGjV3z8LEz7FciIMvcyGjLD4uci6DgaaYvRha/XTgQIDAQAB",
   "name": "Command Center",
   "version": "0.1.0",
   "description": "A calm new tab: world clocks, a dock of links, collapsible work streams, and your wallpaper.",
