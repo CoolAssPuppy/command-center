@@ -49,6 +49,13 @@ function buildWallpaper(section: HTMLElement, ctx: SectionContext): void {
       });
     });
     section.appendChild(field("Search terms", terms));
+    section.appendChild(
+      el(
+        "div",
+        "cc-edit__hint",
+        "Separate subjects with commas. One is chosen at random for each day's photo. Leave blank for any landscape.",
+      ),
+    );
 
     const key = document.createElement("input");
     key.type = "password";

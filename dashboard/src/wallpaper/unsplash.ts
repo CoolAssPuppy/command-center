@@ -37,29 +37,44 @@ const PhotoSchema = z.object({
   links: z.object({ download_location: z.string().url() }),
 });
 
-export function buildRandomUrl(terms: string[], accessKey: string): string {
+export function buildRandomUrl(query: string | undefined, accessKey: string): string {
   const url = new URL(RANDOM_BASE);
-  const cleaned = terms.map((term) => term.trim()).filter((term) => term.length > 0);
-  // With no terms, omit the query so Unsplash returns any random landscape.
-  if (cleaned.length > 0) url.searchParams.set("query", cleaned.join(","));
+  const cleaned = query?.trim();
+  // Unsplash wants a single subject; with none, it returns any random landscape.
+  if (cleaned !== undefined && cleaned.length > 0) url.searchParams.set("query", cleaned);
   url.searchParams.set("orientation", "landscape");
   url.searchParams.set("content_filter", "high");
   url.searchParams.set("client_id", accessKey);
   return url.toString();
 }
 
+/**
+ * Pick one subject from the comma-separated terms at random. Unsplash treats a
+ * comma list as a single bad query, so the terms are alternatives, not an AND.
+ * The random function is injectable for tests.
+ */
+export function pickTerm(
+  terms: string[],
+  random: () => number = Math.random,
+): string | undefined {
+  const cleaned = terms.map((term) => term.trim()).filter((term) => term.length > 0);
+  if (cleaned.length === 0) return undefined;
+  const index = Math.min(cleaned.length - 1, Math.floor(random() * cleaned.length));
+  return cleaned[index];
+}
+
 export async function fetchWallpaper(
   options: { terms: string[]; accessKey: string },
-  deps: { fetch: FetchLike },
+  deps: { fetch: FetchLike; random?: () => number },
 ): Promise<ParseResult<WallpaperPhoto>> {
-  const terms = options.terms.map((term) => term.trim()).filter((term) => term.length > 0);
   if (options.accessKey.trim().length === 0) {
     return { ok: false, error: "missing Unsplash access key" };
   }
+  const query = pickTerm(options.terms, deps.random);
 
   let body: unknown;
   try {
-    const response = await deps.fetch(buildRandomUrl(terms, options.accessKey));
+    const response = await deps.fetch(buildRandomUrl(query, options.accessKey));
     if (!response.ok) {
       return { ok: false, error: `Unsplash request failed (${response.status})` };
     }

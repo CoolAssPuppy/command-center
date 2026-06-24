@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildRandomUrl,
   fetchWallpaper,
+  pickTerm,
   triggerDownload,
   type FetchResponseLike,
 } from "./unsplash";
@@ -20,11 +21,30 @@ const response = (body: unknown, ok = true): FetchResponseLike => ({
 });
 
 describe("buildRandomUrl", () => {
-  it("requests a random landscape photo with the key", () => {
-    const url = buildRandomUrl(["San Francisco", "Lisbon"], "KEY");
-    expect(url).toContain("query=San+Francisco%2CLisbon");
+  it("requests a random landscape photo with one subject and the key", () => {
+    const url = buildRandomUrl("San Francisco", "KEY");
+    expect(url).toContain("query=San+Francisco");
+    expect(url).not.toContain("%2C"); // no comma list
     expect(url).toContain("orientation=landscape");
     expect(url).toContain("client_id=KEY");
+  });
+
+  it("omits the query when there is no subject", () => {
+    expect(buildRandomUrl(undefined, "KEY")).not.toContain("query=");
+  });
+});
+
+describe("pickTerm", () => {
+  it("picks one subject from the comma list at random, never a joined string", () => {
+    const terms = ["San Francisco", "Lisbon", "Puppies"];
+    expect(pickTerm(terms, () => 0)).toBe("San Francisco");
+    expect(pickTerm(terms, () => 0.5)).toBe("Lisbon");
+    expect(pickTerm(terms, () => 0.99)).toBe("Puppies");
+  });
+
+  it("returns undefined for no terms", () => {
+    expect(pickTerm([])).toBeUndefined();
+    expect(pickTerm(["  "])).toBeUndefined();
   });
 });
 
