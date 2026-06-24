@@ -32,7 +32,22 @@ export interface Weather {
   low?: number;
   sunrise?: string;
   sunset?: string;
+  /** Up to five days of forecast, today first. */
+  daily?: DailyForecast[];
 }
+
+export interface DailyForecast {
+  /** ISO date (YYYY-MM-DD) in the location's timezone. */
+  date: string;
+  code: number;
+  condition: string;
+  icon: string;
+  high: number;
+  low: number;
+}
+
+/** How many days the forecast strip shows. */
+export const FORECAST_DAYS = 5;
 
 /** The minimal shape of a fetch response this client uses. */
 export interface FetchResponseLike {
@@ -57,11 +72,11 @@ export function buildForecastUrl(
   url.searchParams.set("current", "temperature_2m,weather_code");
   url.searchParams.set(
     "daily",
-    "temperature_2m_max,temperature_2m_min,sunrise,sunset",
+    "weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset",
   );
   url.searchParams.set("temperature_unit", units);
   url.searchParams.set("timezone", "auto");
-  url.searchParams.set("forecast_days", "1");
+  url.searchParams.set("forecast_days", String(FORECAST_DAYS));
   return url.toString();
 }
 
@@ -128,6 +143,8 @@ const ResponseSchema = z.object({
   }),
   daily: z
     .object({
+      time: z.array(z.string()),
+      weather_code: z.array(z.number()),
       temperature_2m_max: z.array(z.number()),
       temperature_2m_min: z.array(z.number()),
       sunrise: z.array(z.string()),
@@ -135,6 +152,33 @@ const ResponseSchema = z.object({
     })
     .optional(),
 });
+
+/** Assemble the per-day forecast list from the daily arrays. */
+function buildDaily(
+  daily:
+    | {
+        time: string[];
+        weather_code: number[];
+        temperature_2m_max: number[];
+        temperature_2m_min: number[];
+      }
+    | undefined,
+): DailyForecast[] {
+  if (daily === undefined) return [];
+  const days: DailyForecast[] = [];
+  for (let i = 0; i < daily.time.length && i < FORECAST_DAYS; i += 1) {
+    const date = daily.time[i];
+    const code = daily.weather_code[i];
+    const high = daily.temperature_2m_max[i];
+    const low = daily.temperature_2m_min[i];
+    if (date === undefined || code === undefined || high === undefined || low === undefined) {
+      continue;
+    }
+    const described = describeWeatherCode(code);
+    days.push({ date, code, condition: described.condition, icon: described.icon, high, low });
+  }
+  return days;
+}
 
 export async function fetchWeather(
   location: WeatherLocation,
@@ -178,6 +222,9 @@ export async function fetchWeather(
   if (low !== undefined) weather.low = low;
   if (sunrise !== undefined) weather.sunrise = sunrise;
   if (sunset !== undefined) weather.sunset = sunset;
+
+  const forecast = buildDaily(daily);
+  if (forecast.length > 0) weather.daily = forecast;
 
   return { ok: true, value: weather };
 }

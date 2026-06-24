@@ -107,9 +107,9 @@ export function renderDashboard(
     if (model.config.profile.name !== undefined) {
       clockModel.name = model.config.profile.name;
     }
-    const homeWeather = model.weatherByZone?.[home.id];
-    if (model.config.weather.showForHome && homeWeather !== undefined) {
-      clockModel.weather = homeWeather;
+    const homeForecast = model.weatherByZone?.[home.id]?.daily;
+    if (model.config.weather.showForHome && homeForecast !== undefined) {
+      clockModel.forecast = homeForecast;
     }
     renderHomeClock(hero, clockModel);
 

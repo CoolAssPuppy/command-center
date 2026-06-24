@@ -2,20 +2,22 @@ import type { Zone } from "../config/schema";
 import { el } from "../render/helpers";
 import { formatClock, zonedTime } from "../time/clock";
 import { phaseLabel } from "../time/solar";
-import type { Weather } from "../weather/openMeteo";
+import type { DailyForecast } from "../weather/openMeteo";
+import { renderForecast } from "./forecast";
 
 /**
  * The centered, prominent home clock: a greeting, the big current time for the
- * home zone, and the date plus place beneath it. Pure and deterministic; the
- * instant is always passed in so the same moment renders the same way.
+ * home zone, the date plus place beneath it, and an optional multi-day forecast
+ * strip. Pure and deterministic; the instant is always passed in so the same
+ * moment renders the same way.
  */
 export interface HomeClockModel {
   now: Date;
   zone: Zone;
   name?: string;
   hour12?: boolean;
-  /** Current weather for the home zone, shown when present. */
-  weather?: Weather;
+  /** Multi-day forecast for the home zone, shown beneath the clock when set. */
+  forecast?: DailyForecast[];
 }
 
 function greetingFor(hour: number): string {
@@ -56,13 +58,11 @@ export function renderHomeClock(host: HTMLElement, model: HomeClockModel): HTMLE
   meta.appendChild(el("span", "cc-home__date", formatDate(model.now, model.zone.timeZone)));
   meta.appendChild(el("span", "cc-home__dot", "·"));
   meta.appendChild(el("span", "cc-home__place", model.zone.label));
-  if (model.weather !== undefined) {
-    meta.appendChild(el("span", "cc-home__dot", "·"));
-    meta.appendChild(
-      el("span", "cc-home__weather", `${Math.round(model.weather.temperature)}°`),
-    );
-  }
   root.appendChild(meta);
+
+  if (model.forecast !== undefined && model.forecast.length > 0) {
+    renderForecast(root, { daily: model.forecast });
+  }
 
   host.appendChild(root);
   return root;

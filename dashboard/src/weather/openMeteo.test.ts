@@ -24,6 +24,8 @@ function jsonResponse(
 const goodBody = {
   current: { temperature_2m: 63.4, weather_code: 3 },
   daily: {
+    time: ["2026-06-14", "2026-06-15"],
+    weather_code: [3, 0],
     temperature_2m_max: [68.2, 70.0],
     temperature_2m_min: [54.1, 55.0],
     sunrise: ["2026-06-14T05:48", "2026-06-15T05:48"],
@@ -74,7 +76,17 @@ describe("fetchWeather", () => {
       low: 54.1,
       sunrise: "2026-06-14T05:48",
       sunset: "2026-06-14T20:31",
+      daily: [
+        { date: "2026-06-14", code: 3, condition: "Overcast", icon: "cloud", high: 68.2, low: 54.1 },
+        { date: "2026-06-15", code: 0, condition: "Clear", icon: "sun", high: 70, low: 55 },
+      ],
     });
+  });
+
+  it("requests a multi-day forecast with weather codes", () => {
+    const params = new URL(buildForecastUrl(SF, "fahrenheit")).searchParams;
+    expect(params.get("forecast_days")).toBe("5");
+    expect(params.get("daily")).toContain("weather_code");
   });
 
   it("only calls the Open-Meteo host", async () => {
