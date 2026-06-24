@@ -164,9 +164,9 @@ function renderConnectionFields(
   }
 
   if (connection.service === "notion") {
-    const database = textInput("Database id");
+    const database = textInput("Database URL or id");
     database.value = connection.databaseId ?? "";
-    database.setAttribute("aria-label", "Notion database id");
+    database.setAttribute("aria-label", "Notion database URL or id");
     database.addEventListener("change", () => {
       updateConnection(ctx, connection.id, (item) => {
         const value = database.value.trim();
@@ -174,7 +174,7 @@ function renderConnectionFields(
         else delete item.databaseId;
       });
     });
-    wrap.appendChild(field("Database id", database));
+    wrap.appendChild(field("Database", database));
   }
 
   const count = textInput("10", "number");
@@ -255,15 +255,15 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
       const token = secretField("Notion token (starts with ntn_)");
       secretInput = token;
       fieldsBox.appendChild(field("Token", token));
-      const database = textInput("Database or page id");
-      database.setAttribute("aria-label", "Notion database or page id");
+      const database = textInput("Paste the database URL");
+      database.setAttribute("aria-label", "Notion database URL or id");
       targetInput = database;
-      fieldsBox.appendChild(field("Database or page", database));
+      fieldsBox.appendChild(field("Database", database));
       fieldsBox.appendChild(
         el(
           "div",
           "cc-edit__hint",
-          "Make an internal integration at notion.so/my-integrations, copy its secret, then share the database or page with it. Stored locally; no client id or secret needed.",
+          "Paste the database's link; the app uses the id before ?v= (the ?v= part is a view, not the database). Make an internal integration at notion.so/my-integrations and share the database with it.",
         ),
       );
     }
