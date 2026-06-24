@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "profile": {
+    "name": "Your Name"
+  },
+  "zones": [
+    {
+      "id": "zone-lisbon",
+      "label": "Lisbon",
+      "timeZone": "Europe/Lisbon",
+      "lat": 38.72509,
+      "lon": -9.1498,
+      "isHome": true
+    },
+    {
+      "id": "zone-san-francisco",
+      "label": "San Francisco",
+      "timeZone": "America/Los_Angeles",
+      "lat": 37.77493,
+      "lon": -122.41942,
+      "isHome": false
+    },
+    {
+      "id": "new-york",
+      "label": "New York",
+      "timeZone": "America/New_York",
+      "lat": 40.7128,
+      "lon": -74.006,
+      "isHome": false
+    },
+    {
+      "id": "singapore",
+      "label": "Singapore",
+      "timeZone": "Asia/Singapore",
+      "lat": 1.3521,
+      "lon": 103.8198,
+      "isHome": false
+    },
+    {
+      "id": "sydney",
+      "label": "Sydney",
+      "timeZone": "Australia/Sydney",
+      "lat": -33.8688,
+      "lon": 151.2093,
+      "isHome": false
+    }
+  ],
+  "links": [
+    {
+      "id": "gmail",
+      "title": "Gmail",
+      "url": "https://mail.google.com/mail/u/0/#inbox"
+    },
+    {
+      "id": "calendar",
+      "title": "Calendar",
+      "url": "https://calendar.google.com/calendar/u/0/r"
+    },
+    {
+      "id": "link-notion",
+      "title": "Notion",
+      "url": "https://www.notion.so/"
+    },
+    {
+      "id": "link-linear",
+      "title": "Linear",
+      "url": "https://linear.app/"
+    },
+    {
+      "id": "github",
+      "title": "GitHub",
+      "url": "https://github.com/"
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn-calendar",
+      "name": "Calendar",
+      "service": "google-calendar",
+      "calendarIds": ["holidays@group.v.calendar.google.com"]
+    },
+    {
+      "id": "conn-notes",
+      "name": "Personal Notes",
+      "service": "notion",
+      "databaseId": "00000000000000000000000000000000"
+    },
+    {
+      "id": "conn-linear",
+      "name": "Linear Inbox",
+      "service": "linear"
+    }
+  ],
+  "streams": [
+    {
+      "id": "stream-calendar",
+      "title": "Today",
+      "connectionId": "conn-calendar",
+      "collapsedByDefault": false
+    },
+    {
+      "id": "stream-notes",
+      "title": "Notes",
+      "connectionId": "conn-notes",
+      "collapsedByDefault": false
+    },
+    {
+      "id": "stream-linear",
+      "title": "Linear Inbox",
+      "connectionId": "conn-linear",
+      "collapsedByDefault": false
+    }
+  ],
+  "wallpaper": {
+    "source": "fluid",
+    "frequency": "newtab",
+    "terms": ["San Francisco", "Lisbon"],
+    "scrim": 0.15
+  },
+  "appearance": {
+    "theme": "com.strategicnerds.twilight",
+    "hour12": true
+  },
+  "weather": {
+    "showForHome": true,
+    "showForZones": true,
+    "unit": "celsius"
+  }
+}
