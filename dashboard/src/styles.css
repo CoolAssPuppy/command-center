@@ -61,6 +61,11 @@ body {
   background: rgba(12, 14, 20, var(--cc-wallpaper-scrim, 0.4));
 }
 
+/* A light photo washes out the light hero text, so darken the scrim more. */
+.cc-wallpaper[data-enabled="true"][data-tone="light"]::after {
+  background: rgba(12, 14, 20, calc(var(--cc-wallpaper-scrim, 0.4) + 0.3));
+}
+
 .cc-credit {
   position: fixed;
   left: 16px;

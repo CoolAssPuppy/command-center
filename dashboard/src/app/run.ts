@@ -19,6 +19,7 @@ import {
   type IntegrationResult,
 } from "../integrations/types";
 import { prefersReducedMotion } from "../perf/perf";
+import { analyzePhotoTone } from "../wallpaper/brightness";
 import {
   renderDashboard,
   type DashboardDeps,
@@ -91,7 +92,12 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
   let config: Config | undefined;
   let streamExpanded = loadStreamState();
   let wallpaperPhoto:
-    | { imageUrl: string; authorName?: string; authorUrl?: string }
+    | {
+        imageUrl: string;
+        authorName?: string;
+        authorUrl?: string;
+        tone?: "light" | "dark";
+      }
     | undefined;
   let integrationResults: Record<string, IntegrationResult> = {};
   const weatherByZone: Record<string, Weather> = {};
@@ -220,12 +226,20 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       { fetch: deps.unsplashFetch ?? ((url) => fetch(url)) },
     );
     if (photo !== undefined) {
-      wallpaperPhoto = {
+      const resolved = {
         imageUrl: photo.imageUrl,
         authorName: photo.authorName,
         authorUrl: photo.authorUrl,
       };
+      wallpaperPhoto = resolved;
       paint();
+      // Strengthen the scrim over a light photo so the hero isn't washed out.
+      void analyzePhotoTone(resolved.imageUrl).then((tone) => {
+        if (wallpaperPhoto?.imageUrl === resolved.imageUrl) {
+          wallpaperPhoto = { ...wallpaperPhoto, tone };
+          paint();
+        }
+      });
     }
   }
 

@@ -26,7 +26,12 @@ export interface DashboardModel {
   /** Per-stream open override (UI state), keyed by stream id. */
   streamExpanded?: Record<string, boolean>;
   /** The resolved wallpaper image plus attribution, once Unsplash has answered. */
-  wallpaper?: { imageUrl: string; authorName?: string; authorUrl?: string };
+  wallpaper?: {
+    imageUrl: string;
+    authorName?: string;
+    authorUrl?: string;
+    tone?: "light" | "dark";
+  };
   /** Resolved integration data per stream id. */
   integrationResults?: Record<string, IntegrationResult>;
 }
@@ -77,6 +82,7 @@ export function renderDashboard(
       "--cc-wallpaper-scrim",
       String(model.config.wallpaper.scrim),
     );
+    wallpaper.setAttribute("data-tone", model.wallpaper?.tone ?? "dark");
   }
   root.appendChild(wallpaper);
 
