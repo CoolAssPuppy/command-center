@@ -1,7 +1,13 @@
 import type { Connection } from "../config/schema";
 import { el } from "../render/helpers";
 import { newId } from "../util/id";
-import { collapsibleSection, iconButton, reorderInArray, textInput } from "./controls";
+import {
+  collapsibleSection,
+  field,
+  iconButton,
+  reorderInArray,
+  textInput,
+} from "./controls";
 import type { SectionContext } from "./editPane";
 import { makeReorderable } from "./reorderable";
 
@@ -110,17 +116,17 @@ function renderStreamRow(
 
 function renderAddStream(ctx: SectionContext): HTMLElement {
   const wrap = el("div", "cc-edit__add");
-  const form = el("form", "cc-edit__add-form");
+  const form = el("form", "cc-edit__add-form cc-edit__add-form--stack");
 
+  const select = connectionSelect(ctx.draft.connections, ctx.draft.connections[0]?.id);
   const title = textInput("Stream title");
   title.setAttribute("aria-label", "New stream title");
-  const select = connectionSelect(ctx.draft.connections, ctx.draft.connections[0]?.id);
 
   const submit = el("button", "cc-edit__add-btn", "Add stream");
   submit.setAttribute("type", "submit");
 
-  form.appendChild(title);
-  form.appendChild(select);
+  form.appendChild(field("Connection", select));
+  form.appendChild(field("Title", title));
   form.appendChild(submit);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
