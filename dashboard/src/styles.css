@@ -584,6 +584,18 @@ body {
   pointer-events: none;
 }
 
+.cc-dock__brand {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: #ffffff;
+  border: 1px solid rgba(20, 22, 28, 0.1);
+}
+
 .cc-dock__glyph {
   width: 30px;
   height: 30px;

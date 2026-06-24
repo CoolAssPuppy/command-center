@@ -2,6 +2,7 @@ import type { DockLink } from "../config/schema";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { makeDashboardReorderable, type ReorderHandler } from "../shell/dashboardReorder";
+import { dockBrandIcon } from "./dockIcons";
 import { fallbackGlyph, faviconUrl } from "./favicon";
 
 /**
@@ -45,14 +46,26 @@ function letterGlyph(title: string): HTMLElement {
   return el("span", "cc-dock__glyph", fallbackGlyph(title));
 }
 
+/** A bundled brand icon for a link's host (Gmail, Calendar), or undefined. */
+function brandIconFor(url: string): HTMLElement | undefined {
+  try {
+    return dockBrandIcon(new URL(url).hostname);
+  } catch {
+    return undefined;
+  }
+}
+
 function renderItem(dock: HTMLElement, link: DockLink, deps: DockDeps): HTMLElement {
   const item = el("button", "cc-dock__item");
   item.setAttribute("type", "button");
   item.setAttribute("aria-label", link.title);
   item.setAttribute("title", link.title);
 
+  const brand = brandIconFor(link.url);
   const icon = faviconUrl(link);
-  if (icon.length > 0) {
+  if (brand !== undefined) {
+    item.appendChild(brand);
+  } else if (icon.length > 0) {
     const img = document.createElement("img");
     img.className = "cc-dock__icon";
     img.src = icon;
