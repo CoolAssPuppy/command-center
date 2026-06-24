@@ -1,6 +1,7 @@
 import { loadCachedConfig, saveCachedConfig } from "../config/cache";
 import { COMBINED_CALENDARS_ID, type Config, type Secrets } from "../config/schema";
 import { combineCalendars } from "../integrations/combine";
+import { demoCombinedCalendars, demoResultFor, isDemoMode } from "./demo";
 import type { ConfigStore } from "../config/store";
 import type { ParseResult } from "../domain/result";
 import { openEditPane } from "../edit/editPane";
@@ -245,6 +246,19 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
 
   async function refreshIntegrations(): Promise<void> {
     if (config === undefined) return;
+
+    // Demo mode: serve canned data so the cards look full for a screenshot.
+    if (isDemoMode()) {
+      const demo: Record<string, IntegrationResult> = {};
+      for (const connection of config.connections) {
+        demo[connection.id] = demoResultFor(connection.service);
+      }
+      demo[COMBINED_CALENDARS_ID] = demoCombinedCalendars;
+      integrationResults = demo;
+      paint();
+      return;
+    }
+
     const streamConnectionIds = config.streams.map((stream) => stream.connectionId);
     const usesCombine = streamConnectionIds.includes(COMBINED_CALENDARS_ID);
     const directIds = new Set(
