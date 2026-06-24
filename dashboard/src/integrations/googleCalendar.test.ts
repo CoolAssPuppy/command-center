@@ -77,19 +77,57 @@ describe("googleCalendarIntegration", () => {
     expect(captured?.headers?.Authorization).toBe("Bearer tok");
   });
 
-  it("queries from the start of the local day, not the current moment", async () => {
+  const capturedWindow = async (now: Date): Promise<{ min: Date; max: Date }> => {
     let captured: HttpRequest | undefined;
-    const fetch = (request: HttpRequest): Promise<HttpResponseLike> => {
-      captured = request;
-      return Promise.resolve(json({ items: [] }));
+    await googleCalendarIntegration.fetch(
+      connection(),
+      undefined,
+      ctx({
+        now,
+        fetch: (request) => {
+          captured = request;
+          return Promise.resolve(json({ items: [] }));
+        },
+      }),
+    );
+    const params = new URL(captured?.url ?? "").searchParams;
+    return {
+      min: new Date(params.get("timeMin") ?? ""),
+      max: new Date(params.get("timeMax") ?? ""),
     };
-    await googleCalendarIntegration.fetch(connection(), undefined, ctx({ fetch }));
+  };
 
-    const timeMin = new URL(captured?.url ?? "").searchParams.get("timeMin");
-    expect(timeMin).not.toBeNull();
-    const start = new Date(timeMin ?? "");
-    expect(start.getHours()).toBe(0);
-    expect(start.getMinutes()).toBe(0);
+  it("queries from the start of the local day, not the current moment", async () => {
+    // Local 9am, built so getHours() is 9 regardless of the test machine's zone.
+    const { min } = await capturedWindow(new Date(2026, 5, 23, 9, 0, 0));
+    expect(min.getHours()).toBe(0);
+    expect(min.getMinutes()).toBe(0);
+    expect(min.getDate()).toBe(23);
+  });
+
+  it("ends the window at tomorrow's midnight before 5pm", async () => {
+    const { max } = await capturedWindow(new Date(2026, 5, 23, 9, 0, 0));
+    expect(max.getHours()).toBe(0);
+    expect(max.getDate()).toBe(24);
+  });
+
+  it("extends the window through tomorrow after 5pm", async () => {
+    const { max } = await capturedWindow(new Date(2026, 5, 23, 18, 0, 0));
+    expect(max.getHours()).toBe(0);
+    expect(max.getDate()).toBe(25);
+  });
+
+  it("labels tomorrow's events as Tomorrow", async () => {
+    const result = await googleCalendarIntegration.fetch(
+      connection(),
+      undefined,
+      ctx({
+        fetch: () => Promise.resolve(json({ items: [{ id: "e5", start: { date: "2026-06-24" } }] })),
+      }),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value[0]?.subtitle).toBe("Tomorrow, all day");
   });
 
   it("shows only the time for events today", async () => {

@@ -46,8 +46,9 @@ function dayPrefix(eventDate: Date, now: Date): string | undefined {
   const eventMidnight = new Date(`${eventKey}T00:00:00`).getTime();
   const todayMidnight = new Date(`${localDateKey(now)}T00:00:00`).getTime();
   const diffDays = Math.round((eventMidnight - todayMidnight) / dayMs);
+  if (diffDays === 1) return "Tomorrow";
   const options: Intl.DateTimeFormatOptions =
-    diffDays >= 1 && diffDays <= 6
+    diffDays >= 2 && diffDays <= 6
       ? { weekday: "short" }
       : { month: "short", day: "numeric" };
   return new Intl.DateTimeFormat(undefined, options).format(eventDate);
@@ -83,12 +84,28 @@ function startOfLocalDay(now: Date): Date {
   return start;
 }
 
+const ROLLOVER_HOUR = 17;
+
+/**
+ * The exclusive end of the window: tomorrow's midnight, so the card covers all
+ * of today. Once it is past 5pm the day is winding down, so it extends through
+ * tomorrow as well rather than leaving a near-empty card.
+ */
+function windowEnd(now: Date): Date {
+  const end = startOfLocalDay(now);
+  const daysAhead = now.getHours() >= ROLLOVER_HOUR ? 2 : 1;
+  end.setDate(end.getDate() + daysAhead);
+  return end;
+}
+
 function buildUrl(connection: Connection, now: Date): string {
   const calendarId = connection.calendarId ?? "primary";
   const url = new URL(`${API_BASE}/${encodeURIComponent(calendarId)}/events`);
   // Start at the top of today, not the current moment, so events earlier today
-  // still show instead of being skipped in favor of ones days or weeks out.
+  // still show. Cap the window at today (and tomorrow after 5pm) so the card
+  // never reaches days or weeks ahead just to fill its item count.
   url.searchParams.set("timeMin", startOfLocalDay(now).toISOString());
+  url.searchParams.set("timeMax", windowEnd(now).toISOString());
   url.searchParams.set("maxResults", String(connection.count ?? 6));
   url.searchParams.set("singleEvents", "true");
   url.searchParams.set("orderBy", "startTime");
