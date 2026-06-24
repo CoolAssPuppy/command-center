@@ -113,6 +113,27 @@ describe("notionIntegration", () => {
     if (!result.ok) expect(result.error).toContain("Share the database");
   });
 
+  it("surfaces Notion's own error message when present", async () => {
+    const result = await notionIntegration.fetch(
+      connection(),
+      "tok",
+      ctx(() =>
+        Promise.resolve({
+          ok: false,
+          status: 404,
+          json: () =>
+            Promise.resolve({
+              object: "error",
+              code: "object_not_found",
+              message: "Could not find data_source with ID: abc. Make sure it is shared.",
+            }),
+        }),
+      ),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("Could not find data_source");
+  });
+
   it("treats a 401 as needs-auth", async () => {
     const result = await notionIntegration.fetch(
       connection(),

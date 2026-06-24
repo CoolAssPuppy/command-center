@@ -108,14 +108,23 @@ export const notionIntegration: Integration = {
         body: JSON.stringify(body),
       });
       if (response.status === 401) return { ok: false, error: NEEDS_AUTH };
-      if (response.status === 404) {
-        return {
-          ok: false,
-          error: "Not found. Share the database with your integration, and check its id.",
-        };
-      }
       if (!response.ok) {
-        return { ok: false, error: `Notion request failed (${response.status})` };
+        // Notion's error body carries a precise message; surface it verbatim
+        // instead of a bare status, so the real cause is visible.
+        const detail = asRecord(await response.json().catch(() => undefined));
+        const apiMessage =
+          detail !== undefined && typeof detail.message === "string"
+            ? detail.message
+            : undefined;
+        if (response.status === 404) {
+          return {
+            ok: false,
+            error:
+              apiMessage ??
+              "Not found. Share the database with your integration, and check its id.",
+          };
+        }
+        return { ok: false, error: apiMessage ?? `Notion request failed (${response.status})` };
       }
       payload = await response.json();
     } catch (cause) {
