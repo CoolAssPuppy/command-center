@@ -252,13 +252,20 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
         el("div", "cc-edit__hint", "A personal API key from Linear settings. Stored locally."),
       );
     } else {
-      const token = secretField("Notion token");
+      const token = secretField("Notion token (starts with ntn_)");
       secretInput = token;
       fieldsBox.appendChild(field("Token", token));
       const database = textInput("Database or page id");
       database.setAttribute("aria-label", "Notion database or page id");
       targetInput = database;
       fieldsBox.appendChild(field("Database or page", database));
+      fieldsBox.appendChild(
+        el(
+          "div",
+          "cc-edit__hint",
+          "Make an internal integration at notion.so/my-integrations, copy its secret, then share the database or page with it. Stored locally; no client id or secret needed.",
+        ),
+      );
     }
   };
   select.addEventListener("change", rebuildFields);
