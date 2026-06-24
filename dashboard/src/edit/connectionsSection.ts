@@ -274,15 +274,22 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
   const submit = el("button", "cc-edit__add-btn", "Add connection");
   submit.setAttribute("type", "submit");
 
+  const error = el("div", "cc-edit__hint");
+
   form.appendChild(field("Service", select));
   form.appendChild(field("Name", name));
   form.appendChild(fieldsBox);
   form.appendChild(submit);
+  form.appendChild(error);
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    error.replaceChildren();
     const nameValue = name.value.trim();
-    if (nameValue.length === 0) return;
+    if (nameValue.length === 0) {
+      error.appendChild(el("span", undefined, "Give the connection a name first."));
+      return;
+    }
     const service = serviceFromValue(select.value);
     const id = newId("conn");
     const target = targetInput?.value.trim();
@@ -297,6 +304,14 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
         connection.databaseId = target;
       }
       config.connections.push(connection);
+      // Also create a work stream for it, so the connection shows on the
+      // dashboard right away. It can be renamed, removed, or joined by more.
+      config.streams.push({
+        id: newId("stream"),
+        title: nameValue,
+        connectionId: id,
+        collapsedByDefault: false,
+      });
     });
     if (secret !== undefined && secret.length > 0) {
       ctx.updateSecrets((secrets) => {
