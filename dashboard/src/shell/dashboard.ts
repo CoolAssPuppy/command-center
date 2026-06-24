@@ -1,9 +1,9 @@
 import { homeZone, otherZones, type Config } from "../config/schema";
-import { renderDock } from "../dock/dock";
+import { renderDock, type DockDeps } from "../dock/dock";
 import type { IntegrationResult } from "../integrations/types";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
-import { renderStreams } from "../streams/streams";
+import { renderStreams, type StreamsDeps } from "../streams/streams";
 import { resolveActiveTheme } from "../theme/resolve";
 import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
@@ -39,6 +39,12 @@ export interface DashboardDeps {
   onEdit?: () => void;
   /** Persist a stream's open/closed toggle. */
   onToggleStream?: (streamId: string, open: boolean) => void;
+  /** Reorder a dashboard group by dragging one item onto another. */
+  onReorder?: (
+    group: "zones" | "streams" | "links",
+    fromId: string,
+    toId: string,
+  ) => void;
 }
 
 export function renderDashboard(
@@ -134,17 +140,22 @@ export function renderDashboard(
       if (model.config.weather.showForZones && model.weatherByZone !== undefined) {
         rowModel.weatherByZone = model.weatherByZone;
       }
+      if (deps.onReorder !== undefined) {
+        const reorder = deps.onReorder;
+        rowModel.onReorder = (fromId, toId) => reorder("zones", fromId, toId);
+      }
       renderZoneRow(stage, rowModel);
     }
   }
 
   // Dock of links, pinned along the bottom of the page.
   if (model.config.links.length > 0) {
-    renderDock(
-      root,
-      { links: model.config.links, reducedMotion },
-      { navigate: deps.navigate },
-    );
+    const dockDeps: DockDeps = { navigate: deps.navigate };
+    if (deps.onReorder !== undefined) {
+      const reorder = deps.onReorder;
+      dockDeps.onReorder = (fromId, toId) => reorder("links", fromId, toId);
+    }
+    renderDock(root, { links: model.config.links, reducedMotion }, dockDeps);
   }
 
   // Work streams, rendered directly into the stage so the panel grid fills
@@ -158,10 +169,15 @@ export function renderDashboard(
         ? { integrationResults: model.integrationResults }
         : {}),
     };
-    renderStreams(stage, streamsModel, {
+    const streamsDeps: StreamsDeps = {
       navigate: deps.navigate,
       onToggle: deps.onToggleStream ?? ((): void => {}),
-    });
+    };
+    if (deps.onReorder !== undefined) {
+      const reorder = deps.onReorder;
+      streamsDeps.onReorder = (fromId, toId) => reorder("streams", fromId, toId);
+    }
+    renderStreams(stage, streamsModel, streamsDeps);
   }
 
   root.appendChild(stage);

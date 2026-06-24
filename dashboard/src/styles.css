@@ -958,6 +958,27 @@ body {
   cursor: pointer;
 }
 
+/* Dashboard drag-to-reorder ----------------------------------------------- */
+
+.cc-zone.is-reorderable,
+.cc-stream.is-reorderable {
+  cursor: grab;
+}
+
+.cc-zone.is-dragging,
+.cc-stream.is-dragging,
+.cc-dock__item.is-dragging {
+  opacity: 0.45;
+}
+
+.cc-zone.is-drop-target,
+.cc-stream.is-drop-target,
+.cc-dock__item.is-drop-target {
+  outline: 2px dashed
+    color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 65%, transparent);
+  outline-offset: 3px;
+}
+
 /* Work streams (display) -------------------------------------------------- */
 
 .cc-streams {

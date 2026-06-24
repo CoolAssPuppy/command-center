@@ -2,6 +2,7 @@ import type { Zone } from "../config/schema";
 import { el } from "../render/helpers";
 import { cityClock, formatClock } from "../time/clock";
 import type { Weather } from "../weather/openMeteo";
+import { makeDashboardReorderable, type ReorderHandler } from "./dashboardReorder";
 
 /**
  * The row of other timezones beneath the home clock. Each card shows the zone's
@@ -14,6 +15,8 @@ export interface ZoneRowModel {
   zones: Zone[];
   hour12?: boolean;
   weatherByZone?: Record<string, Weather>;
+  /** Reorder timezone cards by dragging one onto another. */
+  onReorder?: ReorderHandler;
 }
 
 /** A compact "+5h 30m" / "-3h" / "same time" label for the offset from home. */
@@ -65,6 +68,10 @@ export function renderZoneRow(host: HTMLElement, model: ZoneRowModel): HTMLEleme
       );
     }
     card.appendChild(meta);
+
+    if (model.onReorder !== undefined) {
+      makeDashboardReorderable(card, "zones", zone.id, model.onReorder);
+    }
 
     root.appendChild(card);
   }

@@ -3,6 +3,7 @@ import type { IntegrationResult, NormalizedItem } from "../integrations/types";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { brandIcon } from "../shell/brandIcons";
+import { makeDashboardReorderable, type ReorderHandler } from "../shell/dashboardReorder";
 
 /**
  * Work-stream panels. Each stream names a connection and shows that connection's
@@ -22,6 +23,8 @@ export interface StreamsModel {
 export interface StreamsDeps {
   navigate: (url: string) => void;
   onToggle: (streamId: string, open: boolean) => void;
+  /** Reorder work-stream panels by dragging one onto another. */
+  onReorder?: ReorderHandler;
 }
 
 function isOpen(stream: Stream, expanded: Record<string, boolean>): boolean {
@@ -77,6 +80,10 @@ function renderStream(
   details.addEventListener("toggle", () => {
     deps.onToggle(stream.id, details.open);
   });
+
+  if (deps.onReorder !== undefined) {
+    makeDashboardReorderable(details, "streams", stream.id, deps.onReorder);
+  }
   return details;
 }
 

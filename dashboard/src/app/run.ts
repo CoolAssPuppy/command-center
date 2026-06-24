@@ -115,6 +115,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         streamExpanded = { ...streamExpanded, [streamId]: open };
         saveStreamState(streamExpanded);
       },
+      onReorder: reorderConfigGroup,
     };
     if (deps.theme !== undefined) renderDeps.theme = deps.theme;
     renderDashboard(deps.mount, model, renderDeps);
@@ -293,6 +294,40 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       }
     }
     if (changed) paint();
+  }
+
+  /**
+   * Reorder one config group by moving an item to another's position, then
+   * persist and repaint. Driven by dragging items on the dashboard; the edit
+   * pane reads the same arrays, so both stay in sync. Reordering is by id, so it
+   * is unaffected by the home zone being excluded from the dashboard row.
+   */
+  function reorderConfigGroup(
+    group: "zones" | "streams" | "links",
+    fromId: string,
+    toId: string,
+  ): void {
+    if (config === undefined) return;
+    const move = <T extends { id: string }>(items: T[]): boolean => {
+      const from = items.findIndex((item) => item.id === fromId);
+      const to = items.findIndex((item) => item.id === toId);
+      if (from < 0 || to < 0 || from === to) return false;
+      const [moved] = items.splice(from, 1);
+      if (moved === undefined) return false;
+      items.splice(to, 0, moved);
+      return true;
+    };
+    const changed =
+      group === "zones"
+        ? move(config.zones)
+        : group === "streams"
+          ? move(config.streams)
+          : move(config.links);
+    if (changed) {
+      void deps.store.save(config);
+      saveCache(config);
+      paint();
+    }
   }
 
   // 1. Instant paint from the cached config, if any (runs before the first await).

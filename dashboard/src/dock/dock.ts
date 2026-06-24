@@ -1,6 +1,7 @@
 import type { DockLink } from "../config/schema";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
+import { makeDashboardReorderable, type ReorderHandler } from "../shell/dashboardReorder";
 import { fallbackGlyph, faviconUrl } from "./favicon";
 
 /**
@@ -15,6 +16,8 @@ export interface DockModel {
 
 export interface DockDeps {
   navigate: (url: string) => void;
+  /** Reorder dock links by dragging one onto another. */
+  onReorder?: ReorderHandler;
 }
 
 const MAX_SCALE = 1.6;
@@ -65,6 +68,10 @@ function renderItem(dock: HTMLElement, link: DockLink, deps: DockDeps): HTMLElem
   item.addEventListener("click", () => {
     if (isSafeUrl(link.url)) deps.navigate(link.url);
   });
+
+  if (deps.onReorder !== undefined) {
+    makeDashboardReorderable(item, "links", link.id, deps.onReorder);
+  }
 
   dock.appendChild(item);
   return item;
