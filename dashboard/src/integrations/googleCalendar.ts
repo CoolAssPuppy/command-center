@@ -100,6 +100,8 @@ export const googleCalendarIntegration: Integration = {
       if (when !== undefined) item.subtitle = when;
       if (event.htmlLink !== undefined) item.url = event.htmlLink;
       if (event.location !== undefined) item.meta = event.location;
+      const startKey = event.start?.dateTime ?? event.start?.date;
+      if (startKey !== undefined) item.sortKey = startKey;
       return item;
     });
     return { ok: true, value: items };

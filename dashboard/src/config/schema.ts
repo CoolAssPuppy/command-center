@@ -40,6 +40,13 @@ export const ServiceSchema = z.enum(SERVICES);
 export type Service = z.infer<typeof ServiceSchema>;
 
 /**
+ * A virtual connection id for a Work stream that merges every Google Calendar
+ * connection into one. It is not a real connection; the app fans out to all
+ * calendar connections and combines their events.
+ */
+export const COMBINED_CALENDARS_ID = "combined:google-calendar";
+
+/**
  * A named connection to a service. You can have several of the same service
  * (a "Work" and a "Personal" Google Calendar, say), each with its own settings
  * and credential. The credential is a secret kept out of here (see Secrets);

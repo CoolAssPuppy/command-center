@@ -1,4 +1,4 @@
-import type { Connection, Stream } from "../config/schema";
+import { COMBINED_CALENDARS_ID, type Connection, type Stream } from "../config/schema";
 import type { IntegrationResult, NormalizedItem } from "../integrations/types";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
@@ -55,25 +55,29 @@ function renderStream(
   details.dataset.flipId = `stream:${stream.id}`;
   details.open = isOpen(stream, model.expanded);
 
+  const isCombined = stream.connectionId === COMBINED_CALENDARS_ID;
   const connection = model.connections.find((item) => item.id === stream.connectionId);
+  // The combined stream uses the calendar mark; a real connection uses its own.
+  const service = isCombined ? "google-calendar" : connection?.service;
+  const resultKey = isCombined ? COMBINED_CALENDARS_ID : connection?.id;
 
   const summary = document.createElement("summary");
   summary.className = "cc-stream__summary";
   const chevron = el("span", "cc-stream__chevron", "›");
   chevron.setAttribute("aria-hidden", "true");
   summary.appendChild(chevron);
-  if (connection !== undefined) {
-    const icon = brandIcon(connection.service);
+  if (service !== undefined) {
+    const icon = brandIcon(service);
     if (icon !== undefined) summary.appendChild(icon);
   }
   summary.appendChild(el("span", "cc-stream__title", stream.title));
   details.appendChild(summary);
 
   const body = el("div", "cc-stream__body");
-  if (connection === undefined) {
+  if (resultKey === undefined) {
     body.appendChild(el("div", "cc-stream__empty", "This connection was removed."));
   } else {
-    renderResult(body, model.integrationResults?.[connection.id], deps);
+    renderResult(body, model.integrationResults?.[resultKey], deps);
   }
   details.appendChild(body);
 

@@ -1,5 +1,6 @@
 import { loadCachedConfig, saveCachedConfig } from "../config/cache";
-import { type Config, type Secrets } from "../config/schema";
+import { COMBINED_CALENDARS_ID, type Config, type Secrets } from "../config/schema";
+import { combineCalendars } from "../integrations/combine";
 import type { ConfigStore } from "../config/store";
 import type { ParseResult } from "../domain/result";
 import { openEditPane } from "../edit/editPane";
@@ -230,12 +231,22 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
 
   async function refreshIntegrations(): Promise<void> {
     if (config === undefined) return;
-    // Only fetch connections a stream actually shows. Keyed by connection id.
-    const usedIds = new Set(config.streams.map((stream) => stream.connectionId));
-    const connections = config.connections.filter((connection) =>
-      usedIds.has(connection.id),
+    const streamConnectionIds = config.streams.map((stream) => stream.connectionId);
+    const usesCombine = streamConnectionIds.includes(COMBINED_CALENDARS_ID);
+    const directIds = new Set(
+      streamConnectionIds.filter((id) => id !== COMBINED_CALENDARS_ID),
     );
-    if (connections.length === 0) {
+    const calendars = config.connections.filter(
+      (connection) => connection.service === "google-calendar",
+    );
+    // Fetch the connections a stream shows directly, plus every calendar when a
+    // "Combine all calendars" stream is present. Keyed by connection id.
+    const connections = config.connections.filter(
+      (connection) =>
+        directIds.has(connection.id) ||
+        (usesCombine && connection.service === "google-calendar"),
+    );
+    if (connections.length === 0 && !usesCombine) {
       if (Object.keys(integrationResults).length > 0) {
         integrationResults = {};
         paint();
@@ -258,6 +269,10 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     for (const connection of connections) {
       next[connection.id] = integrationResults[connection.id] ?? { status: "loading" };
     }
+    if (usesCombine) {
+      next[COMBINED_CALENDARS_ID] =
+        integrationResults[COMBINED_CALENDARS_ID] ?? { status: "loading" };
+    }
     integrationResults = next;
     paint();
 
@@ -279,6 +294,12 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         }
       }),
     );
+    if (usesCombine) {
+      integrationResults[COMBINED_CALENDARS_ID] = combineCalendars(
+        calendars,
+        integrationResults,
+      );
+    }
     paint();
   }
 

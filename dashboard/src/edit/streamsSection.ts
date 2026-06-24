@@ -1,4 +1,4 @@
-import type { Connection } from "../config/schema";
+import { COMBINED_CALENDARS_ID, type Connection } from "../config/schema";
 import { el } from "../render/helpers";
 import { newId } from "../util/id";
 import {
@@ -28,6 +28,17 @@ function connectionSelect(
     option.value = connection.id;
     option.textContent = connection.name;
     if (connection.id === selectedId) option.selected = true;
+    select.appendChild(option);
+  }
+  // Offer merging every calendar once there is more than one to merge.
+  const calendarCount = connections.filter(
+    (connection) => connection.service === "google-calendar",
+  ).length;
+  if (calendarCount >= 2) {
+    const option = document.createElement("option");
+    option.value = COMBINED_CALENDARS_ID;
+    option.textContent = "Combine all calendars";
+    if (selectedId === COMBINED_CALENDARS_ID) option.selected = true;
     select.appendChild(option);
   }
   return select;

@@ -16,6 +16,8 @@ export interface NormalizedItem {
   url?: string;
   /** A short trailing note, e.g. a status or date. */
   meta?: string;
+  /** An opaque sort key (e.g. an ISO start time) for merging across sources. */
+  sortKey?: string;
 }
 
 /** A minimal HTTP client so integrations can POST with headers, injected for tests. */
