@@ -10,5 +10,6 @@ export const realHttpFetch: HttpFetch = async (request) => {
     ok: response.ok,
     status: response.status,
     json: () => response.json(),
+    text: () => response.text(),
   };
 };

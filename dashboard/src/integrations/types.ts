@@ -68,6 +68,8 @@ export interface HttpResponseLike {
   ok: boolean;
   status: number;
   json(): Promise<unknown>;
+  /** Raw body text, for XML feeds. Optional so existing clients need not add it. */
+  text?(): Promise<string>;
 }
 
 export type HttpFetch = (request: HttpRequest) => Promise<HttpResponseLike>;

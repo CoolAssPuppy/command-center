@@ -1,3 +1,4 @@
+import { NEWS_FEEDS } from "../integrations/newsFeeds";
 import { el, svgEl } from "../render/helpers";
 import { collapsibleSection, field, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
@@ -73,12 +74,31 @@ export function renderTickersSection(host: HTMLElement, ctx: SectionContext): vo
       );
 
       section.appendChild(
-        checkRow("Show news ticker (Hacker News)", ctx.draft.tickers.news.enabled, (checked) =>
+        checkRow("Show news ticker", ctx.draft.tickers.news.enabled, (checked) =>
           ctx.update((config) => {
             config.tickers.news.enabled = checked;
           }),
         ),
       );
+
+      // When the news ticker is on, pick which curated feeds it pulls from.
+      if (ctx.draft.tickers.news.enabled) {
+        const list = el("div", "cc-edit__nested");
+        const active = new Set(ctx.draft.tickers.news.sources);
+        for (const feed of NEWS_FEEDS) {
+          list.appendChild(
+            checkRow(feed.name, active.has(feed.id), (checked) =>
+              ctx.update((config) => {
+                const sources = new Set(config.tickers.news.sources);
+                if (checked) sources.add(feed.id);
+                else sources.delete(feed.id);
+                config.tickers.news.sources = [...sources];
+              }),
+            ),
+          );
+        }
+        section.appendChild(list);
+      }
     },
   );
 }

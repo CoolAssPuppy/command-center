@@ -134,16 +134,11 @@ function renderStockStrip(
 }
 
 /** Map a news source to the domain whose favicon stands in for its name. */
-const SOURCE_DOMAIN: Record<string, string> = {
-  "Hacker News": "news.ycombinator.com",
-};
-
-function sourceFavicon(source: string): HTMLImageElement {
-  const domain = SOURCE_DOMAIN[source] ?? "news.ycombinator.com";
+function sourceFavicon(host: string, source: string): HTMLImageElement {
   const icon = document.createElement("img");
   icon.className = "cc-ticker__favicon";
   // The Google favicon service is already allowed by the manifest's img-src.
-  icon.src = `https://www.google.com/s2/favicons?sz=32&domain=${domain}`;
+  icon.src = `https://www.google.com/s2/favicons?sz=32&domain=${host}`;
   icon.alt = source;
   icon.width = 14;
   icon.height = 14;
@@ -154,7 +149,9 @@ function sourceFavicon(source: string): HTMLImageElement {
 function newsEntry(item: NewsItem, navigate: (url: string) => void): HTMLElement {
   const navigable = isSafeUrl(item.url);
   const entry = el(navigable ? "button" : "span", "cc-ticker__entry cc-ticker__entry--news");
-  entry.appendChild(sourceFavicon(item.source));
+  // A favicon when the source's brand domain is known, else a short text label.
+  if (item.iconHost !== undefined) entry.appendChild(sourceFavicon(item.iconHost, item.source));
+  else entry.appendChild(el("span", "cc-ticker__source", item.source));
   entry.appendChild(el("span", "cc-ticker__headline", item.title));
   if (navigable) {
     entry.setAttribute("type", "button");

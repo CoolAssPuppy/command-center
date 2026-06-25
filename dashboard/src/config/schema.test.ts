@@ -34,6 +34,18 @@ describe("config parsing", () => {
     expect(parseConfig(42).links).toEqual([]);
   });
 
+  it("defaults the news ticker off with Hacker News as the only source", () => {
+    const config = parseConfig({});
+    expect(config.tickers.news.enabled).toBe(false);
+    expect(config.tickers.news.sources).toEqual(["hacker-news"]);
+  });
+
+  it("keeps an old news config (no sources field) working, defaulting to Hacker News", () => {
+    const config = parseConfig({ tickers: { news: { enabled: true } } });
+    expect(config.tickers.news.enabled).toBe(true);
+    expect(config.tickers.news.sources).toEqual(["hacker-news"]);
+  });
+
   it("rejects a dock link with an invalid url", () => {
     const result = ConfigSchema.safeParse({
       links: [{ id: "x", title: "Bad", url: "notaurl" }],

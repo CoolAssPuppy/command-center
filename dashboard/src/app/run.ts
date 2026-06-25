@@ -464,7 +464,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       tickerStocks = [];
     }
 
-    tickerNews = news.enabled ? await fetchNews(httpFetch) : [];
+    tickerNews = news.enabled ? await fetchNews(httpFetch, news.sources) : [];
 
     paint();
   }

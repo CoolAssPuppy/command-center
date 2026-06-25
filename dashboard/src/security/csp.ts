@@ -21,6 +21,12 @@ export const CONNECT_HOSTS = [
   "https://hacker-news.firebaseio.com",
   "https://api.todoist.com",
   "https://api.frankfurter.dev",
+  "https://www.theverge.com",
+  "https://techcrunch.com",
+  "https://feeds.arstechnica.com",
+  "https://feeds.bbci.co.uk",
+  "https://rss.nytimes.com",
+  "https://feeds.npr.org",
 ] as const;
 
 interface CspDirectives {

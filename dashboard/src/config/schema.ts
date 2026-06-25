@@ -176,8 +176,10 @@ export const TickerSettingsSchema = z.object({
   news: z
     .object({
       enabled: z.boolean().default(false),
+      /** Active feed ids; old configs without this field default to Hacker News. */
+      sources: z.array(z.string()).default(["hacker-news"]),
     })
-    .default({ enabled: false }),
+    .default({ enabled: false, sources: ["hacker-news"] }),
 });
 export type TickerSettings = z.infer<typeof TickerSettingsSchema>;
 

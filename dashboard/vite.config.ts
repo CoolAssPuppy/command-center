@@ -45,6 +45,36 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/__cc-proxy\/frankfurter/, ""),
       },
+      "/__cc-proxy/verge": {
+        target: "https://www.theverge.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/verge/, ""),
+      },
+      "/__cc-proxy/techcrunch": {
+        target: "https://techcrunch.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/techcrunch/, ""),
+      },
+      "/__cc-proxy/ars": {
+        target: "https://feeds.arstechnica.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/ars/, ""),
+      },
+      "/__cc-proxy/bbc": {
+        target: "https://feeds.bbci.co.uk",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/bbc/, ""),
+      },
+      "/__cc-proxy/nyt": {
+        target: "https://rss.nytimes.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/nyt/, ""),
+      },
+      "/__cc-proxy/npr": {
+        target: "https://feeds.npr.org",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/npr/, ""),
+      },
       "/__cc-proxy/google": {
         target: "https://www.googleapis.com",
         changeOrigin: true,

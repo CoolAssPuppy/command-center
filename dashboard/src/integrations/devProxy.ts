@@ -19,6 +19,12 @@ const PROXIED_HOSTS: ReadonlyArray<readonly [string, string]> = [
   ["https://hacker-news.firebaseio.com", "/__cc-proxy/hackernews"],
   ["https://api.todoist.com", "/__cc-proxy/todoist"],
   ["https://api.frankfurter.dev", "/__cc-proxy/frankfurter"],
+  ["https://www.theverge.com", "/__cc-proxy/verge"],
+  ["https://techcrunch.com", "/__cc-proxy/techcrunch"],
+  ["https://feeds.arstechnica.com", "/__cc-proxy/ars"],
+  ["https://feeds.bbci.co.uk", "/__cc-proxy/bbc"],
+  ["https://rss.nytimes.com", "/__cc-proxy/nyt"],
+  ["https://feeds.npr.org", "/__cc-proxy/npr"],
   ["https://www.googleapis.com", "/__cc-proxy/google"],
   ["https://api.unsplash.com", "/__cc-proxy/unsplash"],
 ];
