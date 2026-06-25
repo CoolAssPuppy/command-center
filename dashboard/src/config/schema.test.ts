@@ -80,6 +80,43 @@ describe("config parsing", () => {
     expect(config.streams[0]?.collapsedByDefault).toBe(false);
   });
 
+  it("defaults a card to the right column and seeds its order from array position", () => {
+    const config = parseConfig({
+      streams: [
+        { id: "s1", title: "One", connectionId: "c1" },
+        { id: "s2", title: "Two", connectionId: "c1" },
+        { id: "s3", title: "Three", connectionId: "c1" },
+      ],
+    });
+    expect(config.streams.map((s) => s.column)).toEqual(["right", "right", "right"]);
+    expect(config.streams.map((s) => s.order)).toEqual([0, 1, 2]);
+  });
+
+  it("round-trips an explicit left or right column", () => {
+    const config = parseConfig({
+      streams: [
+        { id: "s1", title: "Lefty", connectionId: "c1", column: "left", order: 0 },
+        { id: "s2", title: "Righty", connectionId: "c1", column: "right", order: 0 },
+      ],
+    });
+    expect(config.streams[0]?.column).toBe("left");
+    expect(config.streams[1]?.column).toBe("right");
+  });
+
+  it("keeps an existing order and stays idempotent across repeated parses", () => {
+    const input = {
+      streams: [
+        { id: "s1", title: "One", connectionId: "c1", column: "left", order: 5 },
+        { id: "s2", title: "Two", connectionId: "c1" },
+      ],
+    };
+    const once = parseConfig(input);
+    const twice = parseConfig(once);
+    expect(once.streams[0]?.order).toBe(5);
+    expect(once.streams[1]?.order).toBe(1);
+    expect(twice).toEqual(once);
+  });
+
   it("keeps a Combine card's calendar selection, qualified by account", () => {
     const config = parseConfig({
       streams: [

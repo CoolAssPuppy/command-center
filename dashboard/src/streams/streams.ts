@@ -3,7 +3,8 @@ import type { IntegrationResult, NormalizedItem } from "../integrations/types";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { brandIcon } from "../shell/brandIcons";
-import { makeDashboardReorderable, type ReorderHandler } from "../shell/dashboardReorder";
+import { makeCardDraggable, makeColumnDropZone, type MoveCardHandler } from "../shell/cardDrag";
+import type { CardColumn } from "../shell/cardMove";
 import { itemIcon } from "../shell/itemIcons";
 
 /**
@@ -15,6 +16,8 @@ import { itemIcon } from "../shell/itemIcons";
 export interface StreamsModel {
   streams: Stream[];
   connections: Connection[];
+  /** Which work-area column to render; only cards in this column appear here. */
+  column: CardColumn;
   /** Per-stream open override; absent means use collapsedByDefault. */
   expanded: Record<string, boolean>;
   /** Resolved integration data, keyed by connection id. */
@@ -24,8 +27,8 @@ export interface StreamsModel {
 export interface StreamsDeps {
   navigate: (url: string) => void;
   onToggle: (streamId: string, open: boolean) => void;
-  /** Reorder work-stream panels by dragging one onto another. */
-  onReorder?: ReorderHandler;
+  /** Move a card to a column at a position (drag-and-drop or keyboard). */
+  onMoveCard?: MoveCardHandler;
 }
 
 function isOpen(stream: Stream, expanded: Record<string, boolean>): boolean {
@@ -33,23 +36,48 @@ function isOpen(stream: Stream, expanded: Record<string, boolean>): boolean {
   return override !== undefined ? override : !stream.collapsedByDefault;
 }
 
+/** Cards that live only in the left lane, never as a column card. */
+function isLaneOnly(stream: Stream, connections: Connection[]): boolean {
+  if (stream.connectionId === COMBINED_CALENDARS_ID) return false;
+  if (stream.role === "tasks") return true;
+  const connection = connections.find((item) => item.id === stream.connectionId);
+  return connection?.service === "linear" && stream.linearView === "inbox";
+}
+
+/**
+ * Render one work-area column. Cards flow in config order, filtered to this
+ * column; lane-only cards (tasks role, Linear inbox) are skipped since they show
+ * in the lane. The container is a drop zone, with a thin empty-state target so a
+ * card can be dragged into an otherwise-empty column.
+ */
 export function renderStreams(
   host: HTMLElement,
   model: StreamsModel,
   deps: StreamsDeps,
 ): HTMLElement {
   const root = el("div", "cc-streams");
-  for (const stream of model.streams) {
-    // Some cards belong only in the left lane, not as a right-column card: one
-    // with role "tasks", and a Linear card in inbox view. The combined-calendars
-    // virtual id always stays. Reverting the role/view brings the card back here.
-    if (stream.connectionId !== COMBINED_CALENDARS_ID) {
-      const connection = model.connections.find((item) => item.id === stream.connectionId);
-      if (stream.role === "tasks") continue;
-      if (connection?.service === "linear" && stream.linearView === "inbox") continue;
-    }
+  root.dataset.column = model.column;
+
+  // The surface layout is owned by each card's column + order, not the config
+  // array order (which the Customize pane reorders cosmetically). Sort by order.
+  const cards = model.streams
+    .filter((stream) => !isLaneOnly(stream, model.connections) && stream.column === model.column)
+    .sort((a, b) => a.order - b.order);
+  for (const stream of cards) {
     root.appendChild(renderStream(stream, model, deps));
   }
+  const count = cards.length;
+
+  if (deps.onMoveCard !== undefined) {
+    // Offer an empty-column drop target only once there is a card to drag, so a
+    // fresh dashboard with no cards stays clean. The column always accepts drops.
+    const hasAnyCard = model.streams.some((stream) => !isLaneOnly(stream, model.connections));
+    if (count === 0 && hasAnyCard) {
+      root.appendChild(el("div", "cc-streams__empty", "Drop a card here"));
+    }
+    makeColumnDropZone(root, model.column, deps.onMoveCard);
+  }
+
   host.appendChild(root);
   return root;
 }
@@ -100,8 +128,8 @@ function renderStream(
     deps.onToggle(stream.id, details.open);
   });
 
-  if (deps.onReorder !== undefined) {
-    makeDashboardReorderable(details, "streams", stream.id, deps.onReorder);
+  if (deps.onMoveCard !== undefined) {
+    makeCardDraggable(details, stream.id, model.column, deps.onMoveCard);
   }
   return details;
 }

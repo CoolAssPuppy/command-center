@@ -13,11 +13,19 @@ const connection = (id: string, service: Service): Connection => ({
   name: id,
   service,
 });
-const stream = (id: string, connectionId: string, collapsed = false): Stream => ({
+const stream = (
+  id: string,
+  connectionId: string,
+  collapsed = false,
+  overrides: Partial<Stream> = {},
+): Stream => ({
   id,
   title: `Stream ${id}`,
   connectionId,
   collapsedByDefault: collapsed,
+  column: "left",
+  order: 0,
+  ...overrides,
 });
 const noop = (): void => {};
 
@@ -26,7 +34,7 @@ describe("renderStreams", () => {
     const root = host();
     renderStreams(
       root,
-      { streams: [stream("s1", "c1")], connections: [connection("c1", "notion")], expanded: {} },
+      { streams: [stream("s1", "c1")], connections: [connection("c1", "notion")], expanded: {}, column: "left" },
       { navigate: noop, onToggle: noop },
     );
     expect(root.querySelector<HTMLDetailsElement>(".cc-stream")?.open).toBe(true);
@@ -37,7 +45,7 @@ describe("renderStreams", () => {
     const root = host();
     renderStreams(
       root,
-      { streams: [stream("s1", "c1", true)], connections: [connection("c1", "linear")], expanded: {} },
+      { streams: [stream("s1", "c1", true)], connections: [connection("c1", "linear")], expanded: {}, column: "left" },
       { navigate: noop, onToggle: noop },
     );
     expect(root.querySelector<HTMLDetailsElement>(".cc-stream")?.open).toBe(false);
@@ -47,7 +55,7 @@ describe("renderStreams", () => {
     const root = host();
     renderStreams(
       root,
-      { streams: [stream("s1", "c1")], connections: [connection("c1", "notion")], expanded: {} },
+      { streams: [stream("s1", "c1")], connections: [connection("c1", "notion")], expanded: {}, column: "left" },
       { navigate: noop, onToggle: noop },
     );
     expect(root.querySelector(".cc-stream__empty")?.textContent).toBe("Loading…");
@@ -61,6 +69,7 @@ describe("renderStreams", () => {
         streams: [stream("s1", "c1")],
         connections: [connection("c1", "notion")],
         expanded: {},
+        column: "left",
         integrationResults: { s1: { status: "needs_auth" } },
       },
       { navigate: noop, onToggle: noop },
@@ -77,6 +86,7 @@ describe("renderStreams", () => {
         streams: [stream("s1", "c1")],
         connections: [connection("c1", "notion")],
         expanded: {},
+        column: "left",
         integrationResults: {
           s1: { status: "ok", items: [{ id: "1", title: "Roadmap item", url: "https://notion.so/x" }] },
         },
@@ -96,6 +106,7 @@ describe("renderStreams", () => {
         streams: [stream("s1", "c1")],
         connections: [connection("c1", "linear")],
         expanded: {},
+        column: "left",
         integrationResults: {
           s1: {
             status: "ok",
@@ -118,7 +129,7 @@ describe("renderStreams", () => {
     const root = host();
     renderStreams(
       root,
-      { streams: [stream("s1", "c1")], connections: [connection("c1", "notion")], expanded: {} },
+      { streams: [stream("s1", "c1")], connections: [connection("c1", "notion")], expanded: {}, column: "left" },
       { navigate: noop, onToggle },
     );
     const details = root.querySelector<HTMLDetailsElement>(".cc-stream");
@@ -139,6 +150,7 @@ describe("renderStreams", () => {
           { id: "c2", name: "Tasks", service: "notion" },
         ],
         expanded: {},
+        column: "left",
       },
       { navigate: noop, onToggle: noop },
     );
@@ -157,6 +169,7 @@ describe("renderStreams", () => {
           { id: "c2", name: "Inbox", service: "linear" },
         ],
         expanded: {},
+        column: "left",
       },
       { navigate: noop, onToggle: noop },
     );

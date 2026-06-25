@@ -644,12 +644,21 @@ body {
   font-weight: 600;
 }
 
-/* Work band: the "needs you" lane (anchor) beside a typeset feed rail. */
+/* Work band: two columns (left ~3/5, right ~2/5). The "needs you" lane is pinned
+   at the top of the left column; data cards flow below it and fill the right. */
 .cc-work {
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   align-items: start;
   gap: clamp(24px, 4vw, 56px);
+}
+
+/* Each column stacks its contents (the lane, then cards) with breathing room. */
+.cc-work__col {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 28px);
+  min-width: 0;
 }
 
 @media (max-width: 900px) {
@@ -1714,6 +1723,39 @@ button.cc-lane__item:hover {
      busy queue runs long. */
   display: flex;
   flex-direction: column;
+}
+
+/* A column is a drop zone for cards; it lifts faintly while a card hovers it. */
+.cc-streams.is-drop-target {
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 7%, transparent);
+}
+
+/* Empty-column drop target: a thin dashed placeholder so a card can land in an
+   otherwise-empty column. Quiet until the column is a live drop target. */
+.cc-streams__empty {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, var(--cc-color-muted, #6a6e76) 22%, transparent);
+  color: var(--cc-color-muted, #6a6e76);
+  font-size: 12px;
+  opacity: 0.55;
+}
+
+.cc-streams.is-drop-target .cc-streams__empty {
+  border-color: color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 60%, transparent);
+  opacity: 1;
+}
+
+/* The insertion indicator: a thin accent line marking the slot a drop lands in. */
+.cc-streams__indicator {
+  height: 2px;
+  margin: 3px 0;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 80%, transparent);
 }
 
 .cc-stream {

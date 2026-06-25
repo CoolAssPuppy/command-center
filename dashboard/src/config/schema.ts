@@ -135,6 +135,19 @@ export const StreamSchema = z
     connectionId: z.string().min(1),
     collapsedByDefault: z.boolean().default(false),
     /**
+     * Which work-area column the card sits in. Layout, not source config, so it
+     * stays on the stream and off IntegrationSource. Defaults to "right" so
+     * existing configs keep today's layout (cards on the right, lane on the left)
+     * after upgrade; the user drags a card to "left" to flow it under the lane.
+     */
+    column: z.enum(["left", "right"]).default("right"),
+    /**
+     * Position within the card's column on the new-tab surface. Set only by
+     * on-surface drag; the Customize pane never touches it. Seeded from the
+     * config order on upgrade (see migrateConfig) so layouts do not move.
+     */
+    order: z.number().int().nonnegative().default(0),
+    /**
      * Combine card only (connectionId is the combined virtual id): the calendars
      * to merge, each qualified by its account. Empty or unset means every
      * calendar from every connected Google account, so the card works before the
@@ -290,67 +303,80 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
 }
 
 /**
- * Migrate an old config (per-card config carried on connections) to the new
- * model (config on the cards). It runs before validation, since the slimmed
- * ConnectionSchema would otherwise strip the old fields before we can move them.
- * For each card, copy any missing card-config field from its base connection; for
- * a Linear inbox connection with no card, create one so it keeps showing. Pure
- * and idempotent: a new-model config passes through unchanged.
+ * Migrate an old config to the new model. It runs before validation, since the
+ * slimmed ConnectionSchema would otherwise strip old fields before we can move
+ * them. Two steps: (1) move per-card config off connections onto the cards, and
+ * create a card for a Linear inbox connection that has none; (2) seed each card's
+ * surface `order` from its config position so today's layout is preserved on
+ * upgrade. Pure and idempotent: a new-model config passes through unchanged.
  */
 export function migrateConfig(raw: unknown): unknown {
   const root = asRecord(raw);
   if (root === undefined) return raw;
-  const connections = Array.isArray(root.connections) ? root.connections : undefined;
   const streams = Array.isArray(root.streams) ? root.streams : undefined;
-  if (connections === undefined || streams === undefined) return raw;
+  if (streams === undefined) return raw;
 
-  const connectionById = new Map<string, Record<string, unknown>>();
-  for (const entry of connections) {
-    const connection = asRecord(entry);
-    if (connection !== undefined && typeof connection.id === "string") {
-      connectionById.set(connection.id, connection);
-    }
-  }
+  let nextStreams: unknown[] = streams;
 
-  const nextStreams = streams.map((entry): unknown => {
-    const stream = asRecord(entry);
-    if (stream === undefined) return entry;
-    const connection = typeof stream.connectionId === "string"
-      ? connectionById.get(stream.connectionId)
-      : undefined;
-    if (connection === undefined) return stream;
-    const merged = { ...stream };
-    for (const key of CARD_CONFIG_KEYS) {
-      if (merged[key] === undefined && connection[key] !== undefined) {
-        merged[key] = connection[key];
+  const connections = Array.isArray(root.connections) ? root.connections : undefined;
+  if (connections !== undefined) {
+    const connectionById = new Map<string, Record<string, unknown>>();
+    for (const entry of connections) {
+      const connection = asRecord(entry);
+      if (connection !== undefined && typeof connection.id === "string") {
+        connectionById.set(connection.id, connection);
       }
     }
-    return merged;
-  });
 
-  // A Linear inbox connection used to feed the lane with no card of its own.
-  const referenced = new Set(
-    nextStreams
-      .map((entry) => asRecord(entry)?.connectionId)
-      .filter((id): id is string => typeof id === "string"),
-  );
-  for (const connection of connectionById.values()) {
-    if (
-      connection.service === "linear" &&
-      connection.linearView === "inbox" &&
-      !referenced.has(connection.id as string)
-    ) {
-      nextStreams.push({
-        id: `card:${String(connection.id)}`,
-        title: typeof connection.name === "string" ? connection.name : "Linear inbox",
-        connectionId: connection.id,
-        linearView: "inbox",
-        collapsedByDefault: false,
-      });
+    nextStreams = streams.map((entry): unknown => {
+      const stream = asRecord(entry);
+      if (stream === undefined) return entry;
+      const connection = typeof stream.connectionId === "string"
+        ? connectionById.get(stream.connectionId)
+        : undefined;
+      if (connection === undefined) return stream;
+      const merged = { ...stream };
+      for (const key of CARD_CONFIG_KEYS) {
+        if (merged[key] === undefined && connection[key] !== undefined) {
+          merged[key] = connection[key];
+        }
+      }
+      return merged;
+    });
+
+    // A Linear inbox connection used to feed the lane with no card of its own.
+    const referenced = new Set(
+      nextStreams
+        .map((entry) => asRecord(entry)?.connectionId)
+        .filter((id): id is string => typeof id === "string"),
+    );
+    for (const connection of connectionById.values()) {
+      if (
+        connection.service === "linear" &&
+        connection.linearView === "inbox" &&
+        !referenced.has(connection.id as string)
+      ) {
+        nextStreams.push({
+          id: `card:${String(connection.id)}`,
+          title: typeof connection.name === "string" ? connection.name : "Linear inbox",
+          connectionId: connection.id,
+          linearView: "inbox",
+          collapsedByDefault: false,
+        });
+      }
     }
   }
 
-  return { ...root, streams: nextStreams };
+  // Seed surface order from the array position when a card has none, so the
+  // current arrangement carries over. Existing orders are left untouched.
+  const seeded = nextStreams.map((entry, index): unknown => {
+    const stream = asRecord(entry);
+    if (stream === undefined) return entry;
+    if (typeof stream.order === "number") return stream;
+    return { ...stream, order: index };
+  });
+
+  return { ...root, streams: seeded };
 }
 
 /** Parse unknown storage data into a Config, falling back to defaults per field. */

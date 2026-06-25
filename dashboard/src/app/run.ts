@@ -12,6 +12,7 @@ import {
 } from "../config/schema";
 import { combineCalendars, resolveCombineTargets } from "../integrations/combine";
 import { fetchGoogleCalendarList } from "../integrations/googleCalendarList";
+import { moveCard } from "../shell/cardMove";
 import { fetchStockQuotes, type StockQuote } from "../integrations/finnhub";
 import { fetchForexQuotes, splitSymbols } from "../integrations/forex";
 import { fetchNews, type NewsItem } from "../integrations/news";
@@ -177,6 +178,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         saveTickerMode(mode);
       },
       onReorder: reorderConfigGroup,
+      onMoveCard: moveCardOnSurface,
     };
     if (deps.theme !== undefined) renderDeps.theme = deps.theme;
     renderDashboard(deps.mount, model, renderDeps);
@@ -581,6 +583,25 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       saveCache(config);
       paint();
     }
+  }
+
+  /**
+   * Place a data card on the surface: set its column and order from an on-surface
+   * drag or keyboard move. This owns the new-tab layout (the Customize pane's list
+   * reorder is cosmetic and does not reach here). A no-op returns the same array.
+   */
+  function moveCardOnSurface(
+    cardId: string,
+    column: "left" | "right",
+    beforeId: string | null,
+  ): void {
+    if (config === undefined) return;
+    const next = moveCard(config.streams, cardId, column, beforeId);
+    if (next === config.streams) return;
+    config.streams = next;
+    void deps.store.save(config);
+    saveCache(config);
+    paint();
   }
 
   // 1. Instant paint from the cached config, if any (runs before the first await).

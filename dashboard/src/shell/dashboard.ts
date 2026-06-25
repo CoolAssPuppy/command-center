@@ -9,6 +9,7 @@ import { renderStreams, type StreamsDeps } from "../streams/streams";
 import { resolveActiveTheme } from "../theme/resolve";
 import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
+import type { MoveCardHandler } from "./cardDrag";
 import { captureFlipRects, playFlip } from "./flip";
 import { renderHomeClock, type HomeClockModel } from "./homeClock";
 import { renderMeetingWindow } from "./meetingWindow";
@@ -72,6 +73,8 @@ export interface DashboardDeps {
     fromId: string,
     toId: string,
   ) => void;
+  /** Move a data card to a column at a position (on-surface drag or keyboard). */
+  onMoveCard?: MoveCardHandler;
 }
 
 export function renderDashboard(
@@ -215,9 +218,13 @@ export function renderDashboard(
     );
     stage.appendChild(orient);
 
-    // Tier 2: the work band. The "needs you" lane is the one distinguished
-    // surface (the anchor); the source feeds sit typeset in a quieter rail.
+    // Tier 2: the work band. Two columns (left ~3/5, right ~2/5). The "needs you"
+    // lane is pinned at the top of the left column (it is not draggable); data
+    // cards flow below it in the left column and fill the right column. A card's
+    // column and order are explicit on the card; on-surface drag sets them.
     const work = el("div", "cc-work");
+    const leftCol = el("div", "cc-work__col cc-work__col--left");
+    const rightCol = el("div", "cc-work__col cc-work__col--right");
 
     const laneModel: NeedsYouLaneModel = {
       now: model.now,
@@ -232,28 +239,26 @@ export function renderDashboard(
     if (deps.onTaskFilterChange !== undefined) {
       laneDeps.onTaskFilterChange = deps.onTaskFilterChange;
     }
-    renderNeedsYouLane(work, laneModel, laneDeps);
+    renderNeedsYouLane(leftCol, laneModel, laneDeps);
 
-    if (model.config.streams.length > 0) {
-      const streamsModel = {
-        streams: model.config.streams,
-        connections: model.config.connections,
-        expanded: model.streamExpanded ?? {},
-        ...(model.integrationResults !== undefined
-          ? { integrationResults: model.integrationResults }
-          : {}),
-      };
-      const streamsDeps: StreamsDeps = {
-        navigate: deps.navigate,
-        onToggle: deps.onToggleStream ?? ((): void => {}),
-      };
-      if (deps.onReorder !== undefined) {
-        const reorder = deps.onReorder;
-        streamsDeps.onReorder = (fromId, toId) => reorder("streams", fromId, toId);
-      }
-      renderStreams(work, streamsModel, streamsDeps);
-    }
+    const streamsDeps: StreamsDeps = {
+      navigate: deps.navigate,
+      onToggle: deps.onToggleStream ?? ((): void => {}),
+    };
+    if (deps.onMoveCard !== undefined) streamsDeps.onMoveCard = deps.onMoveCard;
+    const baseStreamsModel = {
+      streams: model.config.streams,
+      connections: model.config.connections,
+      expanded: model.streamExpanded ?? {},
+      ...(model.integrationResults !== undefined
+        ? { integrationResults: model.integrationResults }
+        : {}),
+    };
+    renderStreams(leftCol, { ...baseStreamsModel, column: "left" }, streamsDeps);
+    renderStreams(rightCol, { ...baseStreamsModel, column: "right" }, streamsDeps);
 
+    work.appendChild(leftCol);
+    work.appendChild(rightCol);
     stage.appendChild(work);
   }
 

@@ -485,11 +485,19 @@ function renderAddStream(ctx: SectionContext): HTMLElement {
     const connectionId = select.value;
     if (value.length === 0 || connectionId.length === 0) return;
     ctx.update((config) => {
+      // New cards land at the end of the right column on the surface; the user
+      // drags them where they want. Pane list order is separate (cosmetic).
+      const rightOrders = config.streams
+        .filter((stream) => stream.column === "right")
+        .map((stream) => stream.order);
+      const nextOrder = rightOrders.length > 0 ? Math.max(...rightOrders) + 1 : 0;
       config.streams.push({
         id: newId("stream"),
         title: value,
         connectionId,
         collapsedByDefault: false,
+        column: "right",
+        order: nextOrder,
       });
     });
   });

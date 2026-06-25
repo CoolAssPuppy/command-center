@@ -22,6 +22,56 @@ describe("renderDashboard", () => {
     expect(root.querySelectorAll(".cc-zone")).toHaveLength(config.zones.length - 1);
   });
 
+  it("renders cards into columns by (column, order), not config array order", () => {
+    const config = ConfigSchema.parse({
+      zones: [{ id: "h", label: "Home", timeZone: "UTC", isHome: true }],
+      connections: [
+        { id: "c1", name: "A", service: "notion" },
+        { id: "c2", name: "B", service: "notion" },
+        { id: "c3", name: "C", service: "notion" },
+      ],
+      streams: [
+        { id: "s1", title: "First", connectionId: "c1", column: "right", order: 1 },
+        { id: "s2", title: "Second", connectionId: "c2", column: "right", order: 0 },
+        { id: "s3", title: "Lefty", connectionId: "c3", column: "left", order: 0 },
+      ],
+    });
+    const root = host();
+    renderDashboard(root, { now, config }, { navigate: () => {}, reducedMotion: true });
+
+    const titlesIn = (selector: string): string[] =>
+      [...root.querySelectorAll(`${selector} .cc-stream__title`)].map((n) => n.textContent);
+
+    // The lane is pinned in the left column; the one left card flows below it.
+    expect(root.querySelector(".cc-work__col--left .cc-lane")).not.toBeNull();
+    expect(titlesIn(".cc-work__col--left")).toEqual(["Lefty"]);
+    // Right column is sorted by order (s2 before s1), not array order (s1, s2).
+    expect(titlesIn(".cc-work__col--right")).toEqual(["Second", "First"]);
+  });
+
+  it("ignores config array order for the surface (pane reorder is cosmetic)", () => {
+    const streams = [
+      { id: "s1", title: "First", connectionId: "c1", column: "right", order: 0 },
+      { id: "s2", title: "Second", connectionId: "c1", column: "right", order: 1 },
+    ];
+    const base = {
+      zones: [{ id: "h", label: "Home", timeZone: "UTC", isHome: true }],
+      connections: [{ id: "c1", name: "A", service: "notion" }],
+    };
+    const rightTitles = (config: ReturnType<typeof ConfigSchema.parse>): string[] => {
+      const root = host();
+      renderDashboard(root, { now, config }, { navigate: () => {}, reducedMotion: true });
+      return [...root.querySelectorAll(".cc-work__col--right .cc-stream__title")].map(
+        (n) => n.textContent,
+      );
+    };
+
+    const ordered = rightTitles(ConfigSchema.parse({ ...base, streams }));
+    const reversed = rightTitles(ConfigSchema.parse({ ...base, streams: [...streams].reverse() }));
+    expect(ordered).toEqual(["First", "Second"]);
+    expect(reversed).toEqual(ordered);
+  });
+
   it("hides the dock when showDock is false", () => {
     const base = {
       zones: [{ id: "h", label: "Home", timeZone: "UTC", isHome: true }],
