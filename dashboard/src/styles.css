@@ -1555,12 +1555,39 @@ button.cc-lane__item:hover {
   margin-top: 12px;
 }
 
+.cc-edit__calendars-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cc-color-text, #21242a);
+}
+
+.cc-edit__calendars-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cc-edit__calendars-chevron {
+  display: inline-flex;
+  font-size: 15px;
+  color: var(--cc-color-muted, #6a6e76);
+  transition: transform calc(var(--cc-motion-speed, 1) * 140ms) ease;
+}
+
+.cc-edit__calendars-disclosure[open] .cc-edit__calendars-chevron {
+  transform: rotate(90deg);
+}
+
 .cc-edit__calendar-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
   max-height: 168px;
   overflow-y: auto;
+  margin-top: 8px;
 }
 
 .cc-edit__nested {

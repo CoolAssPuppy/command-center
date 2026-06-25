@@ -183,32 +183,58 @@ function selectedCalendarIds(connection: Connection): Set<string> {
  * placeholder. The chosen ids are stored in connection.calendarIds. Falls back to
  * a single plain id input when there is no token or the fetch fails.
  */
+/**
+ * Whether each connection's calendar disclosure is open, kept across the pane's
+ * re-renders (checking a calendar re-renders the whole pane). Keyed by
+ * connection id; absent means collapsed, the default.
+ */
+const expandedCalendars = new Set<string>();
+
 function renderCalendarPicker(
   wrap: HTMLElement,
   connection: Connection,
   ctx: SectionContext,
   accessToken: string | undefined,
 ): void {
-  const fieldWrap = el("div", "cc-edit__field cc-edit__calendars");
-  fieldWrap.appendChild(el("label", "cc-edit__field-label", "Calendars"));
-
   if (accessToken === undefined) {
+    const fieldWrap = el("div", "cc-edit__field cc-edit__calendars");
+    fieldWrap.appendChild(el("label", "cc-edit__field-label", "Calendars"));
     fieldWrap.appendChild(calendarIdInput(connection, ctx));
     wrap.appendChild(fieldWrap);
     return;
   }
 
+  // A chevron disclosure so the calendar list stays out of the way until needed.
+  const details = document.createElement("details");
+  details.className = "cc-edit__field cc-edit__calendars cc-edit__calendars-disclosure";
+  details.open = expandedCalendars.has(connection.id);
+  details.addEventListener("toggle", () => {
+    if (details.open) expandedCalendars.add(connection.id);
+    else expandedCalendars.delete(connection.id);
+  });
+  const summary = document.createElement("summary");
+  summary.className = "cc-edit__calendars-summary";
+  const selectedCount = selectedCalendarIds(connection).size;
+  const chevron = el("span", "cc-edit__calendars-chevron", "›");
+  chevron.setAttribute("aria-hidden", "true");
+  summary.appendChild(chevron);
+  summary.appendChild(
+    el("span", undefined, `Calendars · ${String(selectedCount)} selected`),
+  );
+  details.appendChild(summary);
+
   const listBox = el("div", "cc-edit__calendar-list");
   listBox.appendChild(el("div", "cc-edit__hint", "Loading calendars…"));
-  fieldWrap.appendChild(listBox);
-  wrap.appendChild(fieldWrap);
+  details.appendChild(listBox);
+  wrap.appendChild(details);
 
   void fetchCalendarList(accessToken).then((calendars) => {
     if (calendars === undefined || calendars.length === 0) {
       // No list available; fall back to a single plain calendar-id input.
-      fieldWrap.replaceChildren();
+      const fieldWrap = el("div", "cc-edit__field cc-edit__calendars");
       fieldWrap.appendChild(el("label", "cc-edit__field-label", "Calendar"));
       fieldWrap.appendChild(calendarIdInput(connection, ctx));
+      details.replaceWith(fieldWrap);
       return;
     }
     listBox.replaceChildren();
