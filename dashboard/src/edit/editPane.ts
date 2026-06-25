@@ -29,6 +29,12 @@ export interface EditPaneRuntimeDeps {
    * Absent outside the extension or when sign-in is not configured.
    */
   connectGoogleAccount?: (connectionId: string) => Promise<GoogleToken | undefined>;
+  /**
+   * Toggle screenshot mode: fill every feed with sample data, or clear back to
+   * the real data. Sets the device-local flag and re-runs the feeds. Absent in
+   * contexts that do not drive a live dashboard (e.g. isolated section tests).
+   */
+  onScreenshotMode?: (on: boolean) => void;
 }
 
 export interface EditPaneDeps {

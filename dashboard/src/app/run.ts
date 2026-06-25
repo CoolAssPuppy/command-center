@@ -21,7 +21,15 @@ import {
   saveTickerMode,
   type TickerMode,
 } from "../shell/tickerModeState";
-import { demoCombinedCalendars, demoResultFor, isDemoMode } from "./demo";
+import {
+  demoCombinedCalendars,
+  demoNews,
+  demoResultFor,
+  demoStocks,
+  demoWeatherFor,
+  isDemoMode,
+  setDemoMode,
+} from "./demo";
 import type { ConfigStore } from "../config/store";
 import type { ParseResult } from "../domain/result";
 import { openEditPane } from "../edit/editPane";
@@ -215,6 +223,15 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         },
         runtime: {
           searchCities,
+          // Screenshot mode: flip the device-local flag, then re-run every feed
+          // so the dashboard fills with (or clears back from) sample data live.
+          onScreenshotMode: (on: boolean): void => {
+            setDemoMode(on);
+            void refreshIntegrations();
+            void refreshWeather();
+            void refreshTickers();
+            paint();
+          },
           // Only offer Google sign-in where chrome.identity exists and a client
           // id is configured. Elsewhere the connection row shows a hint. The
           // chosen account's token is returned for the section to store against
@@ -373,9 +390,11 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       const demo: Record<string, IntegrationResult> = {};
       for (const stream of cards) {
         const connection = connectionById.get(stream.connectionId);
-        if (connection !== undefined) demo[stream.id] = demoResultFor(connection.service);
+        if (connection !== undefined) {
+          demo[stream.id] = demoResultFor(connection.service, deps.now(), stream.role);
+        }
       }
-      if (usesCombine) demo[COMBINED_CALENDARS_ID] = demoCombinedCalendars;
+      if (usesCombine) demo[COMBINED_CALENDARS_ID] = demoCombinedCalendars(deps.now());
       integrationResults = demo;
       paint();
       return;
@@ -495,6 +514,14 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     const { stocks, news } = config.tickers;
     const httpFetch = deps.httpFetch ?? realHttpFetch;
 
+    // Screenshot mode: serve canned quotes and headlines for the enabled strips.
+    if (isDemoMode()) {
+      tickerStocks = stocks.enabled ? demoStocks : [];
+      tickerNews = news.enabled ? demoNews : [];
+      paint();
+      return;
+    }
+
     if (stocks.enabled && stocks.symbols.length > 0) {
       // Currency pairs go to the keyless forex source; everything else to
       // Finnhub (which needs a key). Forex still works without a key.
@@ -531,6 +558,16 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     if (located.length === 0) return;
 
     const units: WeatherUnits = deps.units ?? config.weather.unit;
+
+    // Screenshot mode: give every located zone canned weather, no network.
+    if (isDemoMode()) {
+      located.forEach((zone, index) => {
+        weatherByZone[zone.id] = demoWeatherFor(index, deps.now(), units);
+      });
+      paint();
+      return;
+    }
+
     const results = await Promise.all(
       located.map(async (zone) => {
         const result = await fetchWeather(

@@ -1,3 +1,4 @@
+import { isDemoMode } from "../app/demo";
 import { el, svgEl } from "../render/helpers";
 import { collapsibleSection } from "./controls";
 import type { SectionContext } from "./editPane";
@@ -66,6 +67,29 @@ export function renderSupportSection(host: HTMLElement, ctx: SectionContext): vo
       coffee.appendChild(el("span", undefined, " or "));
       coffee.appendChild(link(REVOLUT_URL, "Revolut"));
       section.appendChild(coffee);
+
+      buildScreenshotToggle(section, ctx);
     },
+  );
+}
+
+/**
+ * A device-local toggle that fills the dashboard with sample data for a clean
+ * screenshot, and reverts to the real data when turned off. It overrides only
+ * what is shown; the saved config and credentials are untouched.
+ */
+function buildScreenshotToggle(section: HTMLElement, ctx: SectionContext): void {
+  const row = el("label", "cc-edit__check");
+  const toggle = document.createElement("input");
+  toggle.type = "checkbox";
+  toggle.checked = isDemoMode();
+  toggle.addEventListener("change", () => {
+    ctx.runtime.onScreenshotMode?.(toggle.checked);
+  });
+  row.appendChild(toggle);
+  row.appendChild(el("span", undefined, "Screenshot mode"));
+  section.appendChild(row);
+  section.appendChild(
+    el("div", "cc-edit__hint", "Fills the dashboard with sample data for screenshots."),
   );
 }
