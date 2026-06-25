@@ -13,6 +13,8 @@ import { fallbackGlyph, faviconUrl } from "./favicon";
 export interface DockModel {
   links: DockLink[];
   reducedMotion?: boolean;
+  /** Magnify icons on hover by proximity; false keeps them a fixed size. */
+  magnify?: boolean;
 }
 
 export interface DockDeps {
@@ -34,7 +36,7 @@ export function renderDock(
 
   const items = model.links.map((link) => renderItem(dock, link, deps));
 
-  if (model.reducedMotion !== true && items.length > 0) {
+  if (model.reducedMotion !== true && model.magnify !== false && items.length > 0) {
     attachMagnify(dock, items);
   }
 

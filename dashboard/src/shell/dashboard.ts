@@ -247,14 +247,22 @@ export function renderDashboard(
     stage.appendChild(work);
   }
 
-  // Dock of links, pinned along the bottom of the page.
-  if (model.config.links.length > 0) {
+  // Dock of links, pinned along the bottom of the page, unless hidden.
+  if (model.config.links.length > 0 && model.config.appearance.showDock !== false) {
     const dockDeps: DockDeps = { navigate: deps.navigate };
     if (deps.onReorder !== undefined) {
       const reorder = deps.onReorder;
       dockDeps.onReorder = (fromId, toId) => reorder("links", fromId, toId);
     }
-    renderDock(root, { links: model.config.links, reducedMotion }, dockDeps);
+    renderDock(
+      root,
+      {
+        links: model.config.links,
+        reducedMotion,
+        magnify: model.config.appearance.dockMagnification !== false,
+      },
+      dockDeps,
+    );
   }
 
   root.appendChild(stage);

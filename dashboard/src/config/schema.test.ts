@@ -25,6 +25,8 @@ describe("config parsing", () => {
     expect(config.zones).toEqual([]);
     expect(config.wallpaper.source).toBe("gradient");
     expect(config.appearance.hour12).toBe(true);
+    expect(config.appearance.showDock).toBe(true);
+    expect(config.appearance.dockMagnification).toBe(true);
   });
 
   it("recovers to defaults when given non-config garbage", () => {

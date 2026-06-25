@@ -22,6 +22,28 @@ describe("renderDashboard", () => {
     expect(root.querySelectorAll(".cc-zone")).toHaveLength(config.zones.length - 1);
   });
 
+  it("hides the dock when showDock is false", () => {
+    const base = {
+      zones: [{ id: "h", label: "Home", timeZone: "UTC", isHome: true }],
+      links: [{ id: "l1", title: "Gmail", url: "https://mail.google.com/" }],
+    };
+    const shown = host();
+    renderDashboard(
+      shown,
+      { now, config: ConfigSchema.parse(base) },
+      { navigate: () => {}, reducedMotion: true },
+    );
+    expect(shown.querySelector(".cc-dock")).not.toBeNull();
+
+    const hidden = host();
+    renderDashboard(
+      hidden,
+      { now, config: ConfigSchema.parse({ ...base, appearance: { showDock: false } }) },
+      { navigate: () => {}, reducedMotion: true },
+    );
+    expect(hidden.querySelector(".cc-dock")).toBeNull();
+  });
+
   it("wires the edit button to the onEdit callback", () => {
     const onEdit = vi.fn();
     const root = host();

@@ -32,6 +32,22 @@ describe("renderDock", () => {
     expect(navigate).toHaveBeenCalledWith("https://github.com");
   });
 
+  it("magnifies on hover by default but not when magnification is off", () => {
+    const on = host();
+    renderDock(on, { links }, { navigate: () => {} });
+    on.querySelector(".cc-dock")?.dispatchEvent(new MouseEvent("pointermove", { clientX: 0 }));
+    expect(
+      on.querySelector<HTMLElement>(".cc-dock__item")?.style.getPropertyValue("--cc-dock-scale"),
+    ).not.toBe("");
+
+    const off = host();
+    renderDock(off, { links, magnify: false }, { navigate: () => {} });
+    off.querySelector(".cc-dock")?.dispatchEvent(new MouseEvent("pointermove", { clientX: 0 }));
+    expect(
+      off.querySelector<HTMLElement>(".cc-dock__item")?.style.getPropertyValue("--cc-dock-scale"),
+    ).toBe("");
+  });
+
   it("refuses to navigate to an unsafe url", () => {
     const navigate = vi.fn();
     const root = host();

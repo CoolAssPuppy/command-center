@@ -125,6 +125,10 @@ export const AppearanceSchema = z.object({
   hour12: z.boolean().default(true),
   /** Show the meeting-overlap window beside the home clock. */
   showMeetingWindow: z.boolean().default(true),
+  /** Show the dock of links along the bottom. */
+  showDock: z.boolean().default(true),
+  /** Magnify dock icons on hover by proximity; off keeps them a fixed size. */
+  dockMagnification: z.boolean().default(true),
 });
 export type Appearance = z.infer<typeof AppearanceSchema>;
 
