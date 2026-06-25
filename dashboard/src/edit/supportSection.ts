@@ -49,7 +49,13 @@ export function renderSupportSection(host: HTMLElement, ctx: SectionContext): vo
       section.appendChild(open);
 
       const coffee = el("div", "cc-edit__hint");
-      coffee.appendChild(el("span", undefined, "Buy me coffee: "));
+      coffee.appendChild(
+        el(
+          "span",
+          undefined,
+          "Shareware is awesome and indie creators are cool. Buy me coffee: ",
+        ),
+      );
       coffee.appendChild(link(VENMO_URL, "Venmo"));
       coffee.appendChild(el("span", undefined, " or "));
       coffee.appendChild(link(REVOLUT_URL, "Revolut"));
