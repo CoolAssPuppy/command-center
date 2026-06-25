@@ -283,7 +283,12 @@ body {
 .cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-zone__label,
 .cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-zone__time,
 .cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-zone__meta,
-.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-zone__weather {
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-zone__weather,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-ticker__symbol,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-ticker__price,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-ticker__source,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-ticker__headline,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-ticker__hint {
   color: var(--cc-on-photo);
 }
 
@@ -1965,7 +1970,7 @@ button.cc-ticker__entry {
 }
 
 .cc-ticker__delta[data-dir="down"] {
-  color: #d9694f;
+  color: #cf3322;
 }
 
 .cc-ticker__source {
@@ -1985,7 +1990,7 @@ button.cc-ticker__entry {
 }
 
 .cc-ticker__headline {
-  color: var(--cc-color-muted, #6a6e76);
+  color: var(--cc-color-text, #21242a);
 }
 
 .cc-ticker__hint {
