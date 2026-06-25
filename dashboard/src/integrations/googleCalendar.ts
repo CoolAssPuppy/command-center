@@ -139,6 +139,15 @@ function toItem(event: z.infer<typeof EventSchema>, now: Date): NormalizedItem {
   if (event.location !== undefined) item.meta = event.location;
   const startKey = event.start?.dateTime ?? event.start?.date;
   if (startKey !== undefined) item.sortKey = startKey;
+  // A timed event about to start (or just started) is the most pressing thing
+  // on the calendar, so lift it into the "needs you" lane.
+  if (event.start?.dateTime !== undefined) {
+    const startMs = Date.parse(event.start.dateTime);
+    if (!Number.isNaN(startMs)) {
+      const minutesAway = (startMs - now.getTime()) / 60_000;
+      if (minutesAway >= -5 && minutesAway <= 30) item.tone = "urgent";
+    }
+  }
   return item;
 }
 

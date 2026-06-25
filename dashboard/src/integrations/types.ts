@@ -8,6 +8,12 @@ import type { ParseResult } from "../domain/result";
  * secrets of their own, and never open a URL: they return data, the platform
  * renders and validates it. This keeps adding a new source small and safe.
  */
+/**
+ * How urgent an item is, so the shell can lift the things that need you. The
+ * theme maps these to colors (urgent and positive); neutral is the calm default.
+ */
+export type ItemTone = "urgent" | "positive" | "neutral";
+
 export interface NormalizedItem {
   id: string;
   title: string;
@@ -18,6 +24,8 @@ export interface NormalizedItem {
   meta?: string;
   /** An opaque sort key (e.g. an ISO start time) for merging across sources. */
   sortKey?: string;
+  /** Urgency, used to rank the "needs you" lane and tint the row. */
+  tone?: ItemTone;
 }
 
 /** A minimal HTTP client so integrations can POST with headers, injected for tests. */

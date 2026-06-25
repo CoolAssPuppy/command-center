@@ -15,6 +15,8 @@ const PROXIED_HOSTS: ReadonlyArray<readonly [string, string]> = [
   ["https://api.notion.com", "/__cc-proxy/notion"],
   ["https://api.linear.app", "/__cc-proxy/linear"],
   ["https://api.github.com", "/__cc-proxy/github"],
+  ["https://finnhub.io", "/__cc-proxy/finnhub"],
+  ["https://hacker-news.firebaseio.com", "/__cc-proxy/hackernews"],
   ["https://www.googleapis.com", "/__cc-proxy/google"],
   ["https://api.unsplash.com", "/__cc-proxy/unsplash"],
 ];

@@ -61,6 +61,9 @@ export const githubIntegration: Integration = {
     }
 
     const query = connection.query?.trim() || DEFAULT_QUERY;
+    // A review request is something waiting on you; lift it in the "needs you"
+    // lane. Your own PRs and other searches stay calm.
+    const reviewRequested = query.includes("review-requested");
     const perPage = connection.count ?? 6;
     const url =
       `${ENDPOINT}?q=${encodeURIComponent(query)}` +
@@ -106,6 +109,7 @@ export const githubIntegration: Integration = {
       if (entry.html_url !== undefined) item.url = entry.html_url;
       if (entry.number !== undefined) item.meta = `#${entry.number}`;
       if (entry.updated_at !== undefined) item.sortKey = entry.updated_at;
+      if (reviewRequested) item.tone = "urgent";
       return item;
     });
     return { ok: true, value: items };

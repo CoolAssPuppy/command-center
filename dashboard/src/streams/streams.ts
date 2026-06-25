@@ -60,6 +60,11 @@ function renderStream(
   // The combined stream uses the calendar mark; a real connection uses its own.
   const service = isCombined ? "google-calendar" : connection?.service;
   const resultKey = isCombined ? COMBINED_CALENDARS_ID : connection?.id;
+  // The panel's nature drives how prominent it is: action queues earn room,
+  // reference material stays quiet and short. See the kind styles.
+  details.dataset.kind = panelKind(service);
+
+  const result = resultKey !== undefined ? model.integrationResults?.[resultKey] : undefined;
 
   const summary = document.createElement("summary");
   summary.className = "cc-stream__summary";
@@ -71,13 +76,17 @@ function renderStream(
     if (icon !== undefined) summary.appendChild(icon);
   }
   summary.appendChild(el("span", "cc-stream__title", stream.title));
+  // A count chip so a collapsed panel still tells you how much is waiting.
+  if (result?.status === "ok" && (result.items?.length ?? 0) > 0) {
+    summary.appendChild(el("span", "cc-stream__count", String(result.items?.length ?? 0)));
+  }
   details.appendChild(summary);
 
   const body = el("div", "cc-stream__body");
   if (resultKey === undefined) {
     body.appendChild(el("div", "cc-stream__empty", "This connection was removed."));
   } else {
-    renderResult(body, model.integrationResults?.[resultKey], deps);
+    renderResult(body, result, deps);
   }
   details.appendChild(body);
 
@@ -118,9 +127,17 @@ function renderResult(
   body.appendChild(list);
 }
 
+/** Group services so the layout can size action queues and reference apart. */
+function panelKind(service: string | undefined): string {
+  if (service === "github" || service === "linear") return "queue";
+  if (service === "google-calendar") return "calendar";
+  return "reference";
+}
+
 function renderItem(item: NormalizedItem, deps: StreamsDeps): HTMLElement {
   const navigable = item.url !== undefined && isSafeUrl(item.url);
   const row = el(navigable ? "button" : "div", "cc-stream__item");
+  row.dataset.tone = item.tone ?? "neutral";
   if (navigable && item.url !== undefined) {
     const url = item.url;
     row.setAttribute("type", "button");

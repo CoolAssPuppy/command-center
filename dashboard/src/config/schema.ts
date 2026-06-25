@@ -123,6 +123,27 @@ export const WeatherSettingsSchema = z.object({
 });
 export type WeatherSettings = z.infer<typeof WeatherSettingsSchema>;
 
+/**
+ * The ambient ticker strips in the orientation band. Stocks need a free Finnhub
+ * key (kept in Secrets); news reads Hacker News top stories with no key. Both
+ * are off by default and render nothing until enabled and configured.
+ */
+export const TickerSettingsSchema = z.object({
+  stocks: z
+    .object({
+      enabled: z.boolean().default(false),
+      /** Ticker symbols, e.g. ["AAPL", "MSFT", "NVDA"]. */
+      symbols: z.array(z.string()).default([]),
+    })
+    .default({ enabled: false, symbols: [] }),
+  news: z
+    .object({
+      enabled: z.boolean().default(false),
+    })
+    .default({ enabled: false }),
+});
+export type TickerSettings = z.infer<typeof TickerSettingsSchema>;
+
 export const ConfigSchema = z.object({
   /** Schema version, for future migrations. */
   version: z.number().int().positive().default(1),
@@ -142,6 +163,10 @@ export const ConfigSchema = z.object({
     showForHome: false,
     showForZones: true,
     unit: "fahrenheit",
+  }),
+  tickers: TickerSettingsSchema.default({
+    stocks: { enabled: false, symbols: [] },
+    news: { enabled: false },
   }),
 });
 export type Config = z.infer<typeof ConfigSchema>;
@@ -167,6 +192,8 @@ export const SecretsSchema = z.object({
   connectionSecrets: z.record(z.string()).default({}),
   /** Per-connection Google access token, keyed by connection id. */
   googleTokens: z.record(GoogleTokenSchema).default({}),
+  /** Free Finnhub API key for the stock ticker. */
+  finnhubKey: z.string().optional(),
 });
 export type Secrets = z.infer<typeof SecretsSchema>;
 

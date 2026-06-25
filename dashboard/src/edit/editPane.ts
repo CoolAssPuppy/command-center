@@ -6,6 +6,7 @@ import { renderBackupSection } from "./backupSection";
 import { renderConnectionsSection } from "./connectionsSection";
 import { renderDockSection } from "./dockSection";
 import { renderStreamsSection } from "./streamsSection";
+import { renderTickersSection } from "./tickersSection";
 import { renderWallpaperSection } from "./wallpaperSection";
 import { renderWeatherSection } from "./weatherSection";
 import { renderZonesSection } from "./zonesSection";
@@ -60,6 +61,7 @@ const SECTIONS: SectionRenderer[] = [
   renderDockSection,
   renderConnectionsSection,
   renderStreamsSection,
+  renderTickersSection,
   renderWallpaperSection,
   renderAppearanceSection,
   renderBackupSection,

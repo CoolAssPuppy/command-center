@@ -19,7 +19,7 @@ const ENDPOINT = "https://api.linear.app/graphql";
 const QUERY = `query CommandCenterInbox($first: Int!) {
   viewer {
     assignedIssues(first: $first, filter: { completedAt: { null: true } }) {
-      nodes { identifier title url state { name } }
+      nodes { identifier title url priority state { name } }
     }
   }
 }`;
@@ -34,6 +34,8 @@ const ResponseSchema = z.object({
               identifier: z.string(),
               title: z.string(),
               url: z.string().optional(),
+              // Linear priority: 0 none, 1 urgent, 2 high, 3 medium, 4 low.
+              priority: z.number().optional(),
               state: z.object({ name: z.string() }).optional(),
             }),
           ),
@@ -97,6 +99,10 @@ export const linearIntegration: Integration = {
         if (issue.state !== undefined) item.subtitle = issue.state.name;
         if (issue.url !== undefined) item.url = issue.url;
         item.meta = issue.identifier;
+        // Urgent or High priority is something to act on; lift it.
+        if (issue.priority !== undefined && issue.priority >= 1 && issue.priority <= 2) {
+          item.tone = "urgent";
+        }
         return item;
       },
     );

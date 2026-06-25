@@ -7,6 +7,8 @@ import {
   type Secrets,
 } from "../config/schema";
 import { combineCalendars } from "../integrations/combine";
+import { fetchStockQuotes, type StockQuote } from "../integrations/finnhub";
+import { fetchNews, type NewsItem } from "../integrations/news";
 import { demoCombinedCalendars, demoResultFor, isDemoMode } from "./demo";
 import type { ConfigStore } from "../config/store";
 import type { ParseResult } from "../domain/result";
@@ -106,6 +108,8 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       }
     | undefined;
   let integrationResults: Record<string, IntegrationResult> = {};
+  let tickerStocks: StockQuote[] = [];
+  let tickerNews: NewsItem[] = [];
   const weatherByZone: Record<string, Weather> = {};
   // Stable for this page load, so the "on new tab" wallpaper holds across config
   // edits within the same tab and only changes when the tab is reopened.
@@ -126,6 +130,8 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     }
     model.streamExpanded = streamExpanded;
     model.integrationResults = integrationResults;
+    if (tickerStocks.length > 0) model.tickerStocks = tickerStocks;
+    if (tickerNews.length > 0) model.tickerNews = tickerNews;
     if (wallpaperPhoto !== undefined) model.wallpaper = wallpaperPhoto;
     const renderDeps: DashboardDeps = {
       navigate: deps.navigate,
@@ -159,11 +165,13 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
           void resolveAndPaintWallpaper();
           void refreshIntegrations();
           void refreshWeather();
+          void refreshTickers();
         },
         applySecrets: (next) => {
           void deps.store.saveSecrets(next);
           void resolveAndPaintWallpaper(next);
           void refreshIntegrations();
+          void refreshTickers();
         },
         onClose: () => {
           /* nothing to do; the dashboard already reflects the latest config */
@@ -399,6 +407,31 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
   }
 
   /**
+   * Fetch the ambient ticker data when enabled: stock quotes (needs a Finnhub
+   * key) and news headlines (no key). Failures are swallowed inside the fetchers
+   * and simply leave that strip empty, since the ticker is glance-only.
+   */
+  async function refreshTickers(): Promise<void> {
+    if (config === undefined) return;
+    const { stocks, news } = config.tickers;
+    const httpFetch = deps.httpFetch ?? realHttpFetch;
+
+    if (stocks.enabled && stocks.symbols.length > 0) {
+      const key = (await deps.store.loadSecrets()).finnhubKey;
+      tickerStocks =
+        key !== undefined && key.trim().length > 0
+          ? await fetchStockQuotes(stocks.symbols, key, httpFetch)
+          : [];
+    } else {
+      tickerStocks = [];
+    }
+
+    tickerNews = news.enabled ? await fetchNews(httpFetch) : [];
+
+    paint();
+  }
+
+  /**
    * Fetch weather for every located zone and repaint. Re-run whenever the zones
    * change (a new home city, an added zone), since a zone added after first
    * paint has no weather yet. A zone without coordinates is skipped.
@@ -492,4 +525,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
 
   // 6. Weather for zones that carry coordinates.
   await refreshWeather();
+
+  // 7. Ambient tickers (stocks and news), when enabled.
+  void refreshTickers();
 }

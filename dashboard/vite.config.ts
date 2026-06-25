@@ -25,6 +25,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/__cc-proxy\/github/, ""),
       },
+      "/__cc-proxy/finnhub": {
+        target: "https://finnhub.io",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/finnhub/, ""),
+      },
+      "/__cc-proxy/hackernews": {
+        target: "https://hacker-news.firebaseio.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/hackernews/, ""),
+      },
       "/__cc-proxy/google": {
         target: "https://www.googleapis.com",
         changeOrigin: true,

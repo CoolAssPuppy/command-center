@@ -226,18 +226,41 @@ body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: clamp(22px, 3.5vh, 38px);
+  /* One deliberate section break between the orientation band and the work
+     band, rather than a uniform gap on everything. */
+  gap: clamp(28px, 5vh, 56px);
 }
 
-.cc-hero {
-  display: flex;
-  /* Equal-height columns: when the forecast strip makes the clock taller, the
-     meeting window grows to match instead of leaving a lopsided gap. */
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 40px;
-  width: 100%;
-  flex-wrap: wrap;
+/* Tier 1: orientation band. Card-less, floats on the wallpaper. The clock and
+   forecast read on the left, the timezone ribbon top-right, tickers beneath. */
+.cc-orient {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 40px;
+  row-gap: 16px;
+}
+
+.cc-orient__lead {
+  min-width: 0;
+}
+
+.cc-orient .cc-zones {
+  justify-self: end;
+}
+
+.cc-orient .cc-tickers {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+  .cc-orient {
+    grid-template-columns: 1fr;
+  }
+
+  .cc-orient .cc-zones {
+    justify-self: start;
+  }
 }
 
 /* When a wallpaper is on, foreground text flips to light over the scrim. */
@@ -269,7 +292,9 @@ body {
 }
 
 .cc-home__time {
-  font-size: clamp(64px, 13vw, 132px);
+  /* Moderate, not a billboard: the clock orients you, it is not the headline.
+     The "needs you" lane is the anchor instead. */
+  font-size: clamp(44px, 7vw, 80px);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.02em;
@@ -294,10 +319,8 @@ body {
 .cc-forecast {
   display: flex;
   gap: clamp(12px, 1.8vw, 24px);
-  /* Sink to the bottom of the (stretched) hero column so the strip's baseline
-     lines up with the meeting window's bottom edge, with clear space above it. */
-  margin-top: auto;
-  padding-top: 28px;
+  /* Tucked just beneath the clock in the orientation band, small and quiet. */
+  margin-top: 16px;
 }
 
 .cc-forecast__day {
@@ -515,45 +538,39 @@ body {
 .cc-zones {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 12px;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
-.cc-zone {
-  flex: 1 1 0;
-}
-
+/* Each zone is a compact horizontal pill, not a card: a day/night glyph, city,
+   time, offset, and temp on one line. The set reads as a quiet ribbon, freeing
+   the room four cards used to take. */
 .cc-zone {
   position: relative;
-  min-width: 116px;
+  flex: 0 0 auto;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
-  padding: 14px 18px;
-  border-radius: var(--cc-card-radius, 14px);
-  /* All cards share one surface; day vs night is shown by the corner icon, not
-     a different tint, so the row stays even over a wallpaper. */
-  background: color-mix(in srgb, var(--cc-color-surface, #fff) 82%, transparent);
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cc-color-surface, #fff) 32%, transparent);
   border: 1px solid var(--cc-hairline);
 }
 
 .cc-zone__daynight {
-  position: absolute;
-  top: 9px;
-  right: 11px;
   display: inline-flex;
   color: var(--cc-color-muted, #6a6e76);
-  opacity: 0.7;
+  opacity: 0.75;
 }
 
 .cc-zone__label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 5px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   color: var(--cc-color-text, #21242a);
 }
 
@@ -565,10 +582,9 @@ body {
 }
 
 .cc-zone__time {
-  font-size: 26px;
+  font-size: 13px;
   font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
+  line-height: 1;
   color: var(--cc-color-text, #21242a);
   font-variant-numeric: tabular-nums;
 }
@@ -586,6 +602,126 @@ body {
 .cc-zone__weather {
   color: var(--cc-color-text, #21242a);
   font-weight: 600;
+}
+
+/* Work band: the "needs you" lane (anchor) beside a quieter feed rail. */
+.cc-work {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  align-items: start;
+  gap: clamp(16px, 2vw, 28px);
+}
+
+@media (max-width: 900px) {
+  .cc-work {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The one elevated, opaque, bright surface on the page: where the eye lands. */
+.cc-lane {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--cc-color-surface, #fff) 96%, transparent);
+  border: 1px solid var(--cc-hairline);
+  box-shadow: 0 10px 30px rgba(15, 18, 28, 0.16);
+}
+
+.cc-lane__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cc-color-muted, #6a6e76);
+}
+
+.cc-lane__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cc-lane__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  color: var(--cc-color-text, #21242a);
+}
+
+button.cc-lane__item {
+  cursor: pointer;
+}
+
+button.cc-lane__item:hover {
+  background: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 10%, transparent);
+}
+
+/* Urgency reads as a leading dot plus a faint row tint, never a side stripe. */
+.cc-lane__dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cc-color-muted, #6a6e76);
+  opacity: 0.5;
+}
+
+.cc-lane__item[data-tone="urgent"] {
+  background: color-mix(in srgb, var(--cc-color-urgent, #c0563f) 12%, transparent);
+}
+
+.cc-lane__item[data-tone="urgent"] .cc-lane__dot {
+  background: var(--cc-color-urgent, #c0563f);
+  opacity: 1;
+}
+
+.cc-lane__item[data-tone="urgent"] .cc-lane__item-title {
+  font-weight: 600;
+}
+
+.cc-lane__item[data-tone="positive"] .cc-lane__dot {
+  background: var(--cc-color-positive, #2f7a6f);
+  opacity: 1;
+}
+
+.cc-lane__item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.cc-lane__item-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cc-lane__item-sub {
+  font-size: 12px;
+  color: var(--cc-color-muted, #6a6e76);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cc-lane__empty {
+  font-size: 13px;
+  color: var(--cc-color-muted, #6a6e76);
+  padding: 4px 10px;
 }
 
 /* Slots filled by later phases ------------------------------------------- */
@@ -1173,17 +1309,11 @@ body {
 
 .cc-streams {
   width: 100%;
-  display: grid;
-  /* auto-fit (not auto-fill) collapses empty tracks, so the panels share the
-     whole row and widen or narrow with the count instead of clustering on the
-     left. Wraps to more rows once each would fall below ~260px. */
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  grid-auto-rows: auto;
-  /* Top-align so a connect/empty panel doesn't stretch to a tall neighbour.
-     Panels fill their tracks, so the row runs end to end to the margins with
-     even gaps inside, and each panel's width tracks the stream count. */
-  align-items: start;
-  gap: 16px;
+  /* A single quiet rail beside the lane; panels stack and keep their natural
+     height, so a short reference panel stays short and a busy queue runs long. */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 @media (max-width: 960px) {
@@ -1196,9 +1326,37 @@ body {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--cc-hairline);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--cc-color-surface, #fff) 78%, transparent);
+  border-radius: 14px;
+  /* Quieter and flatter than the lane: the feeds are reference, not the anchor. */
+  background: color-mix(in srgb, var(--cc-color-surface, #fff) 52%, transparent);
   overflow: hidden;
+}
+
+/* Action queues (Linear, GitHub) earn room; reference (notes) stays shortest and
+   lowest contrast. The difference in weight is the priority signal. */
+.cc-stream[data-kind="reference"] {
+  background: color-mix(in srgb, var(--cc-color-surface, #fff) 38%, transparent);
+}
+
+.cc-stream[data-kind="reference"] .cc-stream__items {
+  max-height: 168px;
+  overflow-y: auto;
+}
+
+.cc-stream__count {
+  margin-left: auto;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cc-color-muted, #6a6e76);
+  background: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 16%, transparent);
 }
 
 .cc-stream__body:has(> .cc-stream__empty) {
@@ -1354,6 +1512,116 @@ button.cc-stream__item:hover {
   min-width: 0;
   max-width: 45%;
   text-align: right;
+}
+
+/* An urgent feed row lifts its title in the urgent color; positive goes green.
+   The lane is where urgency really lives, so this stays understated. */
+.cc-stream__item[data-tone="urgent"] .cc-stream__item-title {
+  color: var(--cc-color-urgent, #c0563f);
+  font-weight: 600;
+}
+
+.cc-stream__item[data-tone="positive"] .cc-stream__item-title {
+  color: var(--cc-color-positive, #2f7a6f);
+}
+
+/* Ambient tickers ---------------------------------------------------------- */
+
+.cc-tickers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.cc-ticker {
+  overflow: hidden;
+  border-top: 1px solid var(--cc-hairline);
+  padding: 6px 0;
+}
+
+.cc-ticker__viewport {
+  width: 100%;
+  overflow: hidden;
+}
+
+.cc-ticker__track {
+  display: inline-flex;
+  align-items: center;
+  gap: 26px;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.cc-ticker__track--scroll {
+  animation: cc-ticker-scroll var(--cc-ticker-duration, 40s) linear infinite;
+}
+
+/* Pause the drift on hover so a headline can be read and clicked. */
+.cc-ticker:hover .cc-ticker__track--scroll {
+  animation-play-state: paused;
+}
+
+@keyframes cc-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.cc-ticker__entry {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--cc-color-muted, #6a6e76);
+}
+
+button.cc-ticker__entry {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--cc-color-muted, #6a6e76);
+}
+
+.cc-ticker__symbol {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cc-color-text, #21242a);
+}
+
+.cc-ticker__price {
+  font-variant-numeric: tabular-nums;
+  color: var(--cc-color-text, #21242a);
+}
+
+.cc-ticker__delta {
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-ticker__delta[data-dir="up"] {
+  color: var(--cc-color-positive, #2f7a6f);
+}
+
+.cc-ticker__delta[data-dir="down"] {
+  color: #d9694f;
+}
+
+.cc-ticker__source {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cc-color-text, #21242a);
+}
+
+.cc-ticker__headline {
+  color: var(--cc-color-muted, #6a6e76);
 }
 
 @media (prefers-reduced-motion: reduce) {

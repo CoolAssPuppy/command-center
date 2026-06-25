@@ -1,5 +1,7 @@
 import { homeZone, otherZones, type Config } from "../config/schema";
 import { renderDock, type DockDeps } from "../dock/dock";
+import type { StockQuote } from "../integrations/finnhub";
+import type { NewsItem } from "../integrations/news";
 import type { IntegrationResult } from "../integrations/types";
 import { el, svgEl } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
@@ -9,7 +11,8 @@ import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
 import { captureFlipRects, playFlip } from "./flip";
 import { renderHomeClock, type HomeClockModel } from "./homeClock";
-import { renderMeetingWindow } from "./meetingWindow";
+import { renderNeedsYouLane, type NeedsYouLaneModel } from "./needsYouLane";
+import { renderTickers } from "./ticker";
 import { renderZoneRow, type ZoneRowModel } from "./zoneRow";
 
 /**
@@ -34,6 +37,10 @@ export interface DashboardModel {
   };
   /** Resolved integration data per stream id. */
   integrationResults?: Record<string, IntegrationResult>;
+  /** Stock quotes for the ambient ticker, once fetched. */
+  tickerStocks?: StockQuote[];
+  /** News headlines for the ambient ticker, once fetched. */
+  tickerNews?: NewsItem[];
 }
 
 export interface DashboardDeps {
@@ -117,10 +124,16 @@ export function renderDashboard(
   }
 
   const stage = el("div", "cc-stage");
-
   const home = homeZone(model.config);
+
+  // Tier 1: orientation band. A flat, card-less strip floating on the wallpaper.
+  // The clock (moderate, not a billboard) and forecast read on the left; the
+  // other zones collapse into a one-line ribbon on the right; ambient tickers
+  // sit beneath. Glance height, low priority.
   if (home !== undefined) {
-    const hero = el("div", "cc-hero");
+    const orient = el("div", "cc-orient");
+
+    const lead = el("div", "cc-orient__lead");
     const clockModel: HomeClockModel = {
       now: model.now,
       zone: home,
@@ -133,17 +146,8 @@ export function renderDashboard(
     if (model.config.weather.showForHome && homeForecast !== undefined) {
       clockModel.forecast = homeForecast;
     }
-    renderHomeClock(hero, clockModel);
-
-    if (model.config.appearance.showMeetingWindow !== false && model.config.zones.length >= 2) {
-      renderMeetingWindow(hero, {
-        now: model.now,
-        zones: model.config.zones,
-        homeZone: home,
-        hour12: model.config.appearance.hour12,
-      });
-    }
-    stage.appendChild(hero);
+    renderHomeClock(lead, clockModel);
+    orient.appendChild(lead);
 
     const others = otherZones(model.config);
     if (others.length > 0) {
@@ -160,8 +164,59 @@ export function renderDashboard(
         const reorder = deps.onReorder;
         rowModel.onReorder = (fromId, toId) => reorder("zones", fromId, toId);
       }
-      renderZoneRow(stage, rowModel);
+      renderZoneRow(orient, rowModel);
     }
+
+    renderTickers(
+      orient,
+      {
+        reducedMotion,
+        ...(model.tickerStocks !== undefined ? { stocks: model.tickerStocks } : {}),
+        ...(model.tickerNews !== undefined ? { news: model.tickerNews } : {}),
+      },
+      deps.navigate,
+    );
+    stage.appendChild(orient);
+
+    // Tier 2 + 3: the work band. The "needs you" lane is the one elevated,
+    // brighter surface (the anchor); the source feeds sit in a quieter rail
+    // beside it, sized by content rather than forced to a common height.
+    const work = el("div", "cc-work");
+
+    const laneModel: NeedsYouLaneModel = {
+      now: model.now,
+      homeZone: home,
+      zones: model.config.zones,
+      connections: model.config.connections,
+      hour12: model.config.appearance.hour12,
+      showMeetingWindow: model.config.appearance.showMeetingWindow !== false,
+    };
+    if (model.integrationResults !== undefined) {
+      laneModel.integrationResults = model.integrationResults;
+    }
+    renderNeedsYouLane(work, laneModel, { navigate: deps.navigate });
+
+    if (model.config.streams.length > 0) {
+      const streamsModel = {
+        streams: model.config.streams,
+        connections: model.config.connections,
+        expanded: model.streamExpanded ?? {},
+        ...(model.integrationResults !== undefined
+          ? { integrationResults: model.integrationResults }
+          : {}),
+      };
+      const streamsDeps: StreamsDeps = {
+        navigate: deps.navigate,
+        onToggle: deps.onToggleStream ?? ((): void => {}),
+      };
+      if (deps.onReorder !== undefined) {
+        const reorder = deps.onReorder;
+        streamsDeps.onReorder = (fromId, toId) => reorder("streams", fromId, toId);
+      }
+      renderStreams(work, streamsModel, streamsDeps);
+    }
+
+    stage.appendChild(work);
   }
 
   // Dock of links, pinned along the bottom of the page.
@@ -172,28 +227,6 @@ export function renderDashboard(
       dockDeps.onReorder = (fromId, toId) => reorder("links", fromId, toId);
     }
     renderDock(root, { links: model.config.links, reducedMotion }, dockDeps);
-  }
-
-  // Work streams, rendered directly into the stage so the panel grid fills
-  // the remaining height.
-  if (model.config.streams.length > 0) {
-    const streamsModel = {
-      streams: model.config.streams,
-      connections: model.config.connections,
-      expanded: model.streamExpanded ?? {},
-      ...(model.integrationResults !== undefined
-        ? { integrationResults: model.integrationResults }
-        : {}),
-    };
-    const streamsDeps: StreamsDeps = {
-      navigate: deps.navigate,
-      onToggle: deps.onToggleStream ?? ((): void => {}),
-    };
-    if (deps.onReorder !== undefined) {
-      const reorder = deps.onReorder;
-      streamsDeps.onReorder = (fromId, toId) => reorder("streams", fromId, toId);
-    }
-    renderStreams(stage, streamsModel, streamsDeps);
   }
 
   root.appendChild(stage);
@@ -208,7 +241,6 @@ export function renderDashboard(
   }
   root.appendChild(edit);
 
-  equalizeStreamHeights(root);
   if (!flipDisabled) playFlip(root, flipRects, { reducedMotion: false });
 
   return root;
@@ -235,23 +267,3 @@ function gearIcon(): SVGElement {
   return svg;
 }
 
-/** A floor so panels never collapse to a one-line "connect" body. */
-const MIN_STREAM_BODY_PX = 96;
-
-/**
- * Make every open work-stream panel as tall as the largest, so the cards line
- * up at a common height set by the fullest one (shorter cards simply have space
- * below their items). Measured synchronously here (after layout, before paint),
- * so there is no flicker. Collapsed panels (zero-height bodies) are skipped.
- */
-function equalizeStreamHeights(root: HTMLElement): void {
-  const open = [...root.querySelectorAll<HTMLElement>(".cc-stream__body")].filter(
-    (body) => body.scrollHeight > 0,
-  );
-  if (open.length < 2) return;
-  const target = Math.max(MIN_STREAM_BODY_PX, ...open.map((body) => body.scrollHeight));
-  for (const body of open) {
-    body.style.height = `${String(target)}px`;
-    body.style.overflowY = "auto";
-  }
-}

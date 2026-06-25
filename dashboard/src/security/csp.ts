@@ -17,6 +17,8 @@ export const CONNECT_HOSTS = [
   "https://www.googleapis.com",
   "https://api.linear.app",
   "https://api.github.com",
+  "https://finnhub.io",
+  "https://hacker-news.firebaseio.com",
 ] as const;
 
 interface CspDirectives {

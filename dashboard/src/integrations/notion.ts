@@ -58,6 +58,21 @@ function plainTextFromTitle(property: unknown): string | undefined {
     .join("");
 }
 
+/**
+ * Notion meeting-note pages often append the meeting's ISO date/time to the page
+ * title ("Weekly Huddle2026-06-24T16:59:00.000"), which reads as garbage in a
+ * compact row. Drop a trailing ISO datetime (even a truncated one) so the title
+ * is just the name.
+ */
+export function stripTrailingTimestamp(title: string): string {
+  return title
+    .replace(
+      /\s*\d{4}-\d{2}-\d{2}(T\d{2}(:\d{2}(:\d{2})?(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?\s*$/,
+      "",
+    )
+    .trim();
+}
+
 function extractTitle(
   properties: Record<string, unknown> | undefined,
   titleProperty: string | undefined,
@@ -65,11 +80,11 @@ function extractTitle(
   if (properties === undefined) return "Untitled";
   if (titleProperty !== undefined) {
     const named = plainTextFromTitle(properties[titleProperty]);
-    if (named !== undefined && named.length > 0) return named;
+    if (named !== undefined && named.length > 0) return stripTrailingTimestamp(named);
   }
   for (const value of Object.values(properties)) {
     const text = plainTextFromTitle(value);
-    if (text !== undefined && text.length > 0) return text;
+    if (text !== undefined && text.length > 0) return stripTrailingTimestamp(text);
   }
   return "Untitled";
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Connection } from "../config/schema";
-import { notionIntegration } from "./notion";
+import { notionIntegration, stripTrailingTimestamp } from "./notion";
 import {
   NEEDS_AUTH,
   type HttpRequest,
@@ -153,5 +153,25 @@ describe("notionIntegration", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value[0]?.title).toBe("Untitled");
+  });
+});
+
+describe("stripTrailingTimestamp", () => {
+  it("drops a trailing ISO datetime appended to a title", () => {
+    expect(stripTrailingTimestamp("Marketing Catchup2026-06-24T16:59:00.000")).toBe(
+      "Marketing Catchup",
+    );
+    expect(stripTrailingTimestamp("Weekly Events Huddle 2026-06-24T16:59")).toBe(
+      "Weekly Events Huddle",
+    );
+    expect(stripTrailingTimestamp("Shane 1:12026-06-24T16:59:00.0")).toBe("Shane 1:1");
+  });
+
+  it("drops a trailing bare date too", () => {
+    expect(stripTrailingTimestamp("Roadmap 2026-06-24")).toBe("Roadmap");
+  });
+
+  it("leaves a clean title untouched", () => {
+    expect(stripTrailingTimestamp("Select Demand Gen")).toBe("Select Demand Gen");
   });
 });
