@@ -39,6 +39,15 @@ export function renderStreams(
 ): HTMLElement {
   const root = el("div", "cc-streams");
   for (const stream of model.streams) {
+    // Some connections belong only in the left lane, not as a right-column card:
+    // a role "tasks" source, and a Linear connection in inbox view. The
+    // combined-calendars virtual id has no connection, so it always stays. The
+    // stream config is untouched, so reverting the role/view brings the card back.
+    if (stream.connectionId !== COMBINED_CALENDARS_ID) {
+      const connection = model.connections.find((item) => item.id === stream.connectionId);
+      if (connection?.role === "tasks") continue;
+      if (connection?.service === "linear" && connection.linearView === "inbox") continue;
+    }
     root.appendChild(renderStream(stream, model, deps));
   }
   host.appendChild(root);

@@ -102,4 +102,40 @@ describe("renderStreams", () => {
     details.dispatchEvent(new Event("toggle"));
     expect(onToggle).toHaveBeenCalledWith("s1", false);
   });
+
+  it("skips a stream whose connection is role tasks (it lives in the lane)", () => {
+    const root = host();
+    renderStreams(
+      root,
+      {
+        streams: [stream("s1", "c1"), stream("s2", "c2")],
+        connections: [
+          { id: "c1", name: "Notes", service: "notion" },
+          { id: "c2", name: "Tasks", service: "notion", role: "tasks" },
+        ],
+        expanded: {},
+      },
+      { navigate: noop, onToggle: noop },
+    );
+    const titles = [...root.querySelectorAll(".cc-stream__title")].map((node) => node.textContent);
+    expect(titles).toEqual(["Stream s1"]);
+  });
+
+  it("skips a Linear inbox-view connection on the right (it lives in the lane)", () => {
+    const root = host();
+    renderStreams(
+      root,
+      {
+        streams: [stream("s1", "c1"), stream("s2", "c2")],
+        connections: [
+          { id: "c1", name: "Assigned", service: "linear" },
+          { id: "c2", name: "Inbox", service: "linear", linearView: "inbox" },
+        ],
+        expanded: {},
+      },
+      { navigate: noop, onToggle: noop },
+    );
+    const titles = [...root.querySelectorAll(".cc-stream__title")].map((node) => node.textContent);
+    expect(titles).toEqual(["Stream s1"]);
+  });
 });

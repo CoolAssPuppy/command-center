@@ -330,11 +330,13 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       (connection) => connection.service === "google-calendar",
     );
     // Fetch the connections a stream shows directly, plus every calendar when a
-    // "Combine all calendars" stream is present. Keyed by connection id.
+    // "Combine all calendars" stream is present, plus any Linear inbox connection
+    // (those feed the lane on their own, with no card needed). Keyed by id.
     const connections = config.connections.filter(
       (connection) =>
         directIds.has(connection.id) ||
-        (usesCombine && connection.service === "google-calendar"),
+        (usesCombine && connection.service === "google-calendar") ||
+        (connection.service === "linear" && connection.linearView === "inbox"),
     );
     if (connections.length === 0 && !usesCombine) {
       if (Object.keys(integrationResults).length > 0) {
