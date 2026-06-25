@@ -283,7 +283,7 @@ describe("edit pane — weather", () => {
 
   it("turns weather on for the home clock", () => {
     const harness = open(twoZones());
-    const box = checkFor(harness.root, "for main");
+    const box = checkFor(harness.root, "for Home");
     box.checked = true;
     box.dispatchEvent(new Event("change"));
     expect(harness.applied()?.weather.showForHome).toBe(true);

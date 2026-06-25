@@ -17,7 +17,7 @@ export function renderWeatherSection(host: HTMLElement, ctx: SectionContext): vo
     (section) => {
       section.appendChild(
         checkRow(
-          "Show weather forecast for main",
+          "Show weather forecast for Home",
           ctx.draft.weather.showForHome,
           (checked) =>
             ctx.update((config) => {
