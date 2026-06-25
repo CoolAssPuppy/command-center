@@ -7,6 +7,7 @@ import type {
 } from "../integrations/types";
 import { el, svgEl } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
+import { DEFAULT_TASK_FILTER, type TaskFilterState } from "./taskFilterState";
 
 /**
  * The "needs you" lane: the dashboard's one anchor. It does not echo the feeds;
@@ -19,10 +20,14 @@ export interface NeedsYouLaneModel {
   now: Date;
   connections: Connection[];
   integrationResults?: Record<string, IntegrationResult>;
+  /** The persisted Tasks-section filter and sort; defaults to all, soonest first. */
+  taskFilter?: TaskFilterState;
 }
 
 export interface NeedsYouLaneDeps {
   navigate: (url: string) => void;
+  /** Persist a changed Tasks filter so it survives the next repaint. */
+  onTaskFilterChange?: (state: TaskFilterState) => void;
 }
 
 interface LaneEntry {
@@ -113,17 +118,53 @@ export function buildLaneBuckets(entries: LaneEntry[], now: Date): LaneBuckets {
     .filter((entry) => entry.service === "linear" && entry.linearInbox === true)
     .slice(0, SECTION_LIMIT);
 
-  const tasks = entries
-    .filter(
-      (entry) =>
-        TASK_SERVICES.has(entry.service) &&
-        effectiveRole(entry.service, entry.role) === "tasks",
-    )
-    .slice(0, SECTION_LIMIT);
+  // Tasks are not capped here: the section filters and sorts them first, then
+  // limits for display, so the filter sees the whole set.
+  const tasks = entries.filter(
+    (entry) =>
+      TASK_SERVICES.has(entry.service) &&
+      effectiveRole(entry.service, entry.role) === "tasks",
+  );
 
   const buckets: LaneBuckets = { reviews, linearInbox, tasks };
   if (meeting !== undefined) buckets.meeting = meeting;
   return buckets;
+}
+
+/** The distinct task statuses present, in first-seen order (blank ones skipped). */
+export function distinctStatuses(entries: LaneEntry[]): string[] {
+  const seen: string[] = [];
+  for (const entry of entries) {
+    const status = entry.item.task?.status;
+    if (status !== undefined && status.length > 0 && !seen.includes(status)) {
+      seen.push(status);
+    }
+  }
+  return seen;
+}
+
+/**
+ * Apply the Tasks filter and sort. Undefined statuses shows everything; a list
+ * shows only those, though a task with no status always shows. Sort is by due
+ * date (the item's sortKey), with undated tasks last in both directions.
+ */
+export function applyTaskFilter(entries: LaneEntry[], state: TaskFilterState): LaneEntry[] {
+  const filtered =
+    state.statuses === undefined
+      ? entries
+      : entries.filter((entry) => {
+          const status = entry.item.task?.status;
+          return status === undefined || state.statuses?.includes(status) === true;
+        });
+  const direction = state.sort === "desc" ? -1 : 1;
+  return [...filtered].sort((a, b) => {
+    const ak = a.item.sortKey;
+    const bk = b.item.sortKey;
+    if (ak === undefined && bk === undefined) return 0;
+    if (ak === undefined) return 1;
+    if (bk === undefined) return -1;
+    return direction * ak.localeCompare(bk);
+  });
 }
 
 /** A human countdown to a start time, or undefined once it is well underway. */
@@ -213,6 +254,148 @@ function renderSection(
   return section;
 }
 
+function filterIcon(): SVGElement {
+  const svg = svgEl("svg", {
+    viewBox: "0 0 24 24",
+    width: "15",
+    height: "15",
+    fill: "none",
+    stroke: "currentColor",
+    "stroke-width": "1.8",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  });
+  svg.appendChild(svgEl("path", { d: "M4 6h16M7 12h10M10 18h4" }));
+  return svg;
+}
+
+/**
+ * The Tasks section, with a quiet filter/sort control in its header. Changing the
+ * filter persists it (so it survives repaints) and re-renders just the list in
+ * place, leaving the popover open; a full repaint reads the persisted state.
+ */
+function renderTasksSection(
+  allTasks: LaneEntry[],
+  model: NeedsYouLaneModel,
+  deps: NeedsYouLaneDeps,
+): HTMLElement {
+  let state: TaskFilterState = model.taskFilter ?? { ...DEFAULT_TASK_FILTER };
+  const statuses = distinctStatuses(allTasks);
+
+  const section = el("div", "cc-lane__section cc-lane__section--tasks");
+  const head = el("div", "cc-lane__section-head");
+  head.appendChild(el("div", "cc-lane__label", "Tasks"));
+
+  const filter = el("div", "cc-lane__filter");
+  const button = el("button", "cc-lane__filter-btn");
+  button.setAttribute("type", "button");
+  button.setAttribute("aria-label", "Filter and sort tasks");
+  button.setAttribute("aria-haspopup", "true");
+  button.setAttribute("aria-expanded", "false");
+  button.appendChild(filterIcon());
+
+  const popover = el("div", "cc-lane__popover");
+  popover.dataset.open = "false";
+  popover.setAttribute("role", "group");
+  popover.setAttribute("aria-label", "Task filter and sort");
+
+  const list = el("div", "cc-lane__list");
+
+  function renderList(): void {
+    list.replaceChildren();
+    const visible = applyTaskFilter(allTasks, state).slice(0, SECTION_LIMIT);
+    if (visible.length === 0) {
+      list.appendChild(el("div", "cc-lane__empty", "No tasks match this filter."));
+      return;
+    }
+    for (const entry of visible) list.appendChild(renderLaneItem(entry, deps));
+  }
+
+  function persist(): void {
+    deps.onTaskFilterChange?.(state);
+    renderList();
+  }
+
+  if (statuses.length > 0) {
+    popover.appendChild(el("div", "cc-lane__popover-label", "Status"));
+    const boxes: Array<{ status: string; box: HTMLInputElement }> = [];
+    for (const status of statuses) {
+      const row = el("label", "cc-lane__option");
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = state.statuses === undefined || state.statuses.includes(status);
+      box.addEventListener("change", () => {
+        const checked = boxes.filter((entry) => entry.box.checked).map((entry) => entry.status);
+        state =
+          checked.length === statuses.length
+            ? { sort: state.sort }
+            : { sort: state.sort, statuses: checked };
+        persist();
+      });
+      row.appendChild(box);
+      row.appendChild(el("span", undefined, status));
+      popover.appendChild(row);
+      boxes.push({ status, box });
+    }
+  }
+
+  popover.appendChild(el("div", "cc-lane__popover-label", "Sort by due"));
+  for (const [value, label] of [
+    ["asc", "Soonest first"],
+    ["desc", "Latest first"],
+  ] as const) {
+    const row = el("label", "cc-lane__option");
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "cc-task-sort";
+    radio.checked = state.sort === value;
+    radio.addEventListener("change", () => {
+      if (radio.checked) {
+        state = { ...state, sort: value };
+        persist();
+      }
+    });
+    row.appendChild(radio);
+    row.appendChild(el("span", undefined, label));
+    popover.appendChild(row);
+  }
+
+  let open = false;
+  function setOpen(next: boolean): void {
+    open = next;
+    popover.dataset.open = String(next);
+    button.setAttribute("aria-expanded", String(next));
+    if (next) {
+      document.addEventListener("click", onOutside);
+      document.addEventListener("keydown", onEscape);
+    } else {
+      document.removeEventListener("click", onOutside);
+      document.removeEventListener("keydown", onEscape);
+    }
+  }
+  function onOutside(event: MouseEvent): void {
+    if (!filter.contains(event.target as Node)) setOpen(false);
+  }
+  function onEscape(event: KeyboardEvent): void {
+    if (event.key === "Escape") {
+      setOpen(false);
+      button.focus();
+    }
+  }
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setOpen(!open);
+  });
+
+  filter.appendChild(button);
+  filter.appendChild(popover);
+  head.appendChild(filter);
+  section.appendChild(head);
+  section.appendChild(list);
+  renderList();
+  return section;
+}
+
 function renderMeetingSection(
   entry: LaneEntry,
   now: Date,
@@ -284,7 +467,7 @@ export function renderNeedsYouLane(
     any = true;
   }
   if (buckets.tasks.length > 0) {
-    root.appendChild(renderSection("Tasks", buckets.tasks, deps));
+    root.appendChild(renderTasksSection(buckets.tasks, model, deps));
     any = true;
   }
 

@@ -778,6 +778,91 @@ button.cc-lane__item:hover {
   margin-bottom: 4px;
 }
 
+/* Tasks section header: the label on the left, the filter control on the right. */
+.cc-lane__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.cc-lane__section-head .cc-lane__label {
+  margin-bottom: 0;
+}
+
+.cc-lane__filter {
+  position: relative;
+}
+
+.cc-lane__filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cc-color-muted, #6a6e76);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity calc(var(--cc-motion-speed, 1) * 120ms) ease-out;
+}
+
+.cc-lane__filter-btn:hover,
+.cc-lane__filter-btn[aria-expanded="true"] {
+  opacity: 1;
+  background: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 12%, transparent);
+}
+
+/* The popover anchors under the icon, right-aligned, on the lane's quiet sheet. */
+.cc-lane__popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 4;
+  min-width: 168px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cc-color-surface, #fff) 70%, var(--cc-color-bg, #11131a));
+  box-shadow: 0 8px 24px rgba(15, 18, 28, 0.22);
+}
+
+.cc-lane__popover[data-open="false"] {
+  display: none;
+}
+
+.cc-lane__popover-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cc-color-muted, #6a6e76);
+  margin: 6px 0 2px;
+}
+
+.cc-lane__popover-label:first-child {
+  margin-top: 0;
+}
+
+.cc-lane__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 13px;
+  color: var(--cc-color-text, #21242a);
+  cursor: pointer;
+}
+
+.cc-lane__option input {
+  accent-color: var(--cc-color-primary, var(--cc-color-accent, #4f6bed));
+}
+
 /* The standout: the next meeting, with a countdown and a Join button. */
 .cc-lane__meeting {
   display: flex;

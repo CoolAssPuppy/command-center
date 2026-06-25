@@ -34,6 +34,11 @@ import {
   type DashboardModel,
 } from "../shell/dashboard";
 import { loadStreamState, saveStreamState } from "../streams/streamState";
+import {
+  loadTaskFilterState,
+  saveTaskFilterState,
+  type TaskFilterState,
+} from "../shell/taskFilterState";
 import type { Theme } from "../theme/tokens";
 import type { FetchLike } from "../wallpaper/unsplash";
 import { resolveWallpaper } from "../wallpaper/wallpaper";
@@ -99,6 +104,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
 
   let config: Config | undefined;
   let streamExpanded = loadStreamState();
+  let taskFilter: TaskFilterState = loadTaskFilterState();
   let wallpaperPhoto:
     | {
         imageUrl: string;
@@ -129,6 +135,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       model.weatherByZone = { ...weatherByZone };
     }
     model.streamExpanded = streamExpanded;
+    model.taskFilter = taskFilter;
     model.integrationResults = integrationResults;
     // Always thread the ticker data (even when empty) so an enabled-but-empty
     // strip can show its hint rather than vanishing. Enabled state rides on
@@ -143,6 +150,13 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       onToggleStream: (streamId, open) => {
         streamExpanded = { ...streamExpanded, [streamId]: open };
         saveStreamState(streamExpanded);
+      },
+      // Persist the new filter so the next repaint keeps it. The lane updates its
+      // own list in place, so no repaint is forced here (which would close the
+      // popover mid-adjustment).
+      onTaskFilterChange: (state) => {
+        taskFilter = state;
+        saveTaskFilterState(state);
       },
       onReorder: reorderConfigGroup,
     };

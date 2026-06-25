@@ -12,7 +12,12 @@ import type { Weather } from "../weather/openMeteo";
 import { captureFlipRects, playFlip } from "./flip";
 import { renderHomeClock, type HomeClockModel } from "./homeClock";
 import { renderMeetingWindow } from "./meetingWindow";
-import { renderNeedsYouLane, type NeedsYouLaneModel } from "./needsYouLane";
+import {
+  renderNeedsYouLane,
+  type NeedsYouLaneDeps,
+  type NeedsYouLaneModel,
+} from "./needsYouLane";
+import type { TaskFilterState } from "./taskFilterState";
 import { renderTickers } from "./ticker";
 import { renderZoneRow, type ZoneRowModel } from "./zoneRow";
 
@@ -42,6 +47,8 @@ export interface DashboardModel {
   tickerStocks?: StockQuote[];
   /** News headlines for the ambient ticker, once fetched. */
   tickerNews?: NewsItem[];
+  /** Persisted Tasks-section filter and sort. */
+  taskFilter?: TaskFilterState;
 }
 
 export interface DashboardDeps {
@@ -52,6 +59,8 @@ export interface DashboardDeps {
   onEdit?: () => void;
   /** Persist a stream's open/closed toggle. */
   onToggleStream?: (streamId: string, open: boolean) => void;
+  /** Persist the Tasks-section filter and sort. */
+  onTaskFilterChange?: (state: TaskFilterState) => void;
   /** Reorder a dashboard group by dragging one item onto another. */
   onReorder?: (
     group: "zones" | "streams" | "links",
@@ -208,7 +217,12 @@ export function renderDashboard(
     if (model.integrationResults !== undefined) {
       laneModel.integrationResults = model.integrationResults;
     }
-    renderNeedsYouLane(work, laneModel, { navigate: deps.navigate });
+    if (model.taskFilter !== undefined) laneModel.taskFilter = model.taskFilter;
+    const laneDeps: NeedsYouLaneDeps = { navigate: deps.navigate };
+    if (deps.onTaskFilterChange !== undefined) {
+      laneDeps.onTaskFilterChange = deps.onTaskFilterChange;
+    }
+    renderNeedsYouLane(work, laneModel, laneDeps);
 
     if (model.config.streams.length > 0) {
       const streamsModel = {

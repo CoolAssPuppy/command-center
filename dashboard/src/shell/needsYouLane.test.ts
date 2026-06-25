@@ -1,9 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { buildLaneBuckets, formatCountdown } from "./needsYouLane";
+import { applyTaskFilter, buildLaneBuckets, distinctStatuses, formatCountdown } from "./needsYouLane";
 
 const now = new Date("2026-06-25T08:00:00Z");
 const nowMs = now.getTime();
+
+const taskEntry = (id: string, status?: string, sortKey?: string) => ({
+  service: "notion",
+  item: {
+    id,
+    title: id,
+    ...(status !== undefined ? { task: { status } } : {}),
+    ...(sortKey !== undefined ? { sortKey } : {}),
+  },
+});
 
 describe("buildLaneBuckets", () => {
   it("picks the soonest meeting within the next hour and ignores the rest", () => {
@@ -59,5 +69,52 @@ describe("formatCountdown", () => {
 
   it("returns undefined once a meeting is well underway", () => {
     expect(formatCountdown(nowMs - 5 * 60_000, nowMs)).toBeUndefined();
+  });
+});
+
+describe("distinctStatuses", () => {
+  it("lists statuses present, in first-seen order, skipping blanks", () => {
+    const entries = [
+      taskEntry("a", "Todo"),
+      taskEntry("b", "In progress"),
+      taskEntry("c", "Todo"),
+      taskEntry("d"),
+    ];
+    expect(distinctStatuses(entries)).toEqual(["Todo", "In progress"]);
+  });
+});
+
+describe("applyTaskFilter", () => {
+  it("filters to the selected statuses but always keeps no-status tasks", () => {
+    const entries = [
+      taskEntry("todo", "Todo", "2026-06-26"),
+      taskEntry("prog", "In progress", "2026-06-27"),
+      taskEntry("none", undefined, "2026-06-28"),
+    ];
+    const result = applyTaskFilter(entries, { statuses: ["Todo"], sort: "asc" });
+    expect(result.map((entry) => entry.item.id)).toEqual(["todo", "none"]);
+  });
+
+  it("shows everything when statuses is undefined", () => {
+    const entries = [taskEntry("a", "Todo", "2026-06-26"), taskEntry("b", "Done", "2026-06-27")];
+    expect(applyTaskFilter(entries, { sort: "asc" })).toHaveLength(2);
+  });
+
+  it("sorts by due date ascending and descending, undated last in both", () => {
+    const entries = [
+      taskEntry("late", "Todo", "2026-07-10"),
+      taskEntry("none", "Todo"),
+      taskEntry("soon", "Todo", "2026-06-26"),
+    ];
+    expect(applyTaskFilter(entries, { sort: "asc" }).map((e) => e.item.id)).toEqual([
+      "soon",
+      "late",
+      "none",
+    ]);
+    expect(applyTaskFilter(entries, { sort: "desc" }).map((e) => e.item.id)).toEqual([
+      "late",
+      "soon",
+      "none",
+    ]);
   });
 });
