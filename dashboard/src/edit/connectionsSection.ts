@@ -169,10 +169,19 @@ function calendarIdInput(connection: Connection, ctx: SectionContext): HTMLInput
   return input;
 }
 
+/** The calendars currently selected: calendarIds when set, else the default. */
+function selectedCalendarIds(connection: Connection): Set<string> {
+  if (connection.calendarIds !== undefined && connection.calendarIds.length > 0) {
+    return new Set(connection.calendarIds);
+  }
+  return new Set([connection.calendarId ?? "primary"]);
+}
+
 /**
- * The "Select calendar" control: a dropdown of the account's real calendars when
- * connected, populated async, with a "Loading calendars…" placeholder. Falls
- * back to a plain id input when there is no token or the fetch fails.
+ * The calendar picker: a checklist of the account's real calendars (pick as many
+ * as you like) when connected, populated async with a "Loading calendars…"
+ * placeholder. The chosen ids are stored in connection.calendarIds. Falls back to
+ * a single plain id input when there is no token or the fetch fails.
  */
 function renderCalendarPicker(
   wrap: HTMLElement,
@@ -180,8 +189,8 @@ function renderCalendarPicker(
   ctx: SectionContext,
   accessToken: string | undefined,
 ): void {
-  const fieldWrap = el("div", "cc-edit__field");
-  fieldWrap.appendChild(el("label", "cc-edit__field-label", "Select calendar"));
+  const fieldWrap = el("div", "cc-edit__field cc-edit__calendars");
+  fieldWrap.appendChild(el("label", "cc-edit__field-label", "Calendars"));
 
   if (accessToken === undefined) {
     fieldWrap.appendChild(calendarIdInput(connection, ctx));
@@ -189,36 +198,39 @@ function renderCalendarPicker(
     return;
   }
 
-  const select = document.createElement("select");
-  select.className = "cc-edit__input";
-  select.setAttribute("aria-label", "Select calendar");
-  select.disabled = true;
-  const loading = document.createElement("option");
-  loading.textContent = "Loading calendars…";
-  select.appendChild(loading);
-  fieldWrap.appendChild(select);
+  const listBox = el("div", "cc-edit__calendar-list");
+  listBox.appendChild(el("div", "cc-edit__hint", "Loading calendars…"));
+  fieldWrap.appendChild(listBox);
   wrap.appendChild(fieldWrap);
 
   void fetchCalendarList(accessToken).then((calendars) => {
     if (calendars === undefined || calendars.length === 0) {
-      fieldWrap.replaceChild(calendarIdInput(connection, ctx), select);
+      // No list available; fall back to a single plain calendar-id input.
+      fieldWrap.replaceChildren();
+      fieldWrap.appendChild(el("label", "cc-edit__field-label", "Calendar"));
+      fieldWrap.appendChild(calendarIdInput(connection, ctx));
       return;
     }
-    select.replaceChildren();
-    select.disabled = false;
-    const current = connection.calendarId ?? "primary";
+    listBox.replaceChildren();
+    const selected = selectedCalendarIds(connection);
+    const boxes: Array<{ id: string; box: HTMLInputElement }> = [];
     for (const calendar of calendars) {
-      const option = document.createElement("option");
-      option.value = calendar.id;
-      option.textContent = calendar.summary ?? calendar.id;
-      if (calendar.id === current) option.selected = true;
-      select.appendChild(option);
-    }
-    select.addEventListener("change", () => {
-      updateConnection(ctx, connection.id, (item) => {
-        item.calendarId = select.value;
+      const row = el("label", "cc-edit__check");
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = selected.has(calendar.id);
+      box.addEventListener("change", () => {
+        const checked = boxes.filter((entry) => entry.box.checked).map((entry) => entry.id);
+        updateConnection(ctx, connection.id, (item) => {
+          if (checked.length > 0) item.calendarIds = checked;
+          else delete item.calendarIds;
+        });
       });
-    });
+      row.appendChild(box);
+      row.appendChild(el("span", undefined, calendar.summary ?? calendar.id));
+      listBox.appendChild(row);
+      boxes.push({ id: calendar.id, box });
+    }
   });
 }
 

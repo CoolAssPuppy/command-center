@@ -177,7 +177,7 @@ describe("googleCalendarIntegration", () => {
     expect(result.value[0]?.subtitle).toBe("All day");
   });
 
-  it("merges events from extra calendars, sorted by start time", async () => {
+  it("reads exactly the calendars in calendarIds, sorted by start time", async () => {
     const fetch = (request: HttpRequest): Promise<HttpResponseLike> => {
       const onPrimary = request.url.includes("/calendars/primary/");
       return Promise.resolve(
@@ -188,8 +188,9 @@ describe("googleCalendarIntegration", () => {
         }),
       );
     };
+    // calendarIds is the authoritative set, so primary is included explicitly.
     const result = await googleCalendarIntegration.fetch(
-      connection({ calendarIds: ["work@group.calendar.google.com"] }),
+      connection({ calendarIds: ["primary", "work@group.calendar.google.com"] }),
       undefined,
       ctx({ fetch }),
     );
@@ -199,7 +200,19 @@ describe("googleCalendarIntegration", () => {
     expect(result.value.map((item) => item.id)).toEqual(["w1", "p1"]);
   });
 
-  it("keeps the card alive when a merged calendar cannot be read", async () => {
+  it("defaults to the primary calendar when calendarIds is empty", async () => {
+    const urls: string[] = [];
+    const fetch = (request: HttpRequest): Promise<HttpResponseLike> => {
+      urls.push(request.url);
+      return Promise.resolve(json({ items: [] }));
+    };
+    const result = await googleCalendarIntegration.fetch(connection(), undefined, ctx({ fetch }));
+    expect(result.ok).toBe(true);
+    expect(urls).toHaveLength(1);
+    expect(urls[0]).toContain("/calendars/primary/");
+  });
+
+  it("keeps the card alive when one of several calendars cannot be read", async () => {
     const fetch = (request: HttpRequest): Promise<HttpResponseLike> =>
       request.url.includes("/calendars/primary/")
         ? Promise.resolve(
@@ -207,7 +220,7 @@ describe("googleCalendarIntegration", () => {
           )
         : Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) });
     const result = await googleCalendarIntegration.fetch(
-      connection({ calendarIds: ["missing@group.calendar.google.com"] }),
+      connection({ calendarIds: ["primary", "missing@group.calendar.google.com"] }),
       undefined,
       ctx({ fetch }),
     );

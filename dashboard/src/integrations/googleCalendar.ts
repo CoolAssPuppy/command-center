@@ -124,13 +124,15 @@ function buildUrl(calendarId: string, connection: Connection, now: Date): string
 }
 
 /**
- * The calendars this connection reads: its main one (default "primary") plus
- * any merged in by id or share link. Deduplicated, main first.
+ * The calendars this connection reads. The multi-select is authoritative: when
+ * calendarIds is set, read exactly those (deduped). Only when it is empty do we
+ * fall back to the single calendarId, or "primary".
  */
 function calendarIdsFor(connection: Connection): string[] {
+  const chosen = (connection.calendarIds ?? []).flatMap(parseGoogleCalendarIds);
+  if (chosen.length > 0) return [...new Set(chosen)];
   const main = connection.calendarId?.trim();
-  const extras = (connection.calendarIds ?? []).flatMap(parseGoogleCalendarIds);
-  return [...new Set([main !== undefined && main.length > 0 ? main : "primary", ...extras])];
+  return [main !== undefined && main.length > 0 ? main : "primary"];
 }
 
 type CalendarFetch =

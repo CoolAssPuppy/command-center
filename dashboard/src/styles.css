@@ -1533,6 +1533,19 @@ button.cc-lane__item:hover {
   accent-color: var(--cc-color-accent, #2f7a6f);
 }
 
+/* Clear space above the calendar picker, separating it from the account row. */
+.cc-edit__calendars {
+  margin-top: 12px;
+}
+
+.cc-edit__calendar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 168px;
+  overflow-y: auto;
+}
+
 .cc-edit__nested {
   display: flex;
   flex-direction: column;
