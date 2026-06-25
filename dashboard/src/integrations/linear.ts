@@ -31,6 +31,14 @@ export const ASSIGNED_QUERY = `query CommandCenterAssigned($first: Int!) {
   }
 }`;
 
+/**
+ * How many notifications to pull for the inbox. Linear returns the newest
+ * notifications regardless of read state, and the unread ones we want are often
+ * buried behind recently-read ones, so fetch a wide window and filter to unread
+ * client-side rather than asking for only a handful.
+ */
+const INBOX_FETCH = 100;
+
 export const INBOX_QUERY = `query CommandCenterInbox($first: Int!) {
   notifications(first: $first) {
     nodes {
@@ -187,7 +195,7 @@ export const linearIntegration: Integration = {
         headers: { Authorization: secret, "Content-Type": "application/json" },
         body: JSON.stringify({
           query: view === "inbox" ? INBOX_QUERY : ASSIGNED_QUERY,
-          variables: { first: connection.count ?? 6 },
+          variables: { first: view === "inbox" ? INBOX_FETCH : connection.count ?? 6 },
         }),
       });
       if (response.status === 401 || response.status === 400) {
@@ -202,6 +210,10 @@ export const linearIntegration: Integration = {
       return { ok: false, error: message };
     }
 
-    return view === "inbox" ? parseLinearInbox(payload) : parseAssigned(payload);
+    if (view !== "inbox") return parseAssigned(payload);
+    // Filtered to unread above; cap to the display count after the wide fetch.
+    const parsed = parseLinearInbox(payload);
+    if (!parsed.ok) return parsed;
+    return { ok: true, value: parsed.value.slice(0, connection.count ?? 6) };
   },
 };

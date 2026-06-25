@@ -127,6 +127,31 @@ describe("linear inbox view", () => {
     expect(body.query).toContain("IssueNotification");
   });
 
+  it("fetches a wide window of notifications, then caps to the display count", async () => {
+    let captured: HttpRequest | undefined;
+    const unread = Array.from({ length: 30 }, (_value, index) => ({
+      id: `n${String(index)}`,
+      readAt: null,
+      snoozedUntilAt: null,
+      issue: { identifier: `ENG-${String(index)}`, title: `Issue ${String(index)}` },
+    }));
+    const result = await linearIntegration.fetch(
+      connection({ linearView: "inbox", count: 5 }),
+      "lin_key",
+      ctx((request) => {
+        captured = request;
+        return Promise.resolve(json(inboxBody(unread)));
+      }),
+    );
+    const body = JSON.parse(captured?.body ?? "{}") as { variables?: { first?: number } };
+    // Over-fetch so unread items buried behind recent reads still arrive.
+    expect(body.variables?.first).toBe(100);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Display is still capped to the connection's count.
+    expect(result.value).toHaveLength(5);
+  });
+
   it("keeps unread, unsnoozed issue notifications and dedupes by issue", () => {
     const result = parseLinearInbox(
       inboxBody([
