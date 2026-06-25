@@ -7,6 +7,7 @@ import type {
 } from "../integrations/types";
 import { el, svgEl } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
+import { itemIcon } from "./itemIcons";
 import { DEFAULT_TASK_FILTER, type TaskFilterState } from "./taskFilterState";
 
 /**
@@ -223,6 +224,12 @@ function renderLaneItem(entry: LaneEntry, deps: NeedsYouLaneDeps): HTMLElement {
   }
 
   row.appendChild(el("span", "cc-lane__dot"));
+  if (item.icon !== undefined) {
+    const iconWrap = el("span", "cc-lane__item-icon");
+    iconWrap.setAttribute("aria-hidden", "true");
+    iconWrap.appendChild(itemIcon(item.icon));
+    row.appendChild(iconWrap);
+  }
   const body = el("div", "cc-lane__item-body");
   body.appendChild(el("span", "cc-lane__item-title", item.title));
   // Task items (Notion, Todoist, Google Tasks) share one secondary line built

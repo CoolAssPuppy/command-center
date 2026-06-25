@@ -17,6 +17,9 @@ export type ItemTone = "urgent" | "positive" | "neutral";
 /** Video-call providers the lane can recognize and badge on a Join button. */
 export type ConferenceProvider = "meet" | "zoom" | "teams" | "other";
 
+/** A small type glyph an item can carry, drawn before its title. Extensible. */
+export type ItemIcon = "linear-issue" | "linear-project" | "linear-initiative";
+
 /**
  * Task detail shared across task sources (Notion, Todoist, Google Tasks), so the
  * lane renders all three identically. Every field is a ready-to-show string and
@@ -49,6 +52,8 @@ export interface NormalizedItem {
   conferenceProvider?: ConferenceProvider;
   /** Structured task detail, set by task sources for the lane's Tasks section. */
   task?: TaskFields;
+  /** A type glyph drawn before the title (e.g. Linear issue / project / initiative). */
+  icon?: ItemIcon;
 }
 
 /** A minimal HTTP client so integrations can POST with headers, injected for tests. */

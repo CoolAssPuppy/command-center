@@ -715,6 +715,16 @@ button.cc-lane__item:hover {
   opacity: 0.5;
 }
 
+/* A subtle type glyph before an item's title (Linear issue / project / etc). */
+.cc-stream__item-icon,
+.cc-lane__item-icon {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--cc-color-muted, #6a6e76);
+  opacity: 0.8;
+}
+
 .cc-lane__item[data-tone="urgent"] {
   background: color-mix(in srgb, var(--cc-color-urgent, #c0563f) 12%, transparent);
 }

@@ -88,6 +88,31 @@ describe("renderStreams", () => {
     expect(navigate).toHaveBeenCalledWith("https://notion.so/x");
   });
 
+  it("draws a type icon before an item that carries one", () => {
+    const root = host();
+    renderStreams(
+      root,
+      {
+        streams: [stream("s1", "c1")],
+        connections: [connection("c1", "linear")],
+        expanded: {},
+        integrationResults: {
+          c1: {
+            status: "ok",
+            items: [
+              { id: "ENG-1", title: "Issue", icon: "linear-issue" },
+              { id: "ENG-2", title: "No icon" },
+            ],
+          },
+        },
+      },
+      { navigate: noop, onToggle: noop },
+    );
+    const items = [...root.querySelectorAll(".cc-stream__item")];
+    expect(items[0]?.querySelector(".cc-stream__item-icon svg")).not.toBeNull();
+    expect(items[1]?.querySelector(".cc-stream__item-icon")).toBeNull();
+  });
+
   it("reports toggles by stream id", () => {
     const onToggle = vi.fn();
     const root = host();

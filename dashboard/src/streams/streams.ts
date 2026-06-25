@@ -4,6 +4,7 @@ import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { brandIcon } from "../shell/brandIcons";
 import { makeDashboardReorderable, type ReorderHandler } from "../shell/dashboardReorder";
+import { itemIcon } from "../shell/itemIcons";
 
 /**
  * Work-stream panels. Each stream names a connection and shows that connection's
@@ -149,6 +150,13 @@ function renderItem(item: NormalizedItem, deps: StreamsDeps): HTMLElement {
     row.addEventListener("click", () => {
       deps.navigate(url);
     });
+  }
+
+  if (item.icon !== undefined) {
+    const iconWrap = el("span", "cc-stream__item-icon");
+    iconWrap.setAttribute("aria-hidden", "true");
+    iconWrap.appendChild(itemIcon(item.icon));
+    row.appendChild(iconWrap);
   }
 
   const body = el("div", "cc-stream__item-body");
