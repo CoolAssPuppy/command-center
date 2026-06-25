@@ -765,7 +765,7 @@ button.cc-lane__item:hover {
 
 .cc-lane__item-sub {
   font-size: 12px;
-  color: var(--cc-color-muted, #6a6e76);
+  color: var(--cc-color-text, #21242a);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -785,11 +785,11 @@ button.cc-lane__item:hover {
 }
 
 .cc-lane__label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--cc-color-muted, #6a6e76);
+  color: var(--cc-color-text, #21242a);
   margin-bottom: 4px;
 }
 
@@ -1719,11 +1719,12 @@ button.cc-lane__item:hover {
   padding: 2px 2px 8px;
   cursor: pointer;
   list-style: none;
-  font-size: 11px;
+  /* A real title, matching the ticker symbols' weight and ink rather than a
+     faint gray uppercase label. */
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cc-color-muted, #6a6e76);
+  letter-spacing: 0.01em;
+  color: var(--cc-color-text, #21242a);
 }
 
 .cc-stream__summary::-webkit-details-marker {
@@ -1849,7 +1850,7 @@ button.cc-stream__item:hover {
 .cc-stream__item-sub,
 .cc-stream__item-meta {
   font-size: 12px;
-  color: var(--cc-color-muted, #6a6e76);
+  color: var(--cc-color-text, #21242a);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
