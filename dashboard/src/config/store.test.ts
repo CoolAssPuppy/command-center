@@ -41,21 +41,23 @@ describe("ConfigStore", () => {
     const secretArea = memoryArea();
     const store = createConfigStore(configArea, secretArea);
 
-    await store.saveSecrets({ connectionSecrets: { c1: "secret-token" } });
+    await store.saveSecrets({ connectionSecrets: { c1: "secret-token" }, googleTokens: {} });
 
     expect(await configArea.get("secrets")).toBeUndefined();
     expect(await configArea.get("config")).toBeUndefined();
     expect(await secretArea.get("secrets")).toEqual({
       connectionSecrets: { c1: "secret-token" },
+      googleTokens: {},
     });
   });
 
   it("round-trips secrets", async () => {
     const store = createConfigStore(memoryArea(), memoryArea());
-    await store.saveSecrets({ unsplashAccessKey: "abc", connectionSecrets: {} });
+    await store.saveSecrets({ unsplashAccessKey: "abc", connectionSecrets: {}, googleTokens: {} });
     expect(await store.loadSecrets()).toEqual({
       unsplashAccessKey: "abc",
       connectionSecrets: {},
+      googleTokens: {},
     });
   });
 });

@@ -41,9 +41,14 @@ export interface IntegrationContext {
   now: Date;
   /**
    * Obtain an OAuth access token for a provider (e.g. "google"), or undefined if
-   * not connected. Backed by chrome.identity in the extension; injected in tests.
+   * not connected. The optional connectionId selects a specific account, so each
+   * Google Calendar connection can be a different signed-in account. Backed by
+   * chrome.identity in the extension; injected in tests.
    */
-  getAuthToken?: (provider: string) => Promise<string | undefined>;
+  getAuthToken?: (
+    provider: string,
+    connectionId?: string,
+  ) => Promise<string | undefined>;
 }
 
 /** A sentinel error an integration returns when its credential is missing. */

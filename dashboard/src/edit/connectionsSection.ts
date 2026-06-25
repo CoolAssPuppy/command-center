@@ -119,20 +119,30 @@ function renderConnectionFields(
   const wrap = el("div", "cc-edit__nested");
 
   if (connection.service === "google-calendar") {
-    const connect = ctx.runtime.connectGoogle;
+    const connect = ctx.runtime.connectGoogleAccount;
     if (connect !== undefined) {
-      const button = el("button", "cc-edit__add-btn", "Connect Google");
+      const connected = ctx.draftSecrets.googleTokens[connection.id];
+      const label = connected !== undefined ? "Switch account" : "Connect Google account";
+      const button = el("button", "cc-edit__add-btn", label);
       button.setAttribute("type", "button");
       button.addEventListener("click", () => {
-        void connect();
+        void connect(connection.id).then((token) => {
+          if (token !== undefined) {
+            ctx.updateSecrets((secrets) => {
+              secrets.googleTokens[connection.id] = token;
+            });
+          }
+        });
       });
-      wrap.appendChild(field("Account", button));
+      // Name the signed-in account so several calendars stay distinguishable.
+      const account = connected?.email ?? "Not connected";
+      wrap.appendChild(field(account, button));
     } else {
       wrap.appendChild(
         el(
           "div",
           "cc-edit__hint",
-          "Google sign-in works only in the installed extension, not the dev server. Load the unpacked extension to connect.",
+          "Google sign-in works only in the installed extension with sign-in configured. Load the unpacked extension to connect.",
         ),
       );
     }

@@ -181,7 +181,7 @@ export const googleCalendarIntegration: Integration = {
     _secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>> {
-    const token = await ctx.getAuthToken?.("google");
+    const token = await ctx.getAuthToken?.("google", connection.id);
     if (token === undefined || token.length === 0) {
       return { ok: false, error: NEEDS_AUTH };
     }

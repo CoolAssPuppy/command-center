@@ -1,5 +1,11 @@
 import { loadCachedConfig, saveCachedConfig } from "../config/cache";
-import { COMBINED_CALENDARS_ID, type Config, type Secrets } from "../config/schema";
+import {
+  COMBINED_CALENDARS_ID,
+  type Config,
+  type Connection,
+  type GoogleToken,
+  type Secrets,
+} from "../config/schema";
 import { combineCalendars } from "../integrations/combine";
 import { demoCombinedCalendars, demoResultFor, isDemoMode } from "./demo";
 import type { ConfigStore } from "../config/store";
@@ -7,10 +13,9 @@ import type { ParseResult } from "../domain/result";
 import { openEditPane } from "../edit/editPane";
 import { searchCities as geoSearch, type GeoResult } from "../geo/geocode";
 import {
-  connectGoogle,
-  getGoogleToken,
-  isGoogleAuthAvailable,
-} from "../integrations/googleAuth";
+  authorizeGoogleAccount,
+  isGoogleOAuthAvailable,
+} from "../integrations/googleOAuth";
 import { realHttpFetch } from "../integrations/http";
 import { integrationById } from "../integrations/registry";
 import {
@@ -165,14 +170,16 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         },
         runtime: {
           searchCities,
-          // Only offer Google sign-in where chrome.identity exists (the
-          // installed extension). On the dev server the section shows a hint.
-          ...(isGoogleAuthAvailable()
+          // Only offer Google sign-in where chrome.identity exists and a client
+          // id is configured. Elsewhere the connection row shows a hint. The
+          // chosen account's token is returned for the section to store against
+          // the connection; persisting it triggers a refresh.
+          ...(isGoogleOAuthAvailable()
             ? {
-                connectGoogle: async (): Promise<void> => {
-                  const token = await connectGoogle();
-                  if (token !== undefined) await refreshIntegrations();
-                },
+                connectGoogleAccount: (
+                  _connectionId: string,
+                ): Promise<GoogleToken | undefined> =>
+                  authorizeGoogleAccount({ interactive: true }),
               }
             : {}),
         },
@@ -244,6 +251,50 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     }
   }
 
+  /**
+   * Resolve a usable Google access token for each Google Calendar connection,
+   * keyed by connection id. A token still comfortably in date is used as-is; an
+   * expired or missing one is renewed by a silent re-auth pinned to its account,
+   * and any renewals are persisted once. A connection with no obtainable token
+   * maps to undefined, which the integration reports as needs_auth.
+   */
+  async function resolveGoogleTokens(
+    connections: Connection[],
+    secrets: Secrets,
+    nowMs: number,
+  ): Promise<Record<string, string | undefined>> {
+    const byConnection: Record<string, string | undefined> = {};
+    let changed = false;
+    for (const connection of connections) {
+      if (connection.service !== "google-calendar") continue;
+      const stored = secrets.googleTokens[connection.id];
+      if (stored !== undefined && stored.expiresAt - nowMs > 60_000) {
+        byConnection[connection.id] = stored.accessToken;
+        continue;
+      }
+      const refreshed = await authorizeGoogleAccount({
+        interactive: false,
+        ...(stored?.email !== undefined ? { loginHint: stored.email } : {}),
+      });
+      if (refreshed !== undefined) {
+        const email = refreshed.email ?? stored?.email;
+        const merged: GoogleToken = {
+          accessToken: refreshed.accessToken,
+          expiresAt: refreshed.expiresAt,
+          ...(email !== undefined ? { email } : {}),
+        };
+        secrets.googleTokens[connection.id] = merged;
+        byConnection[connection.id] = merged.accessToken;
+        changed = true;
+      } else {
+        byConnection[connection.id] =
+          stored !== undefined && stored.expiresAt > nowMs ? stored.accessToken : undefined;
+      }
+    }
+    if (changed) await deps.store.saveSecrets(secrets);
+    return byConnection;
+  }
+
   async function refreshIntegrations(): Promise<void> {
     if (config === undefined) return;
 
@@ -283,10 +334,26 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     }
 
     const secrets = await deps.store.loadSecrets();
-    const getAuthToken =
-      deps.getAuthToken ??
-      ((provider: string): Promise<string | undefined> =>
-        provider === "google" ? getGoogleToken() : Promise.resolve(undefined));
+    // Each Google Calendar connection carries its own account token. Resolve
+    // them up front (renewing any that expired), so the fetch loop just reads a
+    // ready token by connection id. Injected getAuthToken (tests) takes over.
+    let getAuthToken = deps.getAuthToken;
+    if (getAuthToken === undefined) {
+      const googleTokenByConn = await resolveGoogleTokens(
+        connections,
+        secrets,
+        deps.now().getTime(),
+      );
+      getAuthToken = (
+        provider: string,
+        connectionId?: string,
+      ): Promise<string | undefined> =>
+        Promise.resolve(
+          provider === "google" && connectionId !== undefined
+            ? googleTokenByConn[connectionId]
+            : undefined,
+        );
+    }
     const ctx: IntegrationContext = {
       fetch: deps.httpFetch ?? realHttpFetch,
       now: deps.now(),

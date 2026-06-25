@@ -95,12 +95,12 @@ describe("zone selectors", () => {
 
 describe("secrets parsing", () => {
   it("defaults connectionSecrets for missing secrets", () => {
-    expect(parseSecrets(undefined)).toEqual({ connectionSecrets: {} });
+    expect(parseSecrets(undefined)).toEqual({ connectionSecrets: {}, googleTokens: {} });
   });
 
   it("keeps known secret fields", () => {
     expect(
       parseSecrets({ unsplashAccessKey: "k", connectionSecrets: { c1: "tok" }, extra: 1 }),
-    ).toEqual({ unsplashAccessKey: "k", connectionSecrets: { c1: "tok" } });
+    ).toEqual({ unsplashAccessKey: "k", connectionSecrets: { c1: "tok" }, googleTokens: {} });
   });
 });

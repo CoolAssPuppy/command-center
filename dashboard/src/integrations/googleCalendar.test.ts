@@ -216,6 +216,27 @@ describe("googleCalendarIntegration", () => {
     expect(result.value.map((item) => item.id)).toEqual(["p1"]);
   });
 
+  it("requests a token for its own connection, so accounts can differ", async () => {
+    // Each connection resolves its own account token, keyed by connection id.
+    const tokensByConnection: Record<string, string> = { work: "tok-work", personal: "tok-personal" };
+    const getAuthToken = (_provider: string, connectionId?: string): Promise<string | undefined> =>
+      Promise.resolve(connectionId !== undefined ? tokensByConnection[connectionId] : undefined);
+
+    let captured: HttpRequest | undefined;
+    const fetch = (request: HttpRequest): Promise<HttpResponseLike> => {
+      captured = request;
+      return Promise.resolve(json({ items: [] }));
+    };
+    const result = await googleCalendarIntegration.fetch(
+      connection({ id: "personal" }),
+      undefined,
+      ctx({ getAuthToken, fetch }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(captured?.headers?.Authorization).toBe("Bearer tok-personal");
+  });
+
   it("maps 401 to needs-auth", async () => {
     const result = await googleCalendarIntegration.fetch(
       connection(),

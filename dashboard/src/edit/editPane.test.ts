@@ -42,7 +42,7 @@ function open(config: Config, search: GeoResult[] = []): Harness {
   const root = host();
   openEditPane(root, {
     config,
-    secrets: { connectionSecrets: {} },
+    secrets: { connectionSecrets: {}, googleTokens: {} },
     applyConfig: (next) => {
       applied = next;
     },
@@ -422,7 +422,7 @@ describe("edit pane — shell", () => {
     const root = host();
     openEditPane(root, {
       config: ConfigSchema.parse({}),
-      secrets: { connectionSecrets: {} },
+      secrets: { connectionSecrets: {}, googleTokens: {} },
       applyConfig: vi.fn(),
       applySecrets: vi.fn(),
       onClose,

@@ -1,4 +1,4 @@
-import { type Config, type Secrets } from "../config/schema";
+import { type Config, type GoogleToken, type Secrets } from "../config/schema";
 import type { GeoResult } from "../geo/geocode";
 import { el } from "../render/helpers";
 import { renderAppearanceSection } from "./appearanceSection";
@@ -20,8 +20,12 @@ import { renderZonesSection } from "./zonesSection";
 export interface EditPaneRuntimeDeps {
   /** City search for adding a zone. Returns matches (empty on failure). */
   searchCities: (query: string) => Promise<GeoResult[]>;
-  /** Prompt for Google consent (chrome.identity). Absent outside the extension. */
-  connectGoogle?: () => Promise<void>;
+  /**
+   * Prompt for Google sign-in with the account chooser and return the chosen
+   * account's token for this connection, or undefined if it was cancelled.
+   * Absent outside the extension or when sign-in is not configured.
+   */
+  connectGoogleAccount?: (connectionId: string) => Promise<GoogleToken | undefined>;
 }
 
 export interface EditPaneDeps {

@@ -146,11 +146,27 @@ export const ConfigSchema = z.object({
 });
 export type Config = z.infer<typeof ConfigSchema>;
 
+/**
+ * A Google OAuth access token for one calendar connection, obtained per account
+ * via chrome.identity.launchWebAuthFlow. Implicit-flow tokens are short-lived
+ * (about an hour), so expiresAt drives a silent re-auth; email identifies the
+ * account, both to show on the connection and as the login hint when refreshing.
+ */
+export const GoogleTokenSchema = z.object({
+  accessToken: z.string(),
+  /** Epoch milliseconds when the access token expires. */
+  expiresAt: z.number(),
+  email: z.string().optional(),
+});
+export type GoogleToken = z.infer<typeof GoogleTokenSchema>;
+
 /** Secrets live in chrome.storage.local and are never synced. */
 export const SecretsSchema = z.object({
   unsplashAccessKey: z.string().optional(),
   /** Per-connection credential (Linear key / Notion token), keyed by connection id. */
   connectionSecrets: z.record(z.string()).default({}),
+  /** Per-connection Google access token, keyed by connection id. */
+  googleTokens: z.record(GoogleTokenSchema).default({}),
 });
 export type Secrets = z.infer<typeof SecretsSchema>;
 
