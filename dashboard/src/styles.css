@@ -1373,6 +1373,18 @@ button.cc-lane__item:hover {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--cc-hairline);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cc-color-text, #21242a) 4%, transparent);
+}
+
+.cc-edit__add-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cc-color-text, #21242a);
 }
 
 .cc-edit__add-form {

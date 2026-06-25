@@ -271,6 +271,7 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
     }
   });
 
+  wrap.appendChild(el("div", "cc-edit__add-title", "Add a new connection"));
   wrap.appendChild(form);
   return wrap;
 }
