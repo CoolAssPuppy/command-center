@@ -342,15 +342,22 @@ function renderConnectionFields(
     );
   }
 
-  // Linear: read assigned issues or your notification inbox.
+  // Linear: pick which pre-defined view this connection reads.
   if (connection.service === "linear") {
+    const views: ReadonlyArray<readonly [NonNullable<Connection["linearView"]>, string]> = [
+      ["assigned", "Assigned to me"],
+      ["created", "Created by me"],
+      ["in-progress", "In progress"],
+      ["due", "Due soon"],
+      ["recent", "Recently updated"],
+      ["inbox", "Inbox"],
+      ["projects", "Projects"],
+      ["initiatives", "Initiatives"],
+    ];
     const view = document.createElement("select");
     view.className = "cc-edit__input";
     view.setAttribute("aria-label", "Linear view");
-    for (const [value, label] of [
-      ["assigned", "Assigned issues"],
-      ["inbox", "Inbox (notifications)"],
-    ] as const) {
+    for (const [value, label] of views) {
       const option = document.createElement("option");
       option.value = value;
       option.textContent = label;
@@ -358,9 +365,11 @@ function renderConnectionFields(
       view.appendChild(option);
     }
     view.addEventListener("change", () => {
+      const next = views.find(([value]) => value === view.value)?.[0] ?? "assigned";
       updateConnection(ctx, connection.id, (item) => {
-        if (view.value === "inbox") item.linearView = "inbox";
-        else delete item.linearView;
+        // "assigned" is the default, so it is left implicit to keep configs clean.
+        if (next === "assigned") delete item.linearView;
+        else item.linearView = next;
       });
     });
     wrap.appendChild(field("View", view));

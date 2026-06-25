@@ -3,10 +3,18 @@ import { describe, expect, it } from "vitest";
 import type { Connection } from "../config/schema";
 import {
   ASSIGNED_QUERY,
+  CREATED_QUERY,
+  DUE_QUERY,
   INBOX_QUERY,
+  IN_PROGRESS_QUERY,
+  INITIATIVES_QUERY,
+  PROJECTS_QUERY,
+  RECENT_QUERY,
   linearIntegration,
   linearViewOf,
+  parseInitiatives,
   parseLinearInbox,
+  parseProjects,
 } from "./linear";
 import {
   NEEDS_AUTH,
@@ -219,5 +227,124 @@ describe("linear assigned view (Change 4)", () => {
     const undated = result.value.find((item) => item.id === "ENG-8");
     expect(dated?.subtitle).toMatch(/^Backlog, /);
     expect(undated?.subtitle).toBe("Todo");
+  });
+});
+
+const queryFor = async (linearView: Connection["linearView"]): Promise<string> => {
+  let captured: HttpRequest | undefined;
+  await linearIntegration.fetch(
+    connection({ linearView }),
+    "lin_key",
+    ctx((request) => {
+      captured = request;
+      return Promise.resolve(json(issuesBody([])));
+    }),
+  );
+  return (JSON.parse(captured?.body ?? "{}") as { query?: string }).query ?? "";
+};
+
+describe("linear expanded views", () => {
+  it("maps each view to its query", async () => {
+    expect(await queryFor("created")).toBe(CREATED_QUERY);
+    expect(await queryFor("in-progress")).toBe(IN_PROGRESS_QUERY);
+    expect(await queryFor("due")).toBe(DUE_QUERY);
+    expect(await queryFor("recent")).toBe(RECENT_QUERY);
+    expect(linearViewOf(connection({ linearView: "recent" }))).toBe("recent");
+    expect(linearViewOf(connection())).toBe("assigned");
+  });
+
+  it("filters each view the Linear way", () => {
+    expect(CREATED_QUERY).toContain("creator: { isMe: { eq: true } }");
+    expect(CREATED_QUERY).not.toContain("assignee");
+    expect(IN_PROGRESS_QUERY).toContain('state: { type: { eq: "started" } }');
+    expect(IN_PROGRESS_QUERY).toContain("assignee: { isMe: { eq: true } }");
+    expect(DUE_QUERY).toContain("dueDate: { null: false }");
+    expect(RECENT_QUERY).toContain("orderBy: updatedAt");
+  });
+
+  it("due view drops undated issues and sorts soonest (incl. overdue) first", async () => {
+    const result = await linearIntegration.fetch(
+      connection({ linearView: "due" }),
+      "lin_key",
+      ctx(() =>
+        Promise.resolve(
+          json(
+            issuesBody([
+              { identifier: "ENG-1", title: "No due", state: { name: "Todo" } },
+              { identifier: "ENG-2", title: "Overdue", dueDate: "2026-06-01", state: { name: "Todo" } },
+              { identifier: "ENG-3", title: "Soon", dueDate: "2026-06-26", state: { name: "Todo" } },
+            ]),
+          ),
+        ),
+      ),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.map((item) => item.id)).toEqual(["ENG-2", "ENG-3"]);
+  });
+
+  it("recent view sorts by updatedAt descending", async () => {
+    const result = await linearIntegration.fetch(
+      connection({ linearView: "recent" }),
+      "lin_key",
+      ctx(() =>
+        Promise.resolve(
+          json(
+            issuesBody([
+              { identifier: "ENG-1", title: "Old", updatedAt: "2026-06-10T00:00:00Z" },
+              { identifier: "ENG-2", title: "New", updatedAt: "2026-06-22T00:00:00Z" },
+            ]),
+          ),
+        ),
+      ),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.map((item) => item.id)).toEqual(["ENG-2", "ENG-1"]);
+  });
+
+  it("tags issue items with the linear-issue icon", async () => {
+    const result = await linearIntegration.fetch(
+      connection(),
+      "lin_key",
+      ctx(() => Promise.resolve(json(issuesBody([{ identifier: "ENG-1", title: "x" }])))),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value[0]?.icon).toBe("linear-issue");
+  });
+});
+
+describe("linear projects and initiatives", () => {
+  it("parses projects with a project icon and target-date subtitle", () => {
+    const result = parseProjects({
+      data: {
+        projects: {
+          nodes: [
+            { id: "p1", name: "Redesign", url: "https://l/p1", targetDate: "2026-07-01" },
+            { id: "p2", name: "No target", url: "https://l/p2", targetDate: null },
+          ],
+        },
+      },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value[0]).toMatchObject({ id: "p1", title: "Redesign", url: "https://l/p1", icon: "linear-project" });
+    expect(result.value[0]?.subtitle).toBeDefined();
+    expect(result.value[1]?.subtitle).toBeUndefined();
+  });
+
+  it("parses initiatives with an initiative icon", () => {
+    const result = parseInitiatives({
+      data: { initiatives: { nodes: [{ id: "i1", name: "FY26", url: "https://l/i1" }] } },
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value[0]).toMatchObject({ id: "i1", title: "FY26", icon: "linear-initiative" });
+  });
+
+  it("requests the projects and initiatives queries for those views", async () => {
+    expect(await queryFor("projects")).toBe(PROJECTS_QUERY);
+    expect(await queryFor("initiatives")).toBe(INITIATIVES_QUERY);
   });
 });

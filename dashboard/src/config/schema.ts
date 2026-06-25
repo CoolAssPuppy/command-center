@@ -82,10 +82,23 @@ export const ConnectionSchema = z.object({
    */
   role: z.enum(["reference", "tasks"]).optional(),
   /**
-   * Linear: which list to read. "assigned" (the default) reads your open
-   * assigned issues; "inbox" reads your Linear notifications.
+   * Linear: which pre-defined view to read. "assigned" (the default) lists open
+   * issues you created or own; the rest are other viewer-scoped issue lists, the
+   * notification inbox, projects, or initiatives. Old configs (just "assigned"
+   * or "inbox") still parse.
    */
-  linearView: z.enum(["assigned", "inbox"]).optional(),
+  linearView: z
+    .enum([
+      "assigned",
+      "created",
+      "in-progress",
+      "due",
+      "recent",
+      "inbox",
+      "projects",
+      "initiatives",
+    ])
+    .optional(),
   /** How many items to show. */
   count: z.number().int().positive().max(50).optional(),
 });
