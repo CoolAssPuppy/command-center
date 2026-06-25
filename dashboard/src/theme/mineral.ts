@@ -1,9 +1,10 @@
 import type { Theme } from "./tokens";
 
 /**
- * Mineral: the editorial default. A limestone ground, slate ink, and a single
- * oxidized-copper accent, built to carry desaturated black-and-white skyline
- * photography. Rust appears only for overdue / at-risk states. A token theme.
+ * Mineral: the editorial day default. A sunlit limestone ground, deep slate ink,
+ * and one oxidized-copper accent with brass and rust beside it, built to carry
+ * desaturated skyline photography. Rust appears only for overdue / at-risk
+ * states. The night counterpart is Twilight; "auto" switches between them.
  */
 export const mineral: Theme = {
   meta: {
@@ -14,17 +15,17 @@ export const mineral: Theme = {
   },
   tokens: {
     color: {
-      bg: "#ECE8E0",
-      surface: "#F8F6F1",
-      text: "#21242A",
+      bg: "#EBE6DB",
+      surface: "#F9F7F2",
+      text: "#1E222A",
       muted: "#6A6E76",
-      accent: "#2F7A6F",
+      accent: "#2E7D6E",
       positive: "#3E7C5A",
       urgent: "#A4503C",
-      primary: "#21242A",
+      primary: "#1E222A",
       secondary: "#6A6E76",
-      accent1: "#2F7A6F",
-      accent2: "#C9A267",
+      accent1: "#2E7D6E",
+      accent2: "#C39A57",
       accent3: "#A4503C",
     },
     type: {
@@ -44,7 +45,7 @@ export const mineral: Theme = {
     background: {
       mode: "gradient",
       value:
-        "linear-gradient(176deg, #F1ECE3 0%, #ECE6DB 46%, #E6DED1 78%, #E1D7C7 100%)",
+        "linear-gradient(176deg, #F4EFE5 0%, #ECE6DA 42%, #E2D9C9 76%, #D8CCB8 100%)",
       imageOfDay: false,
     },
   },

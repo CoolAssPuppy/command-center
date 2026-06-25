@@ -1,9 +1,9 @@
 import type { Theme } from "./tokens";
 
 /**
- * Supa: Supabase's dashboard. Neutral charcoal greys, not tinted, under clean
- * white type, with the one Supabase phosphor-green (#3ECF8E) as the accent and
- * a faint green glow at the foot of the page. A dark token theme.
+ * Supa: Supabase's dashboard, sharpened. Crisp neutral charcoal greys under
+ * clean white type, the one Supabase phosphor-green carried all the way to the
+ * clock, and a deepening green glow at the foot of the page. A dark token theme.
  */
 export const supa: Theme = {
   meta: {
@@ -14,18 +14,18 @@ export const supa: Theme = {
   },
   tokens: {
     color: {
-      bg: "#1C1C1C",
-      surface: "#2A2A2A",
-      text: "#EDEDED",
+      bg: "#161616",
+      surface: "#232323",
+      text: "#FAFAFA",
       muted: "#8B8B8B",
       accent: "#3ECF8E",
       positive: "#3ECF8E",
       urgent: "#F25C54",
-      primary: "#EDEDED",
-      secondary: "#8B8B8B",
+      primary: "#3ECF8E",
+      secondary: "#A8A8A8",
       accent1: "#3ECF8E",
-      accent2: "#2A9D6E",
-      accent3: "#A0A0A0",
+      accent2: "#249361",
+      accent3: "#6B6B6B",
     },
     type: {
       fontFamily: "'Archivo Variable', Archivo, system-ui, -apple-system, sans-serif",
@@ -37,7 +37,7 @@ export const supa: Theme = {
     background: {
       mode: "gradient",
       value:
-        "linear-gradient(176deg, #1B1B1B 0%, #1C1C1C 55%, #1B201D 85%, #19241E 100%)",
+        "linear-gradient(176deg, #141414 0%, #161616 50%, #15201A 82%, #112A1E 100%)",
       imageOfDay: false,
     },
   },

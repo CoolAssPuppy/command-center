@@ -1,9 +1,11 @@
 import type { Theme } from "./tokens";
 
 /**
- * Hermione: the world of Harry Potter. An aged Hogwarts-letter parchment under
- * dark ink, with Gryffindor scarlet as the accent and antique house-gold beside
- * it, like a spellbook read by candlelight. A light token theme.
+ * Hermione: Hogwarts after dark. A midnight-castle ground of aubergine stone
+ * under warm parchment-and-candlelight text, with a candle-gold clock and the
+ * four house colors woven through the accents (Gryffindor scarlet, Ravenclaw
+ * sapphire, Slytherin emerald, Hufflepuff gold). The background is the Great
+ * Hall's enchanted ceiling melting into candle glow at the floor.
  */
 export const hermione: Theme = {
   meta: {
@@ -14,21 +16,21 @@ export const hermione: Theme = {
   },
   tokens: {
     color: {
-      bg: "#EADEC2",
-      surface: "#F6EDD6",
-      text: "#2A201A",
-      muted: "#7A6A52",
-      accent: "#7E1510",
-      positive: "#4E7A53",
-      urgent: "#7E1510",
-      primary: "#2A201A",
-      secondary: "#7A6A52",
-      accent1: "#7E1510",
-      accent2: "#C9A227",
-      accent3: "#5A4326",
+      bg: "#0C0A12",
+      surface: "#17131F",
+      text: "#ECE1C4",
+      muted: "#9A8C6F",
+      accent: "#E3B53A",
+      positive: "#2A623D",
+      urgent: "#AE0001",
+      primary: "#E3B53A",
+      secondary: "#9A8C6F",
+      accent1: "#AE0001",
+      accent2: "#2A3C6E",
+      accent3: "#2A623D",
     },
     type: {
-      fontFamily: "'Archivo Variable', Archivo, system-ui, -apple-system, sans-serif",
+      fontFamily: "'Iowan Old Style', Georgia, 'Times New Roman', serif",
       scale: 1.0,
       numericTabular: true,
     },
@@ -37,7 +39,7 @@ export const hermione: Theme = {
     background: {
       mode: "gradient",
       value:
-        "linear-gradient(176deg, #F0E6CC 0%, #E8DBBA 48%, #DFCEA4 80%, #D6C394 100%)",
+        "linear-gradient(176deg, #0A0913 0%, #12101D 40%, #1B1626 70%, #2A1F1A 88%, #3A2A18 100%)",
       imageOfDay: false,
     },
   },

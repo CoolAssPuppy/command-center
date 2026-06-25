@@ -1,9 +1,9 @@
 import type { Theme } from "./tokens";
 
 /**
- * Kirk: 1960s Star Trek. The black of space under bright optimistic type, with
- * the command-gold tunic as the accent and the sciences-blue and operations-red
- * of the other crew shirts beside it. A dark token theme.
+ * Kirk: 1960s Star Trek. The black of deep space under bright optimistic type,
+ * the command-gold tunic glowing on the clock, and the sciences-blue and
+ * operations-red of the other crew shirts beside it. A dark token theme.
  */
 export const kirk: Theme = {
   meta: {
@@ -14,18 +14,18 @@ export const kirk: Theme = {
   },
   tokens: {
     color: {
-      bg: "#08090E",
+      bg: "#07080D",
       surface: "#15171F",
-      text: "#F2EFE6",
-      muted: "#8E8C81",
+      text: "#F4F1E6",
+      muted: "#9A968A",
       accent: "#E8B23A",
       positive: "#56B98A",
-      urgent: "#CC4436",
-      primary: "#F2EFE6",
-      secondary: "#8E8C81",
+      urgent: "#D6402F",
+      primary: "#E8B23A",
+      secondary: "#9A968A",
       accent1: "#E8B23A",
       accent2: "#3E8FD0",
-      accent3: "#CC4436",
+      accent3: "#D6402F",
     },
     type: {
       fontFamily: "'Archivo Variable', Archivo, system-ui, -apple-system, sans-serif",
@@ -37,7 +37,7 @@ export const kirk: Theme = {
     background: {
       mode: "gradient",
       value:
-        "linear-gradient(176deg, #050608 0%, #0A0B12 45%, #10121C 80%, #161526 100%)",
+        "linear-gradient(176deg, #040507 0%, #0A0B12 40%, #11101E 72%, #1A1330 100%)",
       imageOfDay: false,
     },
   },

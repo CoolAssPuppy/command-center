@@ -1,9 +1,9 @@
 import type { Theme } from "./tokens";
 
 /**
- * Mono: a dense, high-information theme. Near-black ground, monospaced tabular
- * type, a single bright accent. For people who want maximum signal per pixel.
- * A token theme. See docs/14-themes.md.
+ * Mono: an amber-phosphor terminal. A warm near-black ground glowing with the
+ * single amber of an old monochrome monitor, monospaced and dense, where a
+ * hotter amber marks what is urgent. Maximum signal, one color, no chrome.
  */
 export const mono: Theme = {
   meta: {
@@ -14,18 +14,18 @@ export const mono: Theme = {
   },
   tokens: {
     color: {
-      bg: "#0A0A0A",
-      surface: "#111111",
-      text: "#E8E8E8",
-      muted: "#8A8A8A",
-      accent: "#5EE6A8",
-      positive: "#5EE6A8",
-      urgent: "#FF6B6B",
-      primary: "#5EE6A8",
-      secondary: "#E8E8E8",
-      accent1: "#5EE6A8",
-      accent2: "#FFB454",
-      accent3: "#6AA6FF",
+      bg: "#100B04",
+      surface: "#1A1206",
+      text: "#F5B642",
+      muted: "#A87A2C",
+      accent: "#FFB000",
+      positive: "#D69A2E",
+      urgent: "#FF7A1A",
+      primary: "#FFB000",
+      secondary: "#C98A1A",
+      accent1: "#FFB000",
+      accent2: "#FF8C00",
+      accent3: "#B36B00",
     },
     type: {
       fontFamily: "'SF Mono', ui-monospace, 'JetBrains Mono', monospace",
@@ -42,8 +42,8 @@ export const mono: Theme = {
       speed: 1.0,
     },
     background: {
-      mode: "solid",
-      value: "#0A0A0A",
+      mode: "gradient",
+      value: "linear-gradient(176deg, #0C0803 0%, #100B04 60%, #1A1206 100%)",
       imageOfDay: false,
     },
   },
