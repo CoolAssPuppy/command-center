@@ -6,6 +6,7 @@ import { renderBackupSection } from "./backupSection";
 import { renderConnectionsSection } from "./connectionsSection";
 import { renderDockSection } from "./dockSection";
 import { renderStreamsSection } from "./streamsSection";
+import { renderSupportSection } from "./supportSection";
 import { renderTickersSection } from "./tickersSection";
 import { renderWallpaperSection } from "./wallpaperSection";
 import { renderWeatherSection } from "./weatherSection";
@@ -65,6 +66,7 @@ const SECTIONS: SectionRenderer[] = [
   renderWallpaperSection,
   renderAppearanceSection,
   renderBackupSection,
+  renderSupportSection,
 ];
 
 /**
@@ -81,6 +83,7 @@ const SECTION_KEYS = [
   "wallpaper",
   "appearance",
   "backup",
+  "support",
 ];
 
 function clone<T>(value: T): T {
