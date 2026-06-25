@@ -10,7 +10,8 @@ import {
   type SourceConfig,
   type Stream,
 } from "../config/schema";
-import { combineCalendars } from "../integrations/combine";
+import { combineCalendars, resolveCombineTargets } from "../integrations/combine";
+import { fetchGoogleCalendarList } from "../integrations/googleCalendarList";
 import { fetchStockQuotes, type StockQuote } from "../integrations/finnhub";
 import { fetchForexQuotes, splitSymbols } from "../integrations/forex";
 import { fetchNews, type NewsItem } from "../integrations/news";
@@ -453,11 +454,29 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     );
 
     if (usesCombine) {
-      // The combined card reads each calendar account directly (its primary),
-      // independent of any per-card calendar selection, so the all-accounts merge
-      // keeps working exactly as before.
+      const combineCard = config.streams.find(
+        (stream) => stream.connectionId === COMBINED_CALENDARS_ID,
+      );
+      // Resolve the calendars to merge: the card's stored selection if it has one,
+      // otherwise every calendar from every account (discovered per account).
+      const targets = await resolveCombineTargets(
+        combineCard?.combineCalendars ?? [],
+        calendarConnections.map((connection) => connection.id),
+        async (connectionId) => {
+          const token = await ctx.getAuthToken?.("google", connectionId);
+          if (token === undefined || token.length === 0) return undefined;
+          const list = await fetchGoogleCalendarList(ctx.fetch, token);
+          return list?.map((entry) => entry.id);
+        },
+      );
+      // One fetch per account (its token reads every chosen calendar in one call).
+      // A failing account yields a non-ok result that combineCalendars tolerates.
       const calendarResults = await Promise.all(
-        calendarConnections.map((connection) => fetchSource({ ...connection }, connection.id)),
+        targets.map((target) => {
+          const connection = connectionById.get(target.connectionId);
+          if (connection === undefined) return Promise.resolve(undefined);
+          return fetchSource({ ...connection, calendarIds: target.calendarIds }, connection.id);
+        }),
       );
       integrationResults[COMBINED_CALENDARS_ID] = combineCalendars(calendarResults);
     }

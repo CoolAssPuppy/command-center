@@ -80,6 +80,33 @@ describe("config parsing", () => {
     expect(config.streams[0]?.collapsedByDefault).toBe(false);
   });
 
+  it("keeps a Combine card's calendar selection, qualified by account", () => {
+    const config = parseConfig({
+      streams: [
+        {
+          id: "s1",
+          title: "All calendars",
+          connectionId: "combined:google-calendar",
+          combineCalendars: [
+            { connectionId: "work", calendarId: "team@x" },
+            { connectionId: "home", calendarId: "primary" },
+          ],
+        },
+      ],
+    });
+    expect(config.streams[0]?.combineCalendars).toEqual([
+      { connectionId: "work", calendarId: "team@x" },
+      { connectionId: "home", calendarId: "primary" },
+    ]);
+  });
+
+  it("leaves a Combine card's selection unset by default (meaning all calendars)", () => {
+    const config = parseConfig({
+      streams: [{ id: "s1", title: "All calendars", connectionId: "combined:google-calendar" }],
+    });
+    expect(config.streams[0]?.combineCalendars).toBeUndefined();
+  });
+
   it("defaults weather to on for zones and off for the home clock", () => {
     const config = parseConfig({});
     expect(config.weather.showForZones).toBe(true);

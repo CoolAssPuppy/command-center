@@ -1,9 +1,15 @@
 import {
   COMBINED_CALENDARS_ID,
+  type CombineCalendarRef,
   type Connection,
   type Service,
   type Stream,
 } from "../config/schema";
+import {
+  fetchGoogleCalendarList,
+  type CalendarListEntry,
+} from "../integrations/googleCalendarList";
+import { realHttpFetch } from "../integrations/http";
 import { el } from "../render/helpers";
 import { newId } from "../util/id";
 import {
@@ -145,6 +151,7 @@ function renderStreamRow(stream: Stream, index: number, ctx: SectionContext): HT
 /** Append the per-source customization for a card, branching by base service. */
 function renderCardConfig(wrap: HTMLElement, stream: Stream, ctx: SectionContext): void {
   if (stream.connectionId === COMBINED_CALENDARS_ID) {
+    renderCombineCalendarPicker(wrap, stream, ctx);
     wrap.appendChild(countField(stream, ctx));
     return;
   }
@@ -262,40 +269,6 @@ function roleField(stream: Stream, ctx: SectionContext, service: Service): HTMLE
   return field("Role", role);
 }
 
-interface CalendarOption {
-  id: string;
-  summary?: string;
-}
-
-/** Fetch the account's calendar list directly (googleapis.com is permitted). */
-async function fetchCalendarList(accessToken: string): Promise<CalendarOption[] | undefined> {
-  const globalFetch = (globalThis as { fetch?: typeof fetch }).fetch;
-  if (globalFetch === undefined) return undefined;
-  try {
-    const response = await globalFetch(
-      "https://www.googleapis.com/calendar/v3/users/me/calendarList",
-      { headers: { Authorization: `Bearer ${accessToken}` } },
-    );
-    if (!response.ok) return undefined;
-    const body = (await response.json()) as { items?: unknown };
-    if (!Array.isArray(body.items)) return undefined;
-    const options: CalendarOption[] = [];
-    for (const raw of body.items) {
-      if (typeof raw !== "object" || raw === null) continue;
-      const item = raw as { id?: unknown; summary?: unknown };
-      if (typeof item.id !== "string") continue;
-      options.push(
-        typeof item.summary === "string"
-          ? { id: item.id, summary: item.summary }
-          : { id: item.id },
-      );
-    }
-    return options;
-  } catch {
-    return undefined;
-  }
-}
-
 function calendarIdInput(stream: Stream, ctx: SectionContext): HTMLInputElement {
   const input = textInput("primary");
   input.value = stream.calendarId ?? "";
@@ -357,7 +330,7 @@ function renderCalendarPicker(
   details.appendChild(listBox);
   wrap.appendChild(details);
 
-  void fetchCalendarList(accessToken).then((calendars) => {
+  void fetchGoogleCalendarList(realHttpFetch, accessToken).then((calendars) => {
     if (calendars === undefined || calendars.length === 0) {
       const fieldWrap = el("div", "cc-edit__field cc-edit__calendars");
       fieldWrap.appendChild(el("label", "cc-edit__field-label", "Calendar"));
@@ -386,6 +359,110 @@ function renderCalendarPicker(
       boxes.push({ id: calendar.id, box });
     }
   });
+}
+
+/** Qualified keys of the calendars a Combine card has selected. */
+function selectedCombineKeys(stream: Stream): Set<string> {
+  return new Set(
+    (stream.combineCalendars ?? []).map((ref) => `${ref.connectionId} ${ref.calendarId}`),
+  );
+}
+
+/**
+ * The "Combine all calendars" card's picker: a chevron disclosure that pools the
+ * calendars from every connected Google account, labelled by account, as a
+ * multi-select. An empty selection means every calendar, so checking all (or
+ * none) clears it back to that "all accounts" default.
+ */
+function renderCombineCalendarPicker(
+  wrap: HTMLElement,
+  stream: Stream,
+  ctx: SectionContext,
+): void {
+  const accounts = ctx.draft.connections
+    .filter((connection) => connection.service === "google-calendar")
+    .map((connection) => ({
+      connection,
+      token: ctx.draftSecrets.googleTokens[connection.id]?.accessToken,
+    }))
+    .filter((entry): entry is { connection: Connection; token: string } =>
+      entry.token !== undefined,
+    );
+
+  if (accounts.length === 0) {
+    wrap.appendChild(
+      el("div", "cc-edit__hint", "Connect a Google account to choose which calendars to merge."),
+    );
+    return;
+  }
+
+  const selection = selectedCombineKeys(stream);
+  const details = document.createElement("details");
+  details.className = "cc-edit__field cc-edit__calendars cc-edit__calendars-disclosure";
+  details.open = expandedCalendars.has(stream.id);
+  details.addEventListener("toggle", () => {
+    if (details.open) expandedCalendars.add(stream.id);
+    else expandedCalendars.delete(stream.id);
+  });
+  const summary = document.createElement("summary");
+  summary.className = "cc-edit__calendars-summary";
+  const chevron = el("span", "cc-edit__calendars-chevron", "›");
+  chevron.setAttribute("aria-hidden", "true");
+  summary.appendChild(chevron);
+  const label = selection.size === 0 ? "All calendars" : `${String(selection.size)} selected`;
+  summary.appendChild(el("span", undefined, `Calendars · ${label}`));
+  details.appendChild(summary);
+
+  const listBox = el("div", "cc-edit__calendar-list");
+  listBox.appendChild(el("div", "cc-edit__hint", "Loading calendars…"));
+  details.appendChild(listBox);
+  wrap.appendChild(details);
+
+  void Promise.all(
+    accounts.map((account) =>
+      fetchGoogleCalendarList(realHttpFetch, account.token).then((calendars) => ({
+        connection: account.connection,
+        calendars,
+      })),
+    ),
+  ).then((results) => {
+    listBox.replaceChildren();
+    const boxes: Array<{ ref: CombineCalendarRef; box: HTMLInputElement }> = [];
+    const commit = (): void => {
+      const checked = boxes.filter((entry) => entry.box.checked);
+      updateStream(ctx, stream.id, (item) => {
+        // None or all checked both mean "every calendar from every account", so
+        // clear the field; otherwise store the explicit qualified selection.
+        if (checked.length === 0 || checked.length === boxes.length) delete item.combineCalendars;
+        else item.combineCalendars = checked.map((entry) => entry.ref);
+      });
+    };
+
+    for (const { connection, calendars } of results) {
+      if (calendars === undefined || calendars.length === 0) continue;
+      listBox.appendChild(el("div", "cc-edit__calendar-account", connection.name));
+      for (const calendar of calendars) {
+        const ref: CombineCalendarRef = { connectionId: connection.id, calendarId: calendar.id };
+        const key = `${connection.id} ${calendar.id}`;
+        const optionRow = el("label", "cc-edit__check");
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = selection.size === 0 || selection.has(key);
+        box.addEventListener("change", commit);
+        optionRow.appendChild(box);
+        optionRow.appendChild(el("span", undefined, calendarLabel(calendar)));
+        listBox.appendChild(optionRow);
+        boxes.push({ ref, box });
+      }
+    }
+    if (boxes.length === 0) {
+      listBox.appendChild(el("div", "cc-edit__hint", "No calendars found on the connected accounts."));
+    }
+  });
+}
+
+function calendarLabel(calendar: CalendarListEntry): string {
+  return calendar.summary ?? calendar.id;
 }
 
 function renderAddStream(ctx: SectionContext): HTMLElement {

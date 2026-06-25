@@ -1607,6 +1607,20 @@ button.cc-lane__item:hover {
   margin-top: 8px;
 }
 
+/* Account heading above each group of calendars in the combined-card picker. */
+.cc-edit__calendar-account {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cc-color-muted, #6a6e76);
+  margin-top: 8px;
+}
+
+.cc-edit__calendar-account:first-child {
+  margin-top: 0;
+}
+
 /* A chevron dropdown wrapping a multi-select checklist (news sources, etc.). */
 .cc-edit__picker-summary {
   display: flex;

@@ -114,6 +114,16 @@ export type SourceConfig = z.infer<typeof CardConfigSchema>;
 export type IntegrationSource = Connection & SourceConfig;
 
 /**
+ * One calendar chosen for a "Combine all calendars" card, qualified by the
+ * account it lives in so calendars from different accounts never collide.
+ */
+export const CombineCalendarRefSchema = z.object({
+  connectionId: z.string().min(1),
+  calendarId: z.string().min(1),
+});
+export type CombineCalendarRef = z.infer<typeof CombineCalendarRefSchema>;
+
+/**
  * A Data Card: a titled panel that picks a base connection and customizes it. The
  * card carries all per-source presentation (which calendar, which Linear view,
  * the GitHub query, the Notion database, the role, the item count).
@@ -124,6 +134,13 @@ export const StreamSchema = z
     title: z.string().min(1),
     connectionId: z.string().min(1),
     collapsedByDefault: z.boolean().default(false),
+    /**
+     * Combine card only (connectionId is the combined virtual id): the calendars
+     * to merge, each qualified by its account. Empty or unset means every
+     * calendar from every connected Google account, so the card works before the
+     * user narrows it and keeps following accounts as they add calendars.
+     */
+    combineCalendars: z.array(CombineCalendarRefSchema).optional(),
   })
   .merge(CardConfigSchema);
 export type Stream = z.infer<typeof StreamSchema>;
