@@ -4,7 +4,7 @@ import { z } from "zod";
  * Theme tokens are the styling contract between the platform and a theme. The
  * platform exposes a fixed set of tokens; a theme provides values. Tone names,
  * positive and urgent, map to token colors, so a feed that marks a glance
- * urgent is shown in the theme's urgent color. See docs/14-themes.md.
+ * urgent is shown in the theme's urgent color.
  */
 
 export const ThemeTokensSchema = z.object({

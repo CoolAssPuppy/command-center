@@ -6,7 +6,7 @@ import { firstIssue, type ParseResult } from "../domain/result";
  * The weather client. It is the dashboard's only first-party network call, and
  * it speaks to exactly one host, Open-Meteo, which needs no API key. The
  * content security policy in the new tab page allows connect-src to this host
- * only. See docs/06-safari-extension.md and docs/07-dashboard-ui.md.
+ * only.
  *
  * The fetch function is injected so the client is tested without a network and
  * without coupling to any global. No token or secret is ever sent.

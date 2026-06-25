@@ -2,7 +2,7 @@ import { setText } from "../security/dom";
 
 /**
  * Small DOM construction helpers shared across the shell. All text goes through
- * setText, so nothing ever assigns innerHTML. See docs/10-security.md.
+ * setText, so nothing ever assigns innerHTML.
  */
 
 const SVG_NS = "http://www.w3.org/2000/svg";

@@ -2,7 +2,7 @@
  * The time engine for the world clock. Every function takes an explicit instant
  * (a Date) so it is pure and deterministic: the same instant and zone always
  * give the same result, which makes the world clock fully testable. Nothing
- * here reads the system clock. See docs/07-dashboard-ui.md.
+ * here reads the system clock.
  */
 
 export type DayNight = "day" | "night";

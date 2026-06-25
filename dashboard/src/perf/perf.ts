@@ -1,7 +1,7 @@
 /**
  * Performance helpers. A new tab page must paint fast, so the dashboard times
  * its first paint and respects reduced motion. The budgets here are also
- * enforced at build time by scripts/check-bundle.mjs. See docs/07-dashboard-ui.md.
+ * enforced at build time by scripts/check-bundle.mjs.
  */
 
 /** Target for first paint from cache, in milliseconds. */

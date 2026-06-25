@@ -1,7 +1,7 @@
 /**
  * URL safety for anything the dashboard navigates to or fetches: dock links,
  * integration item links, wallpaper image URLs. A dangerous scheme is always
- * blocked, and only allow-listed schemes are permitted. See docs/10-security.md.
+ * blocked, and only allow-listed schemes are permitted.
  */
 
 /** Schemes the dashboard will navigate to by default (dock links, item links). */

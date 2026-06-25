@@ -2,7 +2,7 @@ import type { Theme } from "./tokens";
 
 /**
  * Aurora: the showpiece dark-glass theme with a living gradient background and
- * soft motion. Shipped by default. See docs/14-themes.md. This file is the token
+ * soft motion. Shipped by default. This file is the token
  * layer; render-theme behavior (custom chart styling, ambient background) comes
  * with the theme system in Phase 6.
  */

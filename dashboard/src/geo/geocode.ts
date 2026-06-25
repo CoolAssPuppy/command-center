@@ -6,7 +6,7 @@ import { firstIssue, type ParseResult } from "../domain/result";
  * City search via Open-Meteo's free geocoding API (no key). The edit pane uses
  * it to add a timezone the user types: a match carries the IANA time zone and
  * coordinates, so the new zone gets a correct clock and weather. The fetch is
- * injected so the client is tested without a network. See docs/07-dashboard-ui.md.
+ * injected so the client is tested without a network.
  */
 const SEARCH_BASE = "https://geocoding-api.open-meteo.com/v1/search";
 
