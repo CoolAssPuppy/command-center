@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { Connection } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
+import { formatTaskDue } from "./task";
 import {
   NEEDS_AUTH,
   type Integration,
@@ -11,18 +12,22 @@ import {
 
 /**
  * The Linear integration. Uses the connection's personal API key (a secret) in
- * the Authorization header. In the default "assigned" view it lists the viewer's
- * open assigned issues; in "inbox" view it reads the viewer's notifications
- * (unread and unsnoozed), so the connection can mirror Linear's inbox. Each is
- * normalized into a text-only item linking to Linear.
+ * the Authorization header. The default "assigned" view lists open issues you
+ * created or are assigned (deduped, soonest deadline first); "inbox" view reads
+ * the viewer's notifications (unread and unsnoozed). Each is normalized into a
+ * text-only item linking to Linear.
  */
 const ENDPOINT = "https://api.linear.app/graphql";
 
-const ASSIGNED_QUERY = `query CommandCenterAssigned($first: Int!) {
-  viewer {
-    assignedIssues(first: $first, filter: { completedAt: { null: true } }) {
-      nodes { identifier title url priority state { name } }
+export const ASSIGNED_QUERY = `query CommandCenterAssigned($first: Int!) {
+  issues(
+    first: $first
+    filter: {
+      completedAt: { null: true }
+      or: [{ creator: { isMe: { eq: true } } }, { assignee: { isMe: { eq: true } } }]
     }
+  ) {
+    nodes { identifier title url priority dueDate state { name } }
   }
 }`;
 
@@ -43,19 +48,18 @@ export const INBOX_QUERY = `query CommandCenterInbox($first: Int!) {
 const AssignedSchema = z.object({
   data: z
     .object({
-      viewer: z.object({
-        assignedIssues: z.object({
-          nodes: z.array(
-            z.object({
-              identifier: z.string(),
-              title: z.string(),
-              url: z.string().optional(),
-              // Linear priority: 0 none, 1 urgent, 2 high, 3 medium, 4 low.
-              priority: z.number().optional(),
-              state: z.object({ name: z.string() }).optional(),
-            }),
-          ),
-        }),
+      issues: z.object({
+        nodes: z.array(
+          z.object({
+            identifier: z.string(),
+            title: z.string(),
+            url: z.string().optional(),
+            // Linear priority: 0 none, 1 urgent, 2 high, 3 medium, 4 low.
+            priority: z.number().optional(),
+            dueDate: z.string().nullable().optional(),
+            state: z.object({ name: z.string() }).optional(),
+          }),
+        ),
       }),
     })
     .optional(),
@@ -101,11 +105,28 @@ function parseAssigned(payload: unknown): ParseResult<NormalizedItem[]> {
   }
   if (result.data.data === undefined) return { ok: false, error: "Linear returned no data" };
 
-  const items = result.data.data.viewer.assignedIssues.nodes.map((issue) => {
+  // Soonest deadline first; issues with no due date sort to the end.
+  const nodes = [...result.data.data.issues.nodes].sort((a, b) =>
+    (a.dueDate ?? "9999-99-99").localeCompare(b.dueDate ?? "9999-99-99"),
+  );
+
+  const items = nodes.map((issue) => {
     const item: NormalizedItem = { id: issue.identifier, title: issue.title };
-    if (issue.state !== undefined) item.subtitle = issue.state.name;
     if (issue.url !== undefined) item.url = issue.url;
     item.meta = issue.identifier;
+
+    // Subtitle shows the status, with the due date tucked beside it when set:
+    // "Backlog" or "Backlog, Jun 26".
+    const status = issue.state?.name;
+    const due =
+      issue.dueDate !== undefined && issue.dueDate !== null
+        ? formatTaskDue(issue.dueDate)
+        : undefined;
+    if (status !== undefined && due !== undefined) item.subtitle = `${status}, ${due}`;
+    else if (status !== undefined) item.subtitle = status;
+    else if (due !== undefined) item.subtitle = due;
+    if (issue.dueDate !== undefined && issue.dueDate !== null) item.sortKey = issue.dueDate;
+
     if (issue.priority !== undefined && issue.priority >= 1 && issue.priority <= 2) {
       item.tone = "urgent";
     }

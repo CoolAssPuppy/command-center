@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { Connection } from "../config/schema";
-import { INBOX_QUERY, linearIntegration, linearViewOf, parseLinearInbox } from "./linear";
+import {
+  ASSIGNED_QUERY,
+  INBOX_QUERY,
+  linearIntegration,
+  linearViewOf,
+  parseLinearInbox,
+} from "./linear";
 import {
   NEEDS_AUTH,
   type HttpRequest,
@@ -15,9 +21,7 @@ const json = (body: unknown): HttpResponseLike => ({
   json: () => Promise.resolve(body),
 });
 
-const issuesBody = (nodes: unknown[]): unknown => ({
-  data: { viewer: { assignedIssues: { nodes } } },
-});
+const issuesBody = (nodes: unknown[]): unknown => ({ data: { issues: { nodes } } });
 
 const ctx = (
   fetch: (request: HttpRequest) => Promise<HttpResponseLike>,
@@ -137,5 +141,58 @@ describe("linear inbox view", () => {
     if (!result.ok) return;
     expect(result.value.map((item) => item.id)).toEqual(["ENG-1"]);
     expect(result.value[0]).toMatchObject({ title: "Fix", url: "https://l/1", meta: "ENG-1" });
+  });
+});
+
+describe("linear assigned view (Change 4)", () => {
+  it("queries open issues created-by-me or assigned-to-me", () => {
+    expect(ASSIGNED_QUERY).toContain("creator: { isMe: { eq: true } }");
+    expect(ASSIGNED_QUERY).toContain("assignee: { isMe: { eq: true } }");
+    expect(ASSIGNED_QUERY).toContain("completedAt: { null: true }");
+    expect(ASSIGNED_QUERY).toContain("dueDate");
+  });
+
+  it("orders by nearest due date, with undated issues last", async () => {
+    const result = await linearIntegration.fetch(
+      connection(),
+      "lin_key",
+      ctx(() =>
+        Promise.resolve(
+          json(
+            issuesBody([
+              { identifier: "ENG-1", title: "No due", state: { name: "Todo" } },
+              { identifier: "ENG-2", title: "Later", dueDate: "2026-07-10", state: { name: "Todo" } },
+              { identifier: "ENG-3", title: "Soon", dueDate: "2026-06-26", state: { name: "Backlog" } },
+            ]),
+          ),
+        ),
+      ),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.map((item) => item.id)).toEqual(["ENG-3", "ENG-2", "ENG-1"]);
+  });
+
+  it("shows the due date beside the status in the subtitle", async () => {
+    const result = await linearIntegration.fetch(
+      connection(),
+      "lin_key",
+      ctx(() =>
+        Promise.resolve(
+          json(
+            issuesBody([
+              { identifier: "ENG-9", title: "Has due", dueDate: "2026-06-26", state: { name: "Backlog" } },
+              { identifier: "ENG-8", title: "No due", state: { name: "Todo" } },
+            ]),
+          ),
+        ),
+      ),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const dated = result.value.find((item) => item.id === "ENG-9");
+    const undated = result.value.find((item) => item.id === "ENG-8");
+    expect(dated?.subtitle).toMatch(/^Backlog, /);
+    expect(undated?.subtitle).toBe("Todo");
   });
 });
