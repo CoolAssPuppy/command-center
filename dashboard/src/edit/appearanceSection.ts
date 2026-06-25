@@ -99,48 +99,6 @@ function buildAppearance(section: HTMLElement, ctx: SectionContext): void {
   clockRow.appendChild(clock);
   clockRow.appendChild(el("span", undefined, "Use a 24-hour clock"));
   section.appendChild(clockRow);
-
-  section.appendChild(
-    checkRow("Enable dock", ctx.draft.appearance.showDock !== false, (checked) => {
-      ctx.update((config) => {
-        config.appearance.showDock = checked;
-      });
-    }),
-  );
-  section.appendChild(
-    checkRow(
-      "Enable dock magnification",
-      ctx.draft.appearance.dockMagnification !== false,
-      (checked) => {
-        ctx.update((config) => {
-          config.appearance.dockMagnification = checked;
-        });
-      },
-      // Magnification only matters when the dock is shown, so disable it
-      // (and gray it out) while the dock is off.
-      ctx.draft.appearance.showDock === false,
-    ),
-  );
-}
-
-/** A labeled checkbox row, matching the other edit-pane toggles. */
-function checkRow(
-  label: string,
-  checked: boolean,
-  onChange: (checked: boolean) => void,
-  disabled = false,
-): HTMLElement {
-  const row = el("label", "cc-edit__check");
-  const box = document.createElement("input");
-  box.type = "checkbox";
-  box.checked = checked;
-  box.disabled = disabled;
-  box.addEventListener("change", () => {
-    onChange(box.checked);
-  });
-  row.appendChild(box);
-  row.appendChild(el("span", undefined, label));
-  return row;
 }
 
 /** Export the active theme, and import a pasted one as a new custom theme. */

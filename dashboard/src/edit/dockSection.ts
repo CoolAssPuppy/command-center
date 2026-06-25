@@ -15,8 +15,30 @@ import { makeReorderable } from "./reorderable";
 export function renderDockSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Dock links", key: "dock", collapsed: ctx.collapsed },
+    { title: "Dock", key: "dock", collapsed: ctx.collapsed },
     (section) => {
+      section.appendChild(
+        checkRow("Enable dock", ctx.draft.appearance.showDock !== false, (checked) => {
+          ctx.update((config) => {
+            config.appearance.showDock = checked;
+          });
+        }),
+      );
+      section.appendChild(
+        checkRow(
+          "Enable dock magnification",
+          ctx.draft.appearance.dockMagnification !== false,
+          (checked) => {
+            ctx.update((config) => {
+              config.appearance.dockMagnification = checked;
+            });
+          },
+          // Magnification only matters when the dock is shown, so disable it
+          // (and gray it out) while the dock is off.
+          ctx.draft.appearance.showDock === false,
+        ),
+      );
+
       const list = el("div", "cc-edit__list");
       ctx.draft.links.forEach((link, index) => {
         list.appendChild(renderLinkRow(link, index, ctx));
@@ -132,4 +154,24 @@ function renderAddLink(ctx: SectionContext): HTMLElement {
   wrap.appendChild(form);
   wrap.appendChild(error);
   return wrap;
+}
+
+/** A labeled checkbox row, matching the other edit-pane toggles. */
+function checkRow(
+  label: string,
+  checked: boolean,
+  onChange: (checked: boolean) => void,
+  disabled = false,
+): HTMLElement {
+  const row = el("label", "cc-edit__check");
+  const box = document.createElement("input");
+  box.type = "checkbox";
+  box.checked = checked;
+  box.disabled = disabled;
+  box.addEventListener("change", () => {
+    onChange(box.checked);
+  });
+  row.appendChild(box);
+  row.appendChild(el("span", undefined, label));
+  return row;
 }
