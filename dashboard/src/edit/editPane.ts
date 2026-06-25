@@ -5,6 +5,7 @@ import { renderAppearanceSection } from "./appearanceSection";
 import { renderBackupSection } from "./backupSection";
 import { renderConnectionsSection } from "./connectionsSection";
 import { renderDockSection } from "./dockSection";
+import { createPersistedCollapsed } from "./sectionState";
 import { renderStreamsSection } from "./streamsSection";
 import { renderSupportSection } from "./supportSection";
 import { renderTickersSection } from "./tickersSection";
@@ -141,8 +142,9 @@ export function openEditPane(host: HTMLElement, deps: EditPaneDeps): EditPaneHan
   // Remember who opened the drawer so focus returns there when it closes.
   const opener =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
-  // Section collapse state, kept across re-renders (the body rebuilds on edit).
-  const collapsed = new Set<string>();
+  // Section collapse state: seeded from this device's localStorage and saved on
+  // every change, so the pane reopens the way it was last left here.
+  const collapsed = createPersistedCollapsed();
 
   const root = el("div", "cc-edit");
   const backdrop = el("div", "cc-edit__backdrop");
