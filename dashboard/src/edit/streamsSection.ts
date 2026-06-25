@@ -417,6 +417,7 @@ function renderAddStream(ctx: SectionContext): HTMLElement {
     });
   });
 
+  wrap.appendChild(el("div", "cc-edit__add-title", "Add a new data card"));
   wrap.appendChild(form);
   return wrap;
 }
