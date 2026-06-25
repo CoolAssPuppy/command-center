@@ -1740,6 +1740,17 @@ button.cc-stream__item:hover {
   padding: 6px 0;
 }
 
+/* The stock/forex strip is clickable to toggle percent vs amount. */
+.cc-ticker--stocks {
+  cursor: pointer;
+}
+
+.cc-ticker--stocks:focus-visible {
+  outline: 2px solid var(--cc-color-accent, #2f7a6f);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .cc-ticker__viewport {
   width: 100%;
   overflow: hidden;

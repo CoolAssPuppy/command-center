@@ -19,6 +19,7 @@ import {
 } from "./needsYouLane";
 import type { TaskFilterState } from "./taskFilterState";
 import { renderTickers } from "./ticker";
+import type { TickerMode } from "./tickerModeState";
 import { renderZoneRow, type ZoneRowModel } from "./zoneRow";
 
 /**
@@ -49,6 +50,8 @@ export interface DashboardModel {
   tickerNews?: NewsItem[];
   /** Persisted Tasks-section filter and sort. */
   taskFilter?: TaskFilterState;
+  /** Persisted ticker delta mode (percent or amount). */
+  tickerMode?: TickerMode;
 }
 
 export interface DashboardDeps {
@@ -61,6 +64,8 @@ export interface DashboardDeps {
   onToggleStream?: (streamId: string, open: boolean) => void;
   /** Persist the Tasks-section filter and sort. */
   onTaskFilterChange?: (state: TaskFilterState) => void;
+  /** Persist the ticker delta mode after a strip click. */
+  onTickerModeChange?: (mode: TickerMode) => void;
   /** Reorder a dashboard group by dragging one item onto another. */
   onReorder?: (
     group: "zones" | "streams" | "links",
@@ -201,6 +206,10 @@ export function renderDashboard(
         newsEnabled: model.config.tickers.news.enabled,
         ...(model.tickerStocks !== undefined ? { stocks: model.tickerStocks } : {}),
         ...(model.tickerNews !== undefined ? { news: model.tickerNews } : {}),
+        ...(model.tickerMode !== undefined ? { mode: model.tickerMode } : {}),
+        ...(deps.onTickerModeChange !== undefined
+          ? { onTickerModeChange: deps.onTickerModeChange }
+          : {}),
       },
       deps.navigate,
     );

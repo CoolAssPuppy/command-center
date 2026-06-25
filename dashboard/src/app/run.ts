@@ -8,7 +8,13 @@ import {
 } from "../config/schema";
 import { combineCalendars } from "../integrations/combine";
 import { fetchStockQuotes, type StockQuote } from "../integrations/finnhub";
+import { fetchForexQuotes, splitSymbols } from "../integrations/forex";
 import { fetchNews, type NewsItem } from "../integrations/news";
+import {
+  loadTickerMode,
+  saveTickerMode,
+  type TickerMode,
+} from "../shell/tickerModeState";
 import { demoCombinedCalendars, demoResultFor, isDemoMode } from "./demo";
 import type { ConfigStore } from "../config/store";
 import type { ParseResult } from "../domain/result";
@@ -105,6 +111,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
   let config: Config | undefined;
   let streamExpanded = loadStreamState();
   let taskFilter: TaskFilterState = loadTaskFilterState();
+  let tickerMode: TickerMode = loadTickerMode();
   let wallpaperPhoto:
     | {
         imageUrl: string;
@@ -142,6 +149,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     // model.config.tickers, which the shell reads directly.
     model.tickerStocks = tickerStocks;
     model.tickerNews = tickerNews;
+    model.tickerMode = tickerMode;
     if (wallpaperPhoto !== undefined) model.wallpaper = wallpaperPhoto;
     const renderDeps: DashboardDeps = {
       navigate: deps.navigate,
@@ -157,6 +165,11 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       onTaskFilterChange: (state) => {
         taskFilter = state;
         saveTaskFilterState(state);
+      },
+      // The strip updates its own deltas in place, so just persist the choice.
+      onTickerModeChange: (mode) => {
+        tickerMode = mode;
+        saveTickerMode(mode);
       },
       onReorder: reorderConfigGroup,
     };
@@ -436,11 +449,17 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     const httpFetch = deps.httpFetch ?? realHttpFetch;
 
     if (stocks.enabled && stocks.symbols.length > 0) {
+      // Currency pairs go to the keyless forex source; everything else to
+      // Finnhub (which needs a key). Forex still works without a key.
+      const { forex, stocks: stockSymbols } = splitSymbols(stocks.symbols);
       const key = (await deps.store.loadSecrets()).finnhubKey;
-      tickerStocks =
-        key !== undefined && key.trim().length > 0
-          ? await fetchStockQuotes(stocks.symbols, key, httpFetch)
-          : [];
+      const [equities, currencies] = await Promise.all([
+        stockSymbols.length > 0 && key !== undefined && key.trim().length > 0
+          ? fetchStockQuotes(stockSymbols, key, httpFetch)
+          : Promise.resolve([]),
+        forex.length > 0 ? fetchForexQuotes(forex, httpFetch) : Promise.resolve([]),
+      ]);
+      tickerStocks = [...equities, ...currencies];
     } else {
       tickerStocks = [];
     }

@@ -12,15 +12,20 @@ const ENDPOINT = "https://finnhub.io/api/v1/quote";
 
 export interface StockQuote {
   symbol: string;
-  /** Latest price. */
+  /** Latest price (or FX rate). */
   price: number;
   /** Percent change on the day. */
   changePercent: number;
+  /** Absolute change on the day; undefined when it cannot be determined. */
+  change?: number;
+  /** A currency pair, so the ticker formats the rate and change with more decimals. */
+  isForex?: boolean;
 }
 
-/** Finnhub returns current price `c` and percent change `dp`. */
+/** Finnhub returns current price `c`, absolute change `d`, percent change `dp`. */
 const QuoteSchema = z.object({
   c: z.number(),
+  d: z.number().nullable().optional(),
   dp: z.number().nullable().optional(),
 });
 
@@ -45,7 +50,13 @@ export async function fetchStockQuotes(
         if (!parsed.success) return undefined;
         // Finnhub returns all zeros for an unknown symbol; skip it.
         if (parsed.data.c === 0) return undefined;
-        return { symbol, price: parsed.data.c, changePercent: parsed.data.dp ?? 0 };
+        const quote: StockQuote = {
+          symbol,
+          price: parsed.data.c,
+          changePercent: parsed.data.dp ?? 0,
+        };
+        if (parsed.data.d !== undefined && parsed.data.d !== null) quote.change = parsed.data.d;
+        return quote;
       } catch {
         return undefined;
       }

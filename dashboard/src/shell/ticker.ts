@@ -2,6 +2,7 @@ import type { StockQuote } from "../integrations/finnhub";
 import type { NewsItem } from "../integrations/news";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
+import { DEFAULT_TICKER_MODE, type TickerMode } from "./tickerModeState";
 
 /**
  * Ambient ticker strips for the orientation band: a quiet, slowly scrolling
@@ -17,6 +18,10 @@ export interface TickerOptions {
   /** Whether each strip is switched on, so an empty one can explain itself. */
   stocksEnabled?: boolean;
   newsEnabled?: boolean;
+  /** Whether the stock/forex delta reads as a percent or an absolute amount. */
+  mode?: TickerMode;
+  /** Persist the new mode after the user clicks the strip to toggle it. */
+  onTickerModeChange?: (mode: TickerMode) => void;
 }
 
 /** Seconds of scroll per item, so longer strips drift at a steady pace. */
@@ -33,36 +38,98 @@ function marquee(reducedMotion: boolean, count: number): HTMLElement {
   return viewport;
 }
 
-function formatPrice(price: number): string {
-  return price >= 1000
-    ? price.toLocaleString(undefined, { maximumFractionDigits: 0 })
-    : price.toFixed(2);
+function formatPrice(quote: StockQuote): string {
+  // FX rates need more precision; equities keep two decimals (no decimals over 1000).
+  if (quote.isForex === true) return quote.price.toFixed(4);
+  return quote.price >= 1000
+    ? quote.price.toLocaleString(undefined, { maximumFractionDigits: 0 })
+    : quote.price.toFixed(2);
 }
 
-function stockEntry(quote: StockQuote): HTMLElement {
+/**
+ * The delta text and direction for a quote in the chosen mode: a percentage, or
+ * the absolute change (4 decimals for FX, 2 for equities). Returns undefined when
+ * an amount is asked for but the absolute change is unknown.
+ */
+export function formatDelta(
+  quote: StockQuote,
+  mode: TickerMode,
+): { text: string; dir: "up" | "down" } | undefined {
+  if (mode === "amount") {
+    if (quote.change === undefined) return undefined;
+    const decimals = quote.isForex === true ? 4 : 2;
+    const sign = quote.change >= 0 ? "+" : "";
+    return { text: `${sign}${quote.change.toFixed(decimals)}`, dir: quote.change >= 0 ? "up" : "down" };
+  }
+  const sign = quote.changePercent >= 0 ? "+" : "";
+  return {
+    text: `${sign}${quote.changePercent.toFixed(2)}%`,
+    dir: quote.changePercent >= 0 ? "up" : "down",
+  };
+}
+
+function setDelta(span: HTMLElement, quote: StockQuote, mode: TickerMode): void {
+  const delta = formatDelta(quote, mode);
+  if (delta === undefined) {
+    span.textContent = "";
+    delete span.dataset.dir;
+  } else {
+    span.textContent = delta.text;
+    span.dataset.dir = delta.dir;
+  }
+}
+
+function stockEntry(quote: StockQuote, mode: TickerMode): { entry: HTMLElement; delta: HTMLElement } {
   const entry = el("span", "cc-ticker__entry");
   entry.appendChild(el("span", "cc-ticker__symbol", quote.symbol));
-  entry.appendChild(el("span", "cc-ticker__price", formatPrice(quote.price)));
-  const up = quote.changePercent >= 0;
-  const delta = el(
-    "span",
-    "cc-ticker__delta",
-    `${up ? "+" : ""}${quote.changePercent.toFixed(2)}%`,
-  );
-  delta.dataset.dir = up ? "up" : "down";
+  entry.appendChild(el("span", "cc-ticker__price", formatPrice(quote)));
+  const delta = el("span", "cc-ticker__delta");
+  setDelta(delta, quote, mode);
   entry.appendChild(delta);
-  return entry;
+  return { entry, delta };
 }
 
-function renderStockStrip(quotes: StockQuote[], reducedMotion: boolean): HTMLElement {
+function renderStockStrip(
+  quotes: StockQuote[],
+  reducedMotion: boolean,
+  mode: TickerMode,
+  onTickerModeChange?: (mode: TickerMode) => void,
+): HTMLElement {
   const strip = el("div", "cc-ticker cc-ticker--stocks");
+  // The whole strip toggles percent vs amount. It holds no links, so making it a
+  // button is safe (the news strip, which has per-headline links, is left alone).
+  strip.setAttribute("role", "button");
+  strip.setAttribute("tabindex", "0");
+  strip.setAttribute("aria-label", "Toggle ticker between percent change and amount");
+  strip.title = "Click to switch between percent and amount";
+
   const viewport = marquee(reducedMotion, quotes.length);
   const track = viewport.querySelector(".cc-ticker__track");
+  const deltas: Array<{ quote: StockQuote; span: HTMLElement }> = [];
   // Two passes of the content so the loop has no visible seam.
   for (let pass = 0; pass < 2; pass += 1) {
-    for (const quote of quotes) track?.appendChild(stockEntry(quote));
+    for (const quote of quotes) {
+      const { entry, delta } = stockEntry(quote, mode);
+      track?.appendChild(entry);
+      deltas.push({ quote, span: delta });
+    }
   }
   strip.appendChild(viewport);
+
+  // Toggle in place so the marquee keeps scrolling; persist via the callback.
+  let current = mode;
+  const toggle = (): void => {
+    current = current === "percent" ? "amount" : "percent";
+    for (const { quote, span } of deltas) setDelta(span, quote, current);
+    onTickerModeChange?.(current);
+  };
+  strip.addEventListener("click", toggle);
+  strip.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggle();
+    }
+  });
   return strip;
 }
 
@@ -132,8 +199,18 @@ export function renderTickers(
   if (stocks.length === 0 && news.length === 0 && !stockHint && !newsHint) return undefined;
 
   const wrap = el("div", "cc-tickers");
-  if (stocks.length > 0) wrap.appendChild(renderStockStrip(stocks, options.reducedMotion));
-  else if (stockHint) wrap.appendChild(hintStrip("Add a Finnhub key in Customize to show stocks."));
+  if (stocks.length > 0) {
+    wrap.appendChild(
+      renderStockStrip(
+        stocks,
+        options.reducedMotion,
+        options.mode ?? DEFAULT_TICKER_MODE,
+        options.onTickerModeChange,
+      ),
+    );
+  } else if (stockHint) {
+    wrap.appendChild(hintStrip("Add a Finnhub key in Customize to show stocks."));
+  }
   if (news.length > 0) wrap.appendChild(renderNewsStrip(news, options.reducedMotion, navigate));
   else if (newsHint) wrap.appendChild(hintStrip("News unavailable right now."));
   host.appendChild(wrap);

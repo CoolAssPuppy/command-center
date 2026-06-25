@@ -40,6 +40,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/__cc-proxy\/todoist/, ""),
       },
+      "/__cc-proxy/frankfurter": {
+        target: "https://api.frankfurter.dev",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/frankfurter/, ""),
+      },
       "/__cc-proxy/google": {
         target: "https://www.googleapis.com",
         changeOrigin: true,
