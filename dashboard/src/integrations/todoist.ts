@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { Connection } from "../config/schema";
+import type { IntegrationSource } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
 import { formatTaskDue, taskTone } from "./task";
 import {
@@ -46,7 +46,7 @@ export const todoistIntegration: Integration = {
   displayName: "Todoist",
 
   async fetch(
-    connection: Connection,
+    connection: IntegrationSource,
     secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>> {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { Connection } from "../config/schema";
+import type { IntegrationSource } from "../config/schema";
 import { googleCalendarIntegration } from "./googleCalendar";
 import {
   NEEDS_AUTH,
@@ -22,7 +22,7 @@ const ctx = (overrides: Partial<IntegrationContext> = {}): IntegrationContext =>
   ...overrides,
 });
 
-const connection = (overrides: Partial<Connection> = {}): Connection => ({
+const connection = (overrides: Partial<IntegrationSource> = {}): IntegrationSource => ({
   id: "c1",
   name: "Today",
   service: "google-calendar",

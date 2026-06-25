@@ -1,4 +1,4 @@
-import { COMBINED_CALENDARS_ID, type Connection } from "../config/schema";
+import { COMBINED_CALENDARS_ID, type Connection, type Stream } from "../config/schema";
 import type {
   ConferenceProvider,
   IntegrationResult,
@@ -19,6 +19,9 @@ import { DEFAULT_TASK_FILTER, type TaskFilterState } from "./taskFilterState";
  */
 export interface NeedsYouLaneModel {
   now: Date;
+  /** The Data Cards, which carry the per-source config (role, linearView). */
+  streams: Stream[];
+  /** Base connections, to resolve a card's service. */
   connections: Connection[];
   integrationResults?: Record<string, IntegrationResult>;
   /** The persisted Tasks-section filter and sort; defaults to all, soonest first. */
@@ -53,40 +56,44 @@ const SECTION_LIMIT = 5;
 const TASK_SERVICES = new Set(["notion", "todoist", "google-tasks"]);
 const HOUR_MS = 60 * 60 * 1000;
 
-function connectionForKey(
-  key: string,
-  connections: Connection[],
-): Connection | undefined {
-  if (key === COMBINED_CALENDARS_ID) return undefined;
-  return connections.find((connection) => connection.id === key);
-}
-
-/** A task source's items only reach the lane when its role resolves to "tasks".
- *  Google Tasks is a pure task source, so it defaults to tasks; the rest default
- *  to reference, so notes and the like stay out of the lane until opted in. */
+/** A card's items only reach the lane's Tasks section when its role resolves to
+ *  "tasks". Google Tasks is a pure task source, so it defaults to tasks; the rest
+ *  default to reference, so notes and the like stay out until opted in. */
 function effectiveRole(service: string, role: "reference" | "tasks" | undefined): "reference" | "tasks" {
   if (role !== undefined) return role;
   return service === "google-tasks" ? "tasks" : "reference";
 }
 
+/**
+ * Results are keyed by Data Card (stream) id, so each card's service, role, and
+ * Linear view come from the card and its base connection.
+ */
 function collectEntries(
   results: Record<string, IntegrationResult>,
+  streams: Stream[],
   connections: Connection[],
 ): LaneEntry[] {
   const hasCombined = results[COMBINED_CALENDARS_ID]?.status === "ok";
+  const streamById = new Map(streams.map((stream) => [stream.id, stream]));
+  const serviceById = new Map(connections.map((c) => [c.id, c.service]));
   const entries: LaneEntry[] = [];
   for (const [key, result] of Object.entries(results)) {
     if (result.status !== "ok" || result.items === undefined) continue;
-    const connection = connectionForKey(key, connections);
-    const service = key === COMBINED_CALENDARS_ID ? "google-calendar" : connection?.service;
+    const stream = key === COMBINED_CALENDARS_ID ? undefined : streamById.get(key);
+    const service =
+      key === COMBINED_CALENDARS_ID
+        ? "google-calendar"
+        : stream !== undefined
+          ? serviceById.get(stream.connectionId)
+          : undefined;
     if (service === undefined) continue;
     if (hasCombined && service === "google-calendar" && key !== COMBINED_CALENDARS_ID) {
       continue;
     }
     for (const item of result.items) {
       const entry: LaneEntry = { item, service };
-      if (connection?.role !== undefined) entry.role = connection.role;
-      if (connection?.linearView === "inbox") entry.linearInbox = true;
+      if (stream?.role !== undefined) entry.role = stream.role;
+      if (stream?.linearView === "inbox") entry.linearInbox = true;
       entries.push(entry);
     }
   }
@@ -457,7 +464,10 @@ export function renderNeedsYouLane(
 
   const buckets: LaneBuckets =
     model.integrationResults !== undefined
-      ? buildLaneBuckets(collectEntries(model.integrationResults, model.connections), model.now)
+      ? buildLaneBuckets(
+          collectEntries(model.integrationResults, model.streams, model.connections),
+          model.now,
+        )
       : { reviews: [], linearInbox: [], tasks: [] };
 
   let any = false;

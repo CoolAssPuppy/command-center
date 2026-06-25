@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { Connection } from "../config/schema";
+import type { IntegrationSource } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
 import { formatTaskDue } from "./task";
 import {
@@ -19,10 +19,10 @@ import {
  */
 const ENDPOINT = "https://api.linear.app/graphql";
 
-/** The connection's chosen Linear view; assigned is the default. */
-export type LinearView = NonNullable<Connection["linearView"]>;
+/** The card's chosen Linear view; assigned is the default. */
+export type LinearView = NonNullable<IntegrationSource["linearView"]>;
 
-export function linearViewOf(connection: Connection): LinearView {
+export function linearViewOf(connection: IntegrationSource): LinearView {
   return connection.linearView ?? "assigned";
 }
 
@@ -343,7 +343,7 @@ export const linearIntegration: Integration = {
   displayName: "Linear",
 
   async fetch(
-    connection: Connection,
+    connection: IntegrationSource,
     secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>> {

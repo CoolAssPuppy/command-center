@@ -221,6 +221,7 @@ export function renderDashboard(
 
     const laneModel: NeedsYouLaneModel = {
       now: model.now,
+      streams: model.config.streams,
       connections: model.config.connections,
     };
     if (model.integrationResults !== undefined) {

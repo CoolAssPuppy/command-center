@@ -1,20 +1,18 @@
-import type { Connection } from "../config/schema";
 import type { IntegrationResult } from "./types";
 
 /**
- * Merge several Google Calendar connections' results into one, for the "Combine
- * all calendars" Work stream. Events from every connected calendar are pooled
- * and sorted by start time. Status is optimistic: if any calendar loaded, the
- * merged stream is ok; otherwise it reflects loading, then needs-auth, then an
- * error, so one disconnected calendar never blanks the rest.
+ * Merge several Google Calendar results into one, for the "Combine all calendars"
+ * Data Card. Events from every connected calendar are pooled and sorted by start
+ * time. Status is optimistic: if any calendar loaded, the merged card is ok;
+ * otherwise it reflects loading, then needs-auth, then an error, so one
+ * disconnected calendar never blanks the rest.
  */
 export function combineCalendars(
-  calendars: Connection[],
-  results: Record<string, IntegrationResult>,
+  results: ReadonlyArray<IntegrationResult | undefined>,
 ): IntegrationResult {
-  const present = calendars
-    .map((calendar) => results[calendar.id])
-    .filter((result): result is IntegrationResult => result !== undefined);
+  const present = results.filter(
+    (result): result is IntegrationResult => result !== undefined,
+  );
 
   if (present.some((result) => result.status === "ok")) {
     const items = present

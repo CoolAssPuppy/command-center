@@ -40,14 +40,13 @@ export function renderStreams(
 ): HTMLElement {
   const root = el("div", "cc-streams");
   for (const stream of model.streams) {
-    // Some connections belong only in the left lane, not as a right-column card:
-    // a role "tasks" source, and a Linear connection in inbox view. The
-    // combined-calendars virtual id has no connection, so it always stays. The
-    // stream config is untouched, so reverting the role/view brings the card back.
+    // Some cards belong only in the left lane, not as a right-column card: one
+    // with role "tasks", and a Linear card in inbox view. The combined-calendars
+    // virtual id always stays. Reverting the role/view brings the card back here.
     if (stream.connectionId !== COMBINED_CALENDARS_ID) {
       const connection = model.connections.find((item) => item.id === stream.connectionId);
-      if (connection?.role === "tasks") continue;
-      if (connection?.service === "linear" && connection.linearView === "inbox") continue;
+      if (stream.role === "tasks") continue;
+      if (connection?.service === "linear" && stream.linearView === "inbox") continue;
     }
     root.appendChild(renderStream(stream, model, deps));
   }
@@ -69,12 +68,13 @@ function renderStream(
   const connection = model.connections.find((item) => item.id === stream.connectionId);
   // The combined stream uses the calendar mark; a real connection uses its own.
   const service = isCombined ? "google-calendar" : connection?.service;
-  const resultKey = isCombined ? COMBINED_CALENDARS_ID : connection?.id;
+  // Results are keyed by card (stream) id; the combined card by its virtual id.
+  const resultKey = isCombined ? COMBINED_CALENDARS_ID : stream.id;
   // The panel's nature drives how prominent it is: action queues earn room,
   // reference material stays quiet and short. See the kind styles.
   details.dataset.kind = panelKind(service);
 
-  const result = resultKey !== undefined ? model.integrationResults?.[resultKey] : undefined;
+  const result = model.integrationResults?.[resultKey];
 
   const summary = document.createElement("summary");
   summary.className = "cc-stream__summary";
@@ -89,7 +89,7 @@ function renderStream(
   details.appendChild(summary);
 
   const body = el("div", "cc-stream__body");
-  if (resultKey === undefined) {
+  if (!isCombined && connection === undefined) {
     body.appendChild(el("div", "cc-stream__empty", "This connection was removed."));
   } else {
     renderResult(body, result, deps);

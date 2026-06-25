@@ -21,7 +21,7 @@ const baseConfig = (overrides?: Partial<Config>): Config =>
 describe("config parsing", () => {
   it("fills sensible defaults for an empty object", () => {
     const config = parseConfig({});
-    expect(config.version).toBe(1);
+    expect(config.version).toBe(2);
     expect(config.zones).toEqual([]);
     expect(config.wallpaper.source).toBe("gradient");
     expect(config.appearance.hour12).toBe(true);
@@ -84,6 +84,106 @@ describe("config parsing", () => {
     const config = parseConfig({});
     expect(config.weather.showForZones).toBe(true);
     expect(config.weather.showForHome).toBe(false);
+  });
+});
+
+describe("config migration (connection config moves onto cards)", () => {
+  it("moves per-card fields from an old connection onto the card that references it", () => {
+    const config = parseConfig({
+      connections: [
+        {
+          id: "c1",
+          name: "Roadmap",
+          service: "notion",
+          databaseId: "db1",
+          titleProperty: "Name",
+          filter: "status=open",
+          role: "reference",
+          count: 9,
+        },
+      ],
+      streams: [{ id: "s1", title: "Roadmap", connectionId: "c1" }],
+    });
+
+    // The connection is now identity only; card config is gone from it.
+    const connection = config.connections[0] as Record<string, unknown>;
+    expect(connection.databaseId).toBeUndefined();
+    expect(connection.role).toBeUndefined();
+    expect(connection.count).toBeUndefined();
+
+    // The card carries it instead.
+    const stream = config.streams[0];
+    expect(stream?.databaseId).toBe("db1");
+    expect(stream?.titleProperty).toBe("Name");
+    expect(stream?.filter).toBe("status=open");
+    expect(stream?.role).toBe("reference");
+    expect(stream?.count).toBe(9);
+  });
+
+  it("moves GitHub query and Google calendars onto their cards", () => {
+    const config = parseConfig({
+      connections: [
+        { id: "gh", name: "Reviews", service: "github", query: "is:open author:@me", count: 5 },
+        { id: "cal", name: "Work", service: "google-calendar", calendarIds: ["a", "b"] },
+      ],
+      streams: [
+        { id: "s-gh", title: "PRs", connectionId: "gh" },
+        { id: "s-cal", title: "Today", connectionId: "cal" },
+      ],
+    });
+    expect(config.streams.find((s) => s.id === "s-gh")?.query).toBe("is:open author:@me");
+    expect(config.streams.find((s) => s.id === "s-gh")?.count).toBe(5);
+    expect(config.streams.find((s) => s.id === "s-cal")?.calendarIds).toEqual(["a", "b"]);
+  });
+
+  it("does not overwrite a card field that the card already sets", () => {
+    const config = parseConfig({
+      connections: [{ id: "c1", name: "Roadmap", service: "notion", count: 3 }],
+      streams: [{ id: "s1", title: "Roadmap", connectionId: "c1", count: 12 }],
+    });
+    expect(config.streams[0]?.count).toBe(12);
+  });
+
+  it("creates a card for a Linear inbox connection that has no stream", () => {
+    const config = parseConfig({
+      connections: [{ id: "lin", name: "My inbox", service: "linear", linearView: "inbox" }],
+      streams: [],
+    });
+    const card = config.streams.find((s) => s.connectionId === "lin");
+    expect(card).toBeDefined();
+    expect(card?.title).toBe("My inbox");
+    expect(card?.linearView).toBe("inbox");
+    expect(card?.collapsedByDefault).toBe(false);
+  });
+
+  it("does not duplicate a Linear inbox connection that already has a card", () => {
+    const config = parseConfig({
+      connections: [{ id: "lin", name: "My inbox", service: "linear", linearView: "inbox" }],
+      streams: [{ id: "s1", title: "Inbox", connectionId: "lin", linearView: "inbox" }],
+    });
+    expect(config.streams.filter((s) => s.connectionId === "lin")).toHaveLength(1);
+  });
+
+  it("leaves a new-model config unchanged (idempotent)", () => {
+    const input = {
+      connections: [{ id: "c1", name: "Roadmap", service: "notion" }],
+      streams: [
+        {
+          id: "s1",
+          title: "Roadmap",
+          connectionId: "c1",
+          databaseId: "db1",
+          count: 6,
+          collapsedByDefault: false,
+        },
+      ],
+    };
+    const once = parseConfig(input);
+    const twice = parseConfig(once);
+    expect(twice.streams[0]?.databaseId).toBe("db1");
+    expect(twice.streams[0]?.count).toBe(6);
+    expect((twice.connections[0] as Record<string, unknown>).databaseId).toBeUndefined();
+    expect(twice).toEqual(once);
   });
 });
 

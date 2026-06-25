@@ -56,18 +56,25 @@ export type Service = z.infer<typeof ServiceSchema>;
 export const COMBINED_CALENDARS_ID = "combined:google-calendar";
 
 /**
- * A named connection to a service. You can have several of the same service
- * (a "Work" and a "Personal" Google Calendar, say), each with its own settings
- * and credential. The credential is a secret kept out of here (see Secrets);
- * only the non-secret settings live on the connection.
+ * A connection is identity only: a label, the service, and (kept separately in
+ * Secrets) its credential or OAuth token. All presentation is on the Data Card
+ * (Stream) that picks this connection as its base.
  */
 export const ConnectionSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   service: ServiceSchema,
+});
+export type Connection = z.infer<typeof ConnectionSchema>;
+
+/**
+ * Per-card customization of a base connection. Every field is optional and lives
+ * on the Data Card, not the connection, so one connection can back several cards.
+ */
+export const CardConfigSchema = z.object({
   /** Google Calendar: which calendar (default "primary"). */
   calendarId: z.string().optional(),
-  /** Google Calendar: extra calendars to merge in, by id or share link. */
+  /** Google Calendar: the calendars to read, by id or share link. */
   calendarIds: z.array(z.string()).optional(),
   /** Notion: which database, and how to read it. */
   databaseId: z.string().optional(),
@@ -76,7 +83,7 @@ export const ConnectionSchema = z.object({
   /** GitHub: a search query, e.g. "is:open is:pr review-requested:@me". */
   query: z.string().optional(),
   /**
-   * Where a source's items belong. "reference" (the default) shows only as a
+   * Where the card's items belong. "reference" (the default) shows only as a
    * right-column data card; "tasks" also surfaces in the left lane's Tasks
    * section. Applies to task-capable sources (Notion, Todoist, Google Tasks).
    */
@@ -84,8 +91,7 @@ export const ConnectionSchema = z.object({
   /**
    * Linear: which pre-defined view to read. "assigned" (the default) lists open
    * issues you created or own; the rest are other viewer-scoped issue lists, the
-   * notification inbox, projects, or initiatives. Old configs (just "assigned"
-   * or "inbox") still parse.
+   * notification inbox, projects, or initiatives.
    */
   linearView: z
     .enum([
@@ -102,16 +108,38 @@ export const ConnectionSchema = z.object({
   /** How many items to show. */
   count: z.number().int().positive().max(50).optional(),
 });
-export type Connection = z.infer<typeof ConnectionSchema>;
+export type SourceConfig = z.infer<typeof CardConfigSchema>;
 
-/** A work-stream panel: a title and the connection it displays. */
-export const StreamSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  connectionId: z.string().min(1),
-  collapsedByDefault: z.boolean().default(false),
-});
+/** A connection merged with a card's per-source config, as integrations read it. */
+export type IntegrationSource = Connection & SourceConfig;
+
+/**
+ * A Data Card: a titled panel that picks a base connection and customizes it. The
+ * card carries all per-source presentation (which calendar, which Linear view,
+ * the GitHub query, the Notion database, the role, the item count).
+ */
+export const StreamSchema = z
+  .object({
+    id: z.string().min(1),
+    title: z.string().min(1),
+    connectionId: z.string().min(1),
+    collapsedByDefault: z.boolean().default(false),
+  })
+  .merge(CardConfigSchema);
 export type Stream = z.infer<typeof StreamSchema>;
+
+/** The card-config fields, used by the migration and the per-card fetch. */
+export const CARD_CONFIG_KEYS = [
+  "calendarId",
+  "calendarIds",
+  "databaseId",
+  "titleProperty",
+  "filter",
+  "query",
+  "role",
+  "linearView",
+  "count",
+] as const;
 
 /**
  * The background. "gradient" uses the active theme's gradient (the default);
@@ -185,7 +213,7 @@ export type TickerSettings = z.infer<typeof TickerSettingsSchema>;
 
 export const ConfigSchema = z.object({
   /** Schema version, for future migrations. */
-  version: z.number().int().positive().default(1),
+  version: z.number().int().positive().default(2),
   profile: ProfileSchema.default({}),
   zones: z.array(ZoneSchema).default([]),
   links: z.array(DockLinkSchema).default([]),
@@ -238,9 +266,79 @@ export const SecretsSchema = z.object({
 });
 export type Secrets = z.infer<typeof SecretsSchema>;
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+/**
+ * Migrate an old config (per-card config carried on connections) to the new
+ * model (config on the cards). It runs before validation, since the slimmed
+ * ConnectionSchema would otherwise strip the old fields before we can move them.
+ * For each card, copy any missing card-config field from its base connection; for
+ * a Linear inbox connection with no card, create one so it keeps showing. Pure
+ * and idempotent: a new-model config passes through unchanged.
+ */
+export function migrateConfig(raw: unknown): unknown {
+  const root = asRecord(raw);
+  if (root === undefined) return raw;
+  const connections = Array.isArray(root.connections) ? root.connections : undefined;
+  const streams = Array.isArray(root.streams) ? root.streams : undefined;
+  if (connections === undefined || streams === undefined) return raw;
+
+  const connectionById = new Map<string, Record<string, unknown>>();
+  for (const entry of connections) {
+    const connection = asRecord(entry);
+    if (connection !== undefined && typeof connection.id === "string") {
+      connectionById.set(connection.id, connection);
+    }
+  }
+
+  const nextStreams = streams.map((entry): unknown => {
+    const stream = asRecord(entry);
+    if (stream === undefined) return entry;
+    const connection = typeof stream.connectionId === "string"
+      ? connectionById.get(stream.connectionId)
+      : undefined;
+    if (connection === undefined) return stream;
+    const merged = { ...stream };
+    for (const key of CARD_CONFIG_KEYS) {
+      if (merged[key] === undefined && connection[key] !== undefined) {
+        merged[key] = connection[key];
+      }
+    }
+    return merged;
+  });
+
+  // A Linear inbox connection used to feed the lane with no card of its own.
+  const referenced = new Set(
+    nextStreams
+      .map((entry) => asRecord(entry)?.connectionId)
+      .filter((id): id is string => typeof id === "string"),
+  );
+  for (const connection of connectionById.values()) {
+    if (
+      connection.service === "linear" &&
+      connection.linearView === "inbox" &&
+      !referenced.has(connection.id as string)
+    ) {
+      nextStreams.push({
+        id: `card:${String(connection.id)}`,
+        title: typeof connection.name === "string" ? connection.name : "Linear inbox",
+        connectionId: connection.id,
+        linearView: "inbox",
+        collapsedByDefault: false,
+      });
+    }
+  }
+
+  return { ...root, streams: nextStreams };
+}
+
 /** Parse unknown storage data into a Config, falling back to defaults per field. */
 export function parseConfig(raw: unknown): Config {
-  const result = ConfigSchema.safeParse(raw ?? {});
+  const result = ConfigSchema.safeParse(migrateConfig(raw ?? {}));
   return result.success ? result.data : ConfigSchema.parse({});
 }
 

@@ -1,10 +1,14 @@
 import { loadCachedConfig, saveCachedConfig } from "../config/cache";
 import {
+  CARD_CONFIG_KEYS,
   COMBINED_CALENDARS_ID,
   type Config,
   type Connection,
   type GoogleToken,
+  type IntegrationSource,
   type Secrets,
+  type SourceConfig,
+  type Stream,
 } from "../config/schema";
 import { combineCalendars } from "../integrations/combine";
 import { fetchStockQuotes, type StockQuote } from "../integrations/finnhub";
@@ -333,39 +337,48 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     return byConnection;
   }
 
+  /** The per-card config a Data Card layers onto its base connection. */
+  function cardConfig(stream: Stream): SourceConfig {
+    const out: Record<string, unknown> = {};
+    for (const key of CARD_CONFIG_KEYS) {
+      if (stream[key] !== undefined) out[key] = stream[key];
+    }
+    return out;
+  }
+
   async function refreshIntegrations(): Promise<void> {
     if (config === undefined) return;
+
+    const connectionById = new Map<string, Connection>(
+      config.connections.map((connection) => [connection.id, connection]),
+    );
+    // Cards that fetch on their own (everything but the combined virtual id).
+    const cards = config.streams.filter(
+      (stream) =>
+        stream.connectionId !== COMBINED_CALENDARS_ID &&
+        connectionById.has(stream.connectionId),
+    );
+    const usesCombine = config.streams.some(
+      (stream) => stream.connectionId === COMBINED_CALENDARS_ID,
+    );
+    const calendarConnections = config.connections.filter(
+      (connection) => connection.service === "google-calendar",
+    );
 
     // Demo mode: serve canned data so the cards look full for a screenshot.
     if (isDemoMode()) {
       const demo: Record<string, IntegrationResult> = {};
-      for (const connection of config.connections) {
-        demo[connection.id] = demoResultFor(connection.service);
+      for (const stream of cards) {
+        const connection = connectionById.get(stream.connectionId);
+        if (connection !== undefined) demo[stream.id] = demoResultFor(connection.service);
       }
-      demo[COMBINED_CALENDARS_ID] = demoCombinedCalendars;
+      if (usesCombine) demo[COMBINED_CALENDARS_ID] = demoCombinedCalendars;
       integrationResults = demo;
       paint();
       return;
     }
 
-    const streamConnectionIds = config.streams.map((stream) => stream.connectionId);
-    const usesCombine = streamConnectionIds.includes(COMBINED_CALENDARS_ID);
-    const directIds = new Set(
-      streamConnectionIds.filter((id) => id !== COMBINED_CALENDARS_ID),
-    );
-    const calendars = config.connections.filter(
-      (connection) => connection.service === "google-calendar",
-    );
-    // Fetch the connections a stream shows directly, plus every calendar when a
-    // "Combine all calendars" stream is present, plus any Linear inbox connection
-    // (those feed the lane on their own, with no card needed). Keyed by id.
-    const connections = config.connections.filter(
-      (connection) =>
-        directIds.has(connection.id) ||
-        (usesCombine && connection.service === "google-calendar") ||
-        (connection.service === "linear" && connection.linearView === "inbox"),
-    );
-    if (connections.length === 0 && !usesCombine) {
+    if (cards.length === 0 && !usesCombine) {
       if (Object.keys(integrationResults).length > 0) {
         integrationResults = {};
         paint();
@@ -374,13 +387,18 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     }
 
     const secrets = await deps.store.loadSecrets();
-    // Each Google Calendar connection carries its own account token. Resolve
-    // them up front (renewing any that expired), so the fetch loop just reads a
-    // ready token by connection id. Injected getAuthToken (tests) takes over.
+    // Google tokens are per account (connection). Resolve those backing a card,
+    // plus every calendar account when the combined card is present. Injected
+    // getAuthToken (tests) takes over.
     let getAuthToken = deps.getAuthToken;
     if (getAuthToken === undefined) {
+      const googleConnections = usesCombine
+        ? calendarConnections
+        : calendarConnections.filter((connection) =>
+            cards.some((stream) => stream.connectionId === connection.id),
+          );
       const googleTokenByConn = await resolveGoogleTokens(
-        connections,
+        googleConnections,
         secrets,
         deps.now().getTime(),
       );
@@ -400,9 +418,10 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       getAuthToken,
     };
 
+    // Seed loading state per card (by stream id) for an instant paint.
     const next: Record<string, IntegrationResult> = {};
-    for (const connection of connections) {
-      next[connection.id] = integrationResults[connection.id] ?? { status: "loading" };
+    for (const stream of cards) {
+      next[stream.id] = integrationResults[stream.id] ?? { status: "loading" };
     }
     if (usesCombine) {
       next[COMBINED_CALENDARS_ID] =
@@ -411,29 +430,36 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     integrationResults = next;
     paint();
 
+    const fetchSource = async (
+      source: IntegrationSource,
+      credentialId: string,
+    ): Promise<IntegrationResult> => {
+      const integration = integrationById(source.service);
+      if (integration === undefined) return { status: "error", error: "Unknown service" };
+      const secret = secrets.connectionSecrets[credentialId];
+      const result = await integration.fetch(source, secret, ctx);
+      if (result.ok) return { status: "ok", items: result.value };
+      if (result.error === NEEDS_AUTH) return { status: "needs_auth" };
+      return { status: "error", error: result.error };
+    };
+
     await Promise.all(
-      connections.map(async (connection) => {
-        const integration = integrationById(connection.service);
-        if (integration === undefined) {
-          integrationResults[connection.id] = { status: "error", error: "Unknown service" };
-          return;
-        }
-        const secret = secrets.connectionSecrets[connection.id];
-        const result = await integration.fetch(connection, secret, ctx);
-        if (result.ok) {
-          integrationResults[connection.id] = { status: "ok", items: result.value };
-        } else if (result.error === NEEDS_AUTH) {
-          integrationResults[connection.id] = { status: "needs_auth" };
-        } else {
-          integrationResults[connection.id] = { status: "error", error: result.error };
-        }
+      cards.map(async (stream) => {
+        const connection = connectionById.get(stream.connectionId);
+        if (connection === undefined) return;
+        const source: IntegrationSource = { ...connection, ...cardConfig(stream) };
+        integrationResults[stream.id] = await fetchSource(source, connection.id);
       }),
     );
+
     if (usesCombine) {
-      integrationResults[COMBINED_CALENDARS_ID] = combineCalendars(
-        calendars,
-        integrationResults,
+      // The combined card reads each calendar account directly (its primary),
+      // independent of any per-card calendar selection, so the all-accounts merge
+      // keeps working exactly as before.
+      const calendarResults = await Promise.all(
+        calendarConnections.map((connection) => fetchSource({ ...connection }, connection.id)),
       );
+      integrationResults[COMBINED_CALENDARS_ID] = combineCalendars(calendarResults);
     }
     paint();
   }

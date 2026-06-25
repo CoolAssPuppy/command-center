@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { Connection } from "../config/schema";
+import type { IntegrationSource } from "../config/schema";
 import { githubIntegration } from "./github";
 import {
   NEEDS_AUTH,
@@ -21,7 +21,7 @@ const ctx = (
   fetch: (request: HttpRequest) => Promise<HttpResponseLike>,
 ): IntegrationContext => ({ fetch, now: new Date("2026-06-24T00:00:00Z") });
 
-const connection = (overrides: Partial<Connection> = {}): Connection => ({
+const connection = (overrides: Partial<IntegrationSource> = {}): IntegrationSource => ({
   id: "c1",
   name: "Reviews",
   service: "github",

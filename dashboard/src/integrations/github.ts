@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { Connection } from "../config/schema";
+import type { IntegrationSource } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
 import {
   NEEDS_AUTH,
@@ -52,7 +52,7 @@ export const githubIntegration: Integration = {
   displayName: "GitHub",
 
   async fetch(
-    connection: Connection,
+    connection: IntegrationSource,
     secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>> {

@@ -61,7 +61,7 @@ describe("renderStreams", () => {
         streams: [stream("s1", "c1")],
         connections: [connection("c1", "notion")],
         expanded: {},
-        integrationResults: { c1: { status: "needs_auth" } },
+        integrationResults: { s1: { status: "needs_auth" } },
       },
       { navigate: noop, onToggle: noop },
     );
@@ -78,7 +78,7 @@ describe("renderStreams", () => {
         connections: [connection("c1", "notion")],
         expanded: {},
         integrationResults: {
-          c1: { status: "ok", items: [{ id: "1", title: "Roadmap item", url: "https://notion.so/x" }] },
+          s1: { status: "ok", items: [{ id: "1", title: "Roadmap item", url: "https://notion.so/x" }] },
         },
       },
       { navigate, onToggle: noop },
@@ -97,7 +97,7 @@ describe("renderStreams", () => {
         connections: [connection("c1", "linear")],
         expanded: {},
         integrationResults: {
-          c1: {
+          s1: {
             status: "ok",
             items: [
               { id: "ENG-1", title: "Issue", icon: "linear-issue" },
@@ -133,10 +133,10 @@ describe("renderStreams", () => {
     renderStreams(
       root,
       {
-        streams: [stream("s1", "c1"), stream("s2", "c2")],
+        streams: [stream("s1", "c1"), { ...stream("s2", "c2"), role: "tasks" }],
         connections: [
           { id: "c1", name: "Notes", service: "notion" },
-          { id: "c2", name: "Tasks", service: "notion", role: "tasks" },
+          { id: "c2", name: "Tasks", service: "notion" },
         ],
         expanded: {},
       },
@@ -151,10 +151,10 @@ describe("renderStreams", () => {
     renderStreams(
       root,
       {
-        streams: [stream("s1", "c1"), stream("s2", "c2")],
+        streams: [stream("s1", "c1"), { ...stream("s2", "c2"), linearView: "inbox" }],
         connections: [
           { id: "c1", name: "Assigned", service: "linear" },
-          { id: "c2", name: "Inbox", service: "linear", linearView: "inbox" },
+          { id: "c2", name: "Inbox", service: "linear" },
         ],
         expanded: {},
       },

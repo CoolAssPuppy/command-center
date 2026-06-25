@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { Connection } from "../config/schema";
+import type { IntegrationSource } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
 import { detectConference } from "./conference";
 import { parseGoogleCalendarIds } from "./googleCalendarLink";
@@ -110,7 +110,7 @@ function windowEnd(now: Date): Date {
   return end;
 }
 
-function buildUrl(calendarId: string, connection: Connection, now: Date): string {
+function buildUrl(calendarId: string, connection: IntegrationSource, now: Date): string {
   const url = new URL(`${API_BASE}/${encodeURIComponent(calendarId)}/events`);
   // Start at the top of today, not the current moment, so events earlier today
   // still show. Cap the window at today (and tomorrow after 5pm) so the card
@@ -128,7 +128,7 @@ function buildUrl(calendarId: string, connection: Connection, now: Date): string
  * calendarIds is set, read exactly those (deduped). Only when it is empty do we
  * fall back to the single calendarId, or "primary".
  */
-function calendarIdsFor(connection: Connection): string[] {
+function calendarIdsFor(connection: IntegrationSource): string[] {
   const chosen = (connection.calendarIds ?? []).flatMap(parseGoogleCalendarIds);
   if (chosen.length > 0) return [...new Set(chosen)];
   const main = connection.calendarId?.trim();
@@ -181,7 +181,7 @@ function toItem(event: z.infer<typeof EventSchema>, now: Date): NormalizedItem {
 async function fetchCalendar(
   calendarId: string,
   token: string,
-  connection: Connection,
+  connection: IntegrationSource,
   ctx: IntegrationContext,
 ): Promise<CalendarFetch> {
   let payload: unknown;
@@ -213,7 +213,7 @@ export const googleCalendarIntegration: Integration = {
   displayName: "Google Calendar",
 
   async fetch(
-    connection: Connection,
+    connection: IntegrationSource,
     _secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>> {

@@ -1,4 +1,4 @@
-import type { Connection } from "../config/schema";
+import type { IntegrationSource } from "../config/schema";
 import type { ParseResult } from "../domain/result";
 
 /**
@@ -97,12 +97,12 @@ export interface Integration {
   id: string;
   displayName: string;
   /**
-   * Fetch items for a connection. `secret` is the connection's credential (a
-   * Linear key or Notion token); Google Calendar ignores it and uses
-   * ctx.getAuthToken instead.
+   * Fetch items for a source: the base connection merged with the card's config.
+   * `secret` is the connection's credential (a Linear key or Notion token);
+   * Google Calendar ignores it and uses ctx.getAuthToken instead.
    */
   fetch(
-    connection: Connection,
+    source: IntegrationSource,
     secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>>;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { Connection } from "../config/schema";
+import type { IntegrationSource } from "../config/schema";
 import type { ParseResult } from "../domain/result";
 import { formatTaskDue, taskTone } from "./task";
 import {
@@ -75,7 +75,7 @@ export const googleTasksIntegration: Integration = {
   displayName: "Google Tasks",
 
   async fetch(
-    connection: Connection,
+    connection: IntegrationSource,
     _secret: string | undefined,
     ctx: IntegrationContext,
   ): Promise<ParseResult<NormalizedItem[]>> {

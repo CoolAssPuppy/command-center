@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { Connection } from "../config/schema";
+import type { IntegrationSource } from "../config/schema";
 import {
   ASSIGNED_QUERY,
   CREATED_QUERY,
@@ -35,7 +35,7 @@ const ctx = (
   fetch: (request: HttpRequest) => Promise<HttpResponseLike>,
 ): IntegrationContext => ({ fetch, now: new Date("2026-06-23T00:00:00Z") });
 
-const connection = (overrides: Partial<Connection> = {}): Connection => ({
+const connection = (overrides: Partial<IntegrationSource> = {}): IntegrationSource => ({
   id: "c1",
   name: "Inbox",
   service: "linear",
@@ -230,7 +230,7 @@ describe("linear assigned view (Change 4)", () => {
   });
 });
 
-const queryFor = async (linearView: Connection["linearView"]): Promise<string> => {
+const queryFor = async (linearView: IntegrationSource["linearView"]): Promise<string> => {
   let captured: HttpRequest | undefined;
   await linearIntegration.fetch(
     connection({ linearView }),
