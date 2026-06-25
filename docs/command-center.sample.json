@@ -1,11 +1,11 @@
 {
   "version": 1,
   "profile": {
-    "name": "Your Name"
+    "name": "Prashant"
   },
   "zones": [
     {
-      "id": "zone-lisbon",
+      "id": "zone-5181401b",
       "label": "Lisbon",
       "timeZone": "Europe/Lisbon",
       "lat": 38.72509,
@@ -13,7 +13,7 @@
       "isHome": true
     },
     {
-      "id": "zone-san-francisco",
+      "id": "zone-04e968ca",
       "label": "San Francisco",
       "timeZone": "America/Los_Angeles",
       "lat": 37.77493,
@@ -49,104 +49,181 @@
     {
       "id": "gmail",
       "title": "Gmail",
-      "url": "https://mail.google.com/mail/u/0/#inbox"
+      "url": "https://mail.google.com/mail/u/1/#inbox"
     },
     {
       "id": "calendar",
       "title": "Calendar",
-      "url": "https://calendar.google.com/calendar/u/0/r"
+      "url": "https://calendar.google.com/calendar/u/1/r"
     },
     {
-      "id": "link-notion",
-      "title": "Notion",
-      "url": "https://www.notion.so/"
+      "id": "link-45159479",
+      "title": "Work Notion",
+      "url": "https://www.notion.so/supabase/812bbcc983214ec498fe625278059392"
     },
     {
-      "id": "link-linear",
+      "id": "link-c8793546",
       "title": "Linear",
-      "url": "https://linear.app/"
+      "url": "https://linear.app/supabase/inbox"
     },
     {
       "id": "github",
       "title": "GitHub",
-      "url": "https://github.com/"
+      "url": "https://github.com/coolasspuppy"
+    },
+    {
+      "id": "link-db8c025b",
+      "title": "Personal Notion",
+      "url": "https://www.notion.so/Command-Center-255a555c590580d5adb7ceb79e11a640"
     }
   ],
   "connections": [
     {
-      "id": "conn-calendar",
-      "name": "Calendar",
-      "service": "google-calendar",
-      "calendarIds": ["holidays@group.v.calendar.google.com"]
-    },
-    {
-      "id": "conn-notes",
+      "id": "conn-830b24b5",
       "name": "Personal Notes",
-      "service": "notion",
-      "databaseId": "00000000000000000000000000000000"
+      "service": "notion"
     },
     {
-      "id": "conn-linear",
+      "id": "conn-47160492",
       "name": "Linear Inbox",
       "service": "linear"
     },
     {
-      "id": "conn-gh-reviews",
-      "name": "Reviews",
+      "id": "conn-f2a96d2c",
+      "name": "Personal",
+      "service": "google-calendar"
+    },
+    {
+      "id": "conn-fe6ac9b6",
+      "name": "Work",
+      "service": "google-calendar"
+    },
+    {
+      "id": "conn-8bd7f78c",
+      "name": "GitHub",
       "service": "github"
     },
     {
-      "id": "conn-gh-mine",
-      "name": "My PRs",
-      "service": "github",
-      "query": "is:open is:pr author:@me"
+      "id": "conn-cf083407",
+      "name": "Tasks",
+      "service": "notion"
     }
   ],
   "streams": [
     {
-      "id": "stream-calendar",
+      "id": "stream-8585b7bc",
       "title": "Today",
-      "connectionId": "conn-calendar",
-      "collapsedByDefault": false
+      "connectionId": "combined:google-calendar",
+      "collapsedByDefault": false,
+      "column": "left",
+      "order": 0,
+      "combineCalendars": [
+        {
+          "connectionId": "conn-f2a96d2c",
+          "calendarId": "en.portuguese.official#holiday@group.v.calendar.google.com"
+        },
+        {
+          "connectionId": "conn-f2a96d2c",
+          "calendarId": "prashant@strategicnerds.com"
+        },
+        {
+          "connectionId": "conn-f2a96d2c",
+          "calendarId": "c_92dbc4c8b0f4bbfdcd743acd488b0cd2e6d6c738ce3ee6b7f789f1b3e07250eb@group.calendar.google.com"
+        },
+        {
+          "connectionId": "conn-f2a96d2c",
+          "calendarId": "oi8ouavavcscndp9sergrshkkr078ntq@import.calendar.google.com"
+        }
+      ],
+      "calendarIds": [
+        "en.portuguese.official#holiday@group.v.calendar.google.com",
+        "prashant@strategicnerds.com",
+        "c_92dbc4c8b0f4bbfdcd743acd488b0cd2e6d6c738ce3ee6b7f789f1b3e07250eb@group.calendar.google.com",
+        "oi8ouavavcscndp9sergrshkkr078ntq@import.calendar.google.com"
+      ]
     },
     {
-      "id": "stream-notes",
+      "id": "stream-48a2fa4b",
       "title": "Notes",
-      "connectionId": "conn-notes",
-      "collapsedByDefault": false
+      "connectionId": "conn-830b24b5",
+      "collapsedByDefault": false,
+      "column": "right",
+      "order": 0,
+      "databaseId": "255a555c5905800d8edff0cb5b525852"
     },
     {
-      "id": "stream-linear",
+      "id": "stream-9bd8793d",
+      "title": "Tasks",
+      "connectionId": "conn-cf083407",
+      "collapsedByDefault": false,
+      "column": "right",
+      "order": 1,
+      "databaseId": "255a555c590580a88241c1edc2e7644d",
+      "role": "tasks"
+    },
+    {
+      "id": "stream-b70868fa",
       "title": "Linear Inbox",
-      "connectionId": "conn-linear",
-      "collapsedByDefault": false
+      "connectionId": "conn-47160492",
+      "collapsedByDefault": false,
+      "column": "right",
+      "order": 2,
+      "linearView": "due"
     },
     {
-      "id": "stream-gh-reviews",
-      "title": "Needs my review",
-      "connectionId": "conn-gh-reviews",
-      "collapsedByDefault": false
-    },
-    {
-      "id": "stream-gh-mine",
-      "title": "My PRs",
-      "connectionId": "conn-gh-mine",
-      "collapsedByDefault": false
+      "id": "stream-f9c29a1b",
+      "title": "GitHub",
+      "connectionId": "conn-8bd7f78c",
+      "collapsedByDefault": false,
+      "column": "right",
+      "order": 3,
+      "query": "is:pr assignee:@me"
     }
   ],
   "wallpaper": {
     "source": "fluid",
-    "frequency": "newtab",
-    "terms": ["San Francisco", "Lisbon"],
-    "scrim": 0.15
+    "frequency": "hourly",
+    "terms": [
+      "San Francisco",
+      "Puppies",
+      "Lisbon"
+    ],
+    "scrim": 0.1
   },
   "appearance": {
-    "theme": "com.strategicnerds.twilight",
-    "hour12": true
+    "theme": "com.strategicnerds.supa",
+    "hour12": true,
+    "showMeetingWindow": false,
+    "showDock": false,
+    "dockMagnification": false
   },
   "weather": {
     "showForHome": true,
     "showForZones": true,
     "unit": "celsius"
-  }
+  },
+  "tickers": {
+    "stocks": {
+      "enabled": true,
+      "symbols": [
+        "AAPL",
+        "GOOG",
+        "META",
+        "MSFT",
+        "VOO",
+        "VOOG",
+        "EURUSD=X"
+      ]
+    },
+    "news": {
+      "enabled": true,
+      "sources": [
+        "hacker-news",
+        "nyt",
+        "techcrunch",
+        "techmeme"
+      ]
+    }
+  },
+  "customThemes": []
 }
