@@ -18,7 +18,7 @@ export const twilight: Theme = {
       bg: "#0C1222",
       surface: "#18223E",
       text: "#F5F2EB",
-      muted: "#9FAABE",
+      muted: "#BAC3D4",
       accent: "#F0AE5E",
       positive: "#6FB394",
       urgent: "#E27B4C",
@@ -45,7 +45,7 @@ export const twilight: Theme = {
     background: {
       mode: "gradient",
       value:
-        "linear-gradient(176deg, #080D1C 0%, #101A33 30%, #1C2C48 52%, #34324F 70%, #5A4450 86%, #855438 100%)",
+        "linear-gradient(176deg, #080D1C 0%, #101A33 30%, #1C2C48 52%, #2A2942 70%, #3C3340 86%, #5E3A24 100%)",
       imageOfDay: false,
     },
   },

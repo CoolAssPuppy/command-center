@@ -17,7 +17,7 @@ export const supa: Theme = {
       bg: "#161616",
       surface: "#232323",
       text: "#FAFAFA",
-      muted: "#8B8B8B",
+      muted: "#969696",
       accent: "#3ECF8E",
       positive: "#3ECF8E",
       urgent: "#F25C54",

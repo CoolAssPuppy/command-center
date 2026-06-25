@@ -17,11 +17,11 @@ export const outrun: Theme = {
       bg: "#0E0420",
       surface: "#1B0B33",
       text: "#F5E6FF",
-      muted: "#9B7BB8",
+      muted: "#C9B6E0",
       accent: "#FF2E97",
       positive: "#2DE2E6",
       urgent: "#FF3864",
-      primary: "#FF2E97",
+      primary: "#FF4FA8",
       secondary: "#2DE2E6",
       accent1: "#FF2E97",
       accent2: "#2DE2E6",
@@ -37,7 +37,7 @@ export const outrun: Theme = {
     background: {
       mode: "gradient",
       value:
-        "linear-gradient(176deg, #16092F 0%, #260E47 28%, #5A1A5E 56%, #B0286C 78%, #FF5B5B 100%)",
+        "linear-gradient(176deg, #0E0420 0%, #1A0838 35%, #260B40 70%, #34103C 100%)",
       imageOfDay: false,
     },
   },
