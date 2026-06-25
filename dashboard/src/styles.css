@@ -1464,6 +1464,13 @@ button.cc-lane__item:hover {
   color: var(--cc-color-text, #21242a);
 }
 
+/* A toggle that does not apply right now (e.g. dock magnification while the
+   dock is off) reads as unavailable. */
+.cc-edit__check:has(input:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .cc-edit__field {
   display: flex;
   flex-direction: column;

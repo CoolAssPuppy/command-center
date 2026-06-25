@@ -116,6 +116,9 @@ function buildAppearance(section: HTMLElement, ctx: SectionContext): void {
           config.appearance.dockMagnification = checked;
         });
       },
+      // Magnification only matters when the dock is shown, so disable it
+      // (and gray it out) while the dock is off.
+      ctx.draft.appearance.showDock === false,
     ),
   );
 }
@@ -125,11 +128,13 @@ function checkRow(
   label: string,
   checked: boolean,
   onChange: (checked: boolean) => void,
+  disabled = false,
 ): HTMLElement {
   const row = el("label", "cc-edit__check");
   const box = document.createElement("input");
   box.type = "checkbox";
   box.checked = checked;
+  box.disabled = disabled;
   box.addEventListener("change", () => {
     onChange(box.checked);
   });
