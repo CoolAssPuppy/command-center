@@ -1,6 +1,6 @@
 import { type Config, type GoogleToken, type Secrets } from "../config/schema";
 import type { GeoResult } from "../geo/geocode";
-import { el } from "../render/helpers";
+import { el, svgEl } from "../render/helpers";
 import { renderAppearanceSection } from "./appearanceSection";
 import { renderBackupSection } from "./backupSection";
 import { renderConnectionsSection } from "./connectionsSection";
@@ -87,6 +87,26 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+/** A stacked double chevron, up to collapse all sections or down to open them. */
+function doubleChevron(direction: "up" | "down"): SVGElement {
+  const svg = svgEl("svg", {
+    viewBox: "0 0 24 24",
+    width: "18",
+    height: "18",
+    fill: "none",
+    stroke: "currentColor",
+    "stroke-width": "2",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  });
+  const paths =
+    direction === "up"
+      ? ["m17 11-5-5-5 5", "m17 18-5-5-5 5"]
+      : ["m7 6 5 5 5-5", "m7 13 5 5 5-5"];
+  for (const d of paths) svg.appendChild(svgEl("path", { d }));
+  return svg;
+}
+
 const FOCUSABLE =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -133,29 +153,34 @@ export function openEditPane(host: HTMLElement, deps: EditPaneDeps): EditPaneHan
   header.appendChild(el("h2", "cc-edit__title", "Customize"));
   const actions = el("div", "cc-edit__header-actions");
 
-  const openAll = el("button", "cc-edit__toolbtn", "⤢");
-  openAll.setAttribute("type", "button");
-  openAll.setAttribute("title", "Open all");
-  openAll.setAttribute("aria-label", "Open all sections");
-  openAll.addEventListener("click", () => {
-    collapsed.clear();
-    renderBody();
-  });
-  actions.appendChild(openAll);
-
-  const collapseAll = el("button", "cc-edit__toolbtn", "⤡");
-  collapseAll.setAttribute("type", "button");
-  collapseAll.setAttribute("title", "Collapse all");
-  collapseAll.setAttribute("aria-label", "Collapse all sections");
-  collapseAll.addEventListener("click", () => {
-    for (const key of SECTION_KEYS) collapsed.add(key);
-    renderBody();
-  });
-  actions.appendChild(collapseAll);
-
   const done = el("button", "cc-edit__done", "Done");
   done.setAttribute("type", "button");
   actions.appendChild(done);
+
+  // One toggle for all sections, pinned to the far right so it sits in the same
+  // column as each section's own chevron. The icon shows the action available:
+  // chevrons up to collapse everything, chevrons down to open it back up.
+  const collapseToggle = el("button", "cc-edit__toolbtn cc-edit__collapse-all");
+  collapseToggle.setAttribute("type", "button");
+  const syncCollapseToggle = (): void => {
+    const allCollapsed = SECTION_KEYS.every((key) => collapsed.has(key));
+    collapseToggle.replaceChildren(doubleChevron(allCollapsed ? "down" : "up"));
+    collapseToggle.setAttribute("title", allCollapsed ? "Open all" : "Collapse all");
+    collapseToggle.setAttribute(
+      "aria-label",
+      allCollapsed ? "Open all sections" : "Collapse all sections",
+    );
+  };
+  collapseToggle.addEventListener("click", () => {
+    const allCollapsed = SECTION_KEYS.every((key) => collapsed.has(key));
+    if (allCollapsed) collapsed.clear();
+    else for (const key of SECTION_KEYS) collapsed.add(key);
+    renderBody();
+    syncCollapseToggle();
+  });
+  syncCollapseToggle();
+  actions.appendChild(collapseToggle);
+
   header.appendChild(actions);
   panel.appendChild(header);
 
