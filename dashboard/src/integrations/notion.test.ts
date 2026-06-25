@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Connection } from "../config/schema";
-import { notionIntegration, stripTrailingTimestamp } from "./notion";
+import { extractNotionTaskFields, notionIntegration, stripTrailingTimestamp } from "./notion";
 import {
   NEEDS_AUTH,
   type HttpRequest,
@@ -173,5 +173,36 @@ describe("stripTrailingTimestamp", () => {
 
   it("leaves a clean title untouched", () => {
     expect(stripTrailingTimestamp("Select Demand Gen")).toBe("Select Demand Gen");
+  });
+});
+
+describe("extractNotionTaskFields", () => {
+  it("reads each property type by name", () => {
+    const raw = extractNotionTaskFields({
+      Due: { type: "date", date: { start: "2026-06-26" } },
+      Priority: { type: "select", select: { name: "High" } },
+      Status: { type: "status", status: { name: "In progress" } },
+      Category: { type: "multi_select", multi_select: [{ name: "Eng" }, { name: "Growth" }] },
+    });
+    expect(raw).toEqual({
+      dueIso: "2026-06-26",
+      priority: "High",
+      status: "In progress",
+      category: "Eng, Growth",
+    });
+  });
+
+  it("falls back to the first date property and a select status", () => {
+    const raw = extractNotionTaskFields({
+      Deadline: { type: "date", date: { start: "2026-07-01" } },
+      Status: { type: "select", select: { name: "Todo" } },
+      Category: { type: "select", select: { name: "Ops" } },
+    });
+    expect(raw).toMatchObject({ dueIso: "2026-07-01", status: "Todo", category: "Ops" });
+    expect(raw.priority).toBeUndefined();
+  });
+
+  it("returns nothing when the task properties are absent", () => {
+    expect(extractNotionTaskFields({ Name: { type: "title", title: [] } })).toEqual({});
   });
 });

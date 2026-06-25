@@ -2,11 +2,13 @@ import { z } from "zod";
 
 import type { Connection } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
+import { formatTaskDue, taskTone } from "./task";
 import {
   NEEDS_AUTH,
   type Integration,
   type IntegrationContext,
   type NormalizedItem,
+  type TaskFields,
 } from "./types";
 
 /**
@@ -21,6 +23,9 @@ const TaskSchema = z.object({
   id: z.string(),
   content: z.string(),
   url: z.string().optional(),
+  // Todoist priority: 4 is p1 (highest) down to 1 (no priority).
+  priority: z.number().optional(),
+  labels: z.array(z.string()).optional(),
   due: z
     .object({
       date: z.string().optional(),
@@ -32,6 +37,9 @@ const TaskSchema = z.object({
 });
 
 const ResponseSchema = z.array(TaskSchema);
+
+/** Todoist priority 4..2 maps to P1..P3; 1 is "no priority" and is omitted. */
+const PRIORITY_LABEL: Record<number, string> = { 4: "P1", 3: "P2", 2: "P3" };
 
 export const todoistIntegration: Integration = {
   id: "todoist",
@@ -72,10 +80,25 @@ export const todoistIntegration: Integration = {
     const items: NormalizedItem[] = result.data.slice(0, connection.count ?? 6).map((task) => {
       const item: NormalizedItem = { id: task.id, title: task.content };
       if (task.url !== undefined) item.url = task.url;
-      const due = task.due?.string ?? task.due?.date;
-      if (due !== undefined) item.subtitle = due;
-      const sortKey = task.due?.datetime ?? task.due?.date;
-      if (sortKey !== undefined) item.sortKey = sortKey;
+
+      const dueIso = task.due?.datetime ?? task.due?.date;
+      const fields: TaskFields = {};
+      const dueText =
+        dueIso !== undefined ? (formatTaskDue(dueIso) ?? task.due?.string) : task.due?.string;
+      if (dueText !== undefined) fields.due = dueText;
+      if (dueIso !== undefined) item.sortKey = dueIso;
+      const priorityLabel = task.priority !== undefined ? PRIORITY_LABEL[task.priority] : undefined;
+      if (priorityLabel !== undefined) fields.priority = priorityLabel;
+      if (task.labels !== undefined && task.labels.length > 0) {
+        fields.category = task.labels.join(", ");
+      }
+      item.task = fields;
+
+      const tone = taskTone(
+        { highPriority: task.priority === 4, ...(dueIso !== undefined ? { dueIso } : {}) },
+        ctx.now,
+      );
+      if (tone !== undefined) item.tone = tone;
       return item;
     });
     return { ok: true, value: items };

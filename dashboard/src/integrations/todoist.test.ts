@@ -60,9 +60,9 @@ describe("todoistIntegration", () => {
       id: "9",
       title: "Ship the redesign",
       url: "https://todoist.com/showTask?id=9",
-      subtitle: "tomorrow",
       sortKey: "2026-06-26",
     });
+    expect(result.value[0]?.task?.due).toBeDefined();
     expect(captured?.headers?.Authorization).toBe("Bearer td_token");
   });
 
@@ -74,5 +74,43 @@ describe("todoistIntegration", () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe(NEEDS_AUTH);
+  });
+});
+
+describe("todoist task fields", () => {
+  it("maps p1 priority, labels, and due, and tones p1 urgent", async () => {
+    const result = await todoistIntegration.fetch(
+      connection(),
+      "td_token",
+      ctx(() =>
+        Promise.resolve(
+          json([
+            {
+              id: "9",
+              content: "Ship it",
+              priority: 4,
+              labels: ["work", "release"],
+              due: { date: "2026-06-26", datetime: "2026-06-26T17:00:00Z" },
+            },
+          ]),
+        ),
+      ),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value[0]?.task).toMatchObject({ priority: "P1", category: "work, release" });
+    expect(result.value[0]?.task?.due).toBeDefined();
+    expect(result.value[0]?.tone).toBe("urgent");
+  });
+
+  it("omits priority for the default p4 (no priority)", async () => {
+    const result = await todoistIntegration.fetch(
+      connection(),
+      "td_token",
+      ctx(() => Promise.resolve(json([{ id: "1", content: "Plain", priority: 1 }]))),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value[0]?.task?.priority).toBeUndefined();
   });
 });

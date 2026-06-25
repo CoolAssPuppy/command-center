@@ -14,23 +14,38 @@ const json = (body: unknown): HttpResponseLike => ({
   json: () => Promise.resolve(body),
 });
 
+const taskNow = new Date("2026-06-25T08:00:00Z");
+
 describe("parseGoogleTasks", () => {
-  it("keeps incomplete, titled tasks and reads the due date", () => {
-    const items = parseGoogleTasks({
-      items: [
-        { id: "1", title: "Write report", status: "needsAction", due: "2026-06-26T00:00:00.000Z" },
-        { id: "2", title: "Done thing", status: "completed" },
-        { id: "3", title: "  ", status: "needsAction" },
-        { id: "4", title: "No due", status: "needsAction" },
-      ],
-    });
+  it("keeps incomplete, titled tasks with a due and 'To do' status", () => {
+    const items = parseGoogleTasks(
+      {
+        items: [
+          { id: "1", title: "Write report", status: "needsAction", due: "2026-06-26T00:00:00.000Z" },
+          { id: "2", title: "Done thing", status: "completed" },
+          { id: "3", title: "  ", status: "needsAction" },
+          { id: "4", title: "No due", status: "needsAction" },
+        ],
+      },
+      taskNow,
+    );
     expect(items.map((item) => item.id)).toEqual(["1", "4"]);
     expect(items[0]).toMatchObject({ title: "Write report", sortKey: "2026-06-26T00:00:00.000Z" });
-    expect(items[0]?.subtitle).toBeDefined();
+    expect(items[0]?.task?.due).toBeDefined();
+    expect(items[0]?.task?.status).toBe("To do");
+    expect(items[0]?.task?.priority).toBeUndefined();
+  });
+
+  it("tones an overdue task urgent", () => {
+    const items = parseGoogleTasks(
+      { items: [{ id: "x", title: "Late", status: "needsAction", due: "2026-06-20" }] },
+      taskNow,
+    );
+    expect(items[0]?.tone).toBe("urgent");
   });
 
   it("returns nothing for a malformed payload", () => {
-    expect(parseGoogleTasks({ nope: true })).toEqual([]);
+    expect(parseGoogleTasks({ nope: true }, taskNow)).toEqual([]);
   });
 });
 

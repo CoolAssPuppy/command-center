@@ -3,6 +3,7 @@ import type {
   ConferenceProvider,
   IntegrationResult,
   NormalizedItem,
+  TaskFields,
 } from "../integrations/types";
 import { el, svgEl } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
@@ -183,10 +184,20 @@ function renderLaneItem(entry: LaneEntry, deps: NeedsYouLaneDeps): HTMLElement {
   row.appendChild(el("span", "cc-lane__dot"));
   const body = el("div", "cc-lane__item-body");
   body.appendChild(el("span", "cc-lane__item-title", item.title));
-  const sub = item.subtitle ?? item.meta;
+  // Task items (Notion, Todoist, Google Tasks) share one secondary line built
+  // from their structured fields, so all three read identically.
+  const sub = item.task !== undefined ? taskSecondary(item.task) : (item.subtitle ?? item.meta);
   if (sub !== undefined) body.appendChild(el("span", "cc-lane__item-sub", sub));
   row.appendChild(body);
   return row;
+}
+
+/** Join the present task fields into one line: "due · priority · status · category". */
+function taskSecondary(task: TaskFields): string | undefined {
+  const parts = [task.due, task.priority, task.status, task.category].filter(
+    (part): part is string => part !== undefined && part.length > 0,
+  );
+  return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
 function renderSection(

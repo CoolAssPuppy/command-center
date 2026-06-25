@@ -2,11 +2,13 @@ import { z } from "zod";
 
 import type { Connection } from "../config/schema";
 import type { ParseResult } from "../domain/result";
+import { formatTaskDue, taskTone } from "./task";
 import {
   NEEDS_AUTH,
   type Integration,
   type IntegrationContext,
   type NormalizedItem,
+  type TaskFields,
 } from "./types";
 
 /**
@@ -36,15 +38,12 @@ const TaskSchema = z.object({
 
 const TasksSchema = z.object({ items: z.array(TaskSchema).optional() });
 
-/** Google Tasks "due" is an RFC3339 date; show it as a short month and day. */
-function formatDue(due: string): string | undefined {
-  const date = new Date(due);
-  if (Number.isNaN(date.getTime())) return undefined;
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
-}
-
-/** Parse one task list's response into items, dropping completed and untitled. */
-export function parseGoogleTasks(payload: unknown): NormalizedItem[] {
+/**
+ * Parse one task list's response into items, dropping completed and untitled.
+ * Google Tasks has no native priority or category, so those stay blank; an
+ * overdue task is toned urgent against now.
+ */
+export function parseGoogleTasks(payload: unknown, now: Date): NormalizedItem[] {
   const result = TasksSchema.safeParse(payload);
   if (!result.success) return [];
   return (result.data.items ?? [])
@@ -55,11 +54,18 @@ export function parseGoogleTasks(payload: unknown): NormalizedItem[] {
         title: task.title ?? "Untitled",
         url: TASKS_HOME,
       };
+      const fields: TaskFields = { status: "To do" };
       if (task.due !== undefined) {
-        const when = formatDue(task.due);
-        if (when !== undefined) item.subtitle = when;
+        const when = formatTaskDue(task.due);
+        if (when !== undefined) fields.due = when;
         item.sortKey = task.due;
       }
+      item.task = fields;
+      const tone = taskTone(
+        task.due !== undefined ? { dueIso: task.due } : {},
+        now,
+      );
+      if (tone !== undefined) item.tone = tone;
       return item;
     });
 }
@@ -101,7 +107,7 @@ export const googleTasksIntegration: Integration = {
         try {
           const response = await ctx.fetch({ url: tasksUrl(listId), headers });
           if (!response.ok) return [];
-          return parseGoogleTasks(await response.json());
+          return parseGoogleTasks(await response.json(), ctx.now);
         } catch {
           return [];
         }

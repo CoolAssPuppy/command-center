@@ -2,11 +2,13 @@ import { z } from "zod";
 
 import type { Connection } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
+import { formatTaskDue, taskTone } from "./task";
 import {
   NEEDS_AUTH,
   type Integration,
   type IntegrationContext,
   type NormalizedItem,
+  type TaskFields,
 } from "./types";
 
 /**
@@ -71,6 +73,112 @@ export function stripTrailingTimestamp(title: string): string {
       "",
     )
     .trim();
+}
+
+/** Raw task properties pulled from a Notion page, before display formatting. */
+export interface NotionTaskRaw {
+  dueIso?: string;
+  priority?: string;
+  status?: string;
+  category?: string;
+}
+
+function propType(prop: unknown): string | undefined {
+  const record = asRecord(prop);
+  return record !== undefined && typeof record.type === "string" ? record.type : undefined;
+}
+
+function dateStart(prop: unknown): string | undefined {
+  const date = asRecord(asRecord(prop)?.date);
+  return date !== undefined && typeof date.start === "string" ? date.start : undefined;
+}
+
+function selectName(prop: unknown): string | undefined {
+  const select = asRecord(asRecord(prop)?.select);
+  return select !== undefined && typeof select.name === "string" ? select.name : undefined;
+}
+
+function statusName(prop: unknown): string | undefined {
+  const status = asRecord(asRecord(prop)?.status);
+  return status !== undefined && typeof status.name === "string" ? status.name : undefined;
+}
+
+function multiSelectNames(prop: unknown): string | undefined {
+  const list = asRecord(prop)?.multi_select;
+  if (!Array.isArray(list)) return undefined;
+  const names = list
+    .map((entry) => asRecord(entry)?.name)
+    .filter((name): name is string => typeof name === "string");
+  return names.length > 0 ? names.join(", ") : undefined;
+}
+
+/**
+ * Pull the task fields off a Notion page's properties, defensively. Due matches a
+ * "Due" or "Due date" date property (else the first date property); Priority and
+ * Status and Category match by name across their respective property shapes.
+ */
+export function extractNotionTaskFields(properties: Record<string, unknown>): NotionTaskRaw {
+  const entries = Object.entries(properties);
+  const result: NotionTaskRaw = {};
+
+  let due: string | undefined;
+  for (const [name, prop] of entries) {
+    if (/^due(\s?date)?$/i.test(name.trim()) && propType(prop) === "date") {
+      due = dateStart(prop);
+      if (due !== undefined) break;
+    }
+  }
+  if (due === undefined) {
+    for (const [, prop] of entries) {
+      if (propType(prop) === "date") {
+        due = dateStart(prop);
+        if (due !== undefined) break;
+      }
+    }
+  }
+  if (due !== undefined) result.dueIso = due;
+
+  for (const [name, prop] of entries) {
+    const key = name.trim().toLowerCase();
+    if (key === "priority" && result.priority === undefined) {
+      const value = selectName(prop);
+      if (value !== undefined) result.priority = value;
+    } else if (key === "status" && result.status === undefined) {
+      const value = statusName(prop) ?? selectName(prop);
+      if (value !== undefined) result.status = value;
+    } else if (key === "category" && result.category === undefined) {
+      const value = multiSelectNames(prop) ?? selectName(prop);
+      if (value !== undefined) result.category = value;
+    }
+  }
+
+  return result;
+}
+
+/** Build the shared task fields and tone for a Notion page in tasks mode. */
+function applyNotionTask(
+  item: NormalizedItem,
+  properties: Record<string, unknown>,
+  now: Date,
+): void {
+  const raw = extractNotionTaskFields(properties);
+  const task: TaskFields = {};
+  if (raw.dueIso !== undefined) {
+    const due = formatTaskDue(raw.dueIso);
+    if (due !== undefined) task.due = due;
+    item.sortKey = raw.dueIso;
+  }
+  if (raw.priority !== undefined) task.priority = raw.priority;
+  if (raw.status !== undefined) task.status = raw.status;
+  if (raw.category !== undefined) task.category = raw.category;
+  item.task = task;
+
+  const highPriority = raw.priority !== undefined && /^(high|urgent)$/i.test(raw.priority);
+  const tone = taskTone(
+    { highPriority, ...(raw.dueIso !== undefined ? { dueIso: raw.dueIso } : {}) },
+    now,
+  );
+  if (tone !== undefined) item.tone = tone;
 }
 
 function extractTitle(
@@ -152,12 +260,16 @@ export const notionIntegration: Integration = {
       return { ok: false, error: firstIssue(result.error, "invalid Notion response") };
     }
 
+    const asTasks = connection.role === "tasks";
     const items: NormalizedItem[] = result.data.results.map((page) => {
       const item: NormalizedItem = {
         id: page.id,
         title: extractTitle(page.properties, connection.titleProperty),
       };
       if (page.url !== undefined) item.url = page.url;
+      if (asTasks && page.properties !== undefined) {
+        applyNotionTask(item, page.properties, ctx.now);
+      }
       return item;
     });
     return { ok: true, value: items };

@@ -17,6 +17,18 @@ export type ItemTone = "urgent" | "positive" | "neutral";
 /** Video-call providers the lane can recognize and badge on a Join button. */
 export type ConferenceProvider = "meet" | "zoom" | "teams" | "other";
 
+/**
+ * Task detail shared across task sources (Notion, Todoist, Google Tasks), so the
+ * lane renders all three identically. Every field is a ready-to-show string and
+ * optional; the renderer joins whichever are present.
+ */
+export interface TaskFields {
+  due?: string;
+  priority?: string;
+  status?: string;
+  category?: string;
+}
+
 export interface NormalizedItem {
   id: string;
   title: string;
@@ -35,6 +47,8 @@ export interface NormalizedItem {
   joinUrl?: string;
   /** Which provider joinUrl points at, for the Join button's mark. */
   conferenceProvider?: ConferenceProvider;
+  /** Structured task detail, set by task sources for the lane's Tasks section. */
+  task?: TaskFields;
 }
 
 /** A minimal HTTP client so integrations can POST with headers, injected for tests. */
