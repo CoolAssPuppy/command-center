@@ -230,6 +230,9 @@ describe("edit pane — connections & streams", () => {
   it("adds a connection for a service", () => {
     const harness = open(twoZones());
     const form = formWithOption(harness.root, "Google Calendar");
+    const select = form.querySelector<HTMLSelectElement>("select");
+    if (select === null) throw new Error("no service select");
+    select.value = "google-calendar";
     const name = form.querySelector<HTMLInputElement>("input");
     if (name === null) throw new Error("no connection name input");
     name.value = "Work Calendar";

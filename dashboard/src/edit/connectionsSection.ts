@@ -20,12 +20,12 @@ import { makeReorderable } from "./reorderable";
  * through updateSecrets, keyed by connection id (Google uses chrome.identity).
  */
 const SERVICE_LABELS: ReadonlyArray<readonly [Service, string]> = [
+  ["github", "GitHub"],
   ["google-calendar", "Google Calendar"],
+  ["google-tasks", "Google Tasks"],
   ["linear", "Linear"],
   ["notion", "Notion"],
-  ["github", "GitHub"],
   ["todoist", "Todoist"],
-  ["google-tasks", "Google Tasks"],
 ];
 
 function serviceFromValue(value: string): Service {
