@@ -22,9 +22,10 @@
 export const GOOGLE_OAUTH_CLIENT_ID =
   "180895780616-j3anr6pel0kmubkqu095rb857nuhehsf.apps.googleusercontent.com";
 
-/** OAuth scopes requested: read-only calendar, plus the account's email. */
+/** OAuth scopes requested: read-only calendar and tasks, plus the email. */
 export const GOOGLE_OAUTH_SCOPES = [
   "openid",
   "email",
   "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/tasks.readonly",
 ] as const;

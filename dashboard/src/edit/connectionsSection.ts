@@ -24,6 +24,7 @@ const SERVICE_LABELS: ReadonlyArray<readonly [Service, string]> = [
   ["notion", "Notion"],
   ["github", "GitHub"],
   ["todoist", "Todoist"],
+  ["google-tasks", "Google Tasks"],
 ];
 
 function serviceFromValue(value: string): Service {
@@ -119,7 +120,7 @@ function renderConnectionFields(
 ): HTMLElement {
   const wrap = el("div", "cc-edit__nested");
 
-  if (connection.service === "google-calendar") {
+  if (connection.service === "google-calendar" || connection.service === "google-tasks") {
     const connect = ctx.runtime.connectGoogleAccount;
     if (connect !== undefined) {
       const connected = ctx.draftSecrets.googleTokens[connection.id];
@@ -147,6 +148,7 @@ function renderConnectionFields(
         ),
       );
     }
+    if (connection.service === "google-calendar") {
     const calendarId = textInput("primary");
     calendarId.value = connection.calendarId ?? "";
     calendarId.setAttribute("aria-label", "Calendar");
@@ -190,6 +192,7 @@ function renderConnectionFields(
         "Paste a calendar's share link or id, one per line, to merge its events into this card. From Google Calendar settings, Integrate calendar, copy the Public URL, the Embed src, or the Calendar ID. You can only see calendars your signed-in account can access.",
       ),
     );
+    }
   } else {
     const key = document.createElement("input");
     key.type = "password";
@@ -247,6 +250,58 @@ function renderConnectionFields(
         "A GitHub search. Blank shows pull requests awaiting your review. Try is:open is:pr author:@me for your own, or is:open assignee:@me for issues.",
       ),
     );
+  }
+
+  // Linear: read assigned issues or your notification inbox.
+  if (connection.service === "linear") {
+    const view = document.createElement("select");
+    view.className = "cc-edit__input";
+    view.setAttribute("aria-label", "Linear view");
+    for (const [value, label] of [
+      ["assigned", "Assigned issues"],
+      ["inbox", "Inbox (notifications)"],
+    ] as const) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      if ((connection.linearView ?? "assigned") === value) option.selected = true;
+      view.appendChild(option);
+    }
+    view.addEventListener("change", () => {
+      updateConnection(ctx, connection.id, (item) => {
+        if (view.value === "inbox") item.linearView = "inbox";
+        else delete item.linearView;
+      });
+    });
+    wrap.appendChild(field("View", view));
+  }
+
+  // Task-capable sources choose whether their items also enter the left lane.
+  if (
+    connection.service === "notion" ||
+    connection.service === "todoist" ||
+    connection.service === "google-tasks"
+  ) {
+    const defaultRole = connection.service === "google-tasks" ? "tasks" : "reference";
+    const role = document.createElement("select");
+    role.className = "cc-edit__input";
+    role.setAttribute("aria-label", "Role");
+    for (const [value, label] of [
+      ["reference", "Reference (data card only)"],
+      ["tasks", "Tasks (show in Needs you)"],
+    ] as const) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      if ((connection.role ?? defaultRole) === value) option.selected = true;
+      role.appendChild(option);
+    }
+    role.addEventListener("change", () => {
+      updateConnection(ctx, connection.id, (item) => {
+        item.role = role.value === "tasks" ? "tasks" : "reference";
+      });
+    });
+    wrap.appendChild(field("Role", role));
   }
 
   const count = textInput("6", "number");
@@ -308,12 +363,14 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
     targetInput = undefined;
     const service = serviceFromValue(select.value);
 
-    if (service === "google-calendar") {
+    if (service === "google-calendar" || service === "google-tasks") {
       fieldsBox.appendChild(
         el(
           "div",
           "cc-edit__hint",
-          "No setup here. Add it, then connect your Google account on its row; it reads your main calendar.",
+          service === "google-tasks"
+            ? "No setup here. Add it, then connect your Google account on its row; it reads your task lists."
+            : "No setup here. Add it, then connect your Google account on its row; it reads your main calendar.",
         ),
       );
     } else if (service === "linear") {

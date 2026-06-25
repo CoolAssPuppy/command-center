@@ -27,12 +27,17 @@ export interface NeedsYouLaneDeps {
 interface LaneEntry {
   item: NormalizedItem;
   service: string;
+  /** The connection's role, when it sets one (Feature: source role toggle). */
+  role?: "reference" | "tasks";
+  /** Whether this came from a Linear connection in inbox mode. */
+  linearInbox?: boolean;
 }
 
 export interface LaneBuckets {
   /** The next meeting, only when it starts within the coming hour. */
   meeting?: LaneEntry;
   reviews: LaneEntry[];
+  linearInbox: LaneEntry[];
   tasks: LaneEntry[];
 }
 
@@ -41,9 +46,20 @@ const SECTION_LIMIT = 5;
 const TASK_SERVICES = new Set(["notion", "todoist", "google-tasks"]);
 const HOUR_MS = 60 * 60 * 1000;
 
-function serviceForKey(key: string, connections: Connection[]): string | undefined {
-  if (key === COMBINED_CALENDARS_ID) return "google-calendar";
-  return connections.find((connection) => connection.id === key)?.service;
+function connectionForKey(
+  key: string,
+  connections: Connection[],
+): Connection | undefined {
+  if (key === COMBINED_CALENDARS_ID) return undefined;
+  return connections.find((connection) => connection.id === key);
+}
+
+/** A task source's items only reach the lane when its role resolves to "tasks".
+ *  Google Tasks is a pure task source, so it defaults to tasks; the rest default
+ *  to reference, so notes and the like stay out of the lane until opted in. */
+function effectiveRole(service: string, role: "reference" | "tasks" | undefined): "reference" | "tasks" {
+  if (role !== undefined) return role;
+  return service === "google-tasks" ? "tasks" : "reference";
 }
 
 function collectEntries(
@@ -54,20 +70,26 @@ function collectEntries(
   const entries: LaneEntry[] = [];
   for (const [key, result] of Object.entries(results)) {
     if (result.status !== "ok" || result.items === undefined) continue;
-    const service = serviceForKey(key, connections);
+    const connection = connectionForKey(key, connections);
+    const service = key === COMBINED_CALENDARS_ID ? "google-calendar" : connection?.service;
     if (service === undefined) continue;
     if (hasCombined && service === "google-calendar" && key !== COMBINED_CALENDARS_ID) {
       continue;
     }
-    for (const item of result.items) entries.push({ item, service });
+    for (const item of result.items) {
+      const entry: LaneEntry = { item, service };
+      if (connection?.role !== undefined) entry.role = connection.role;
+      if (connection?.linearView === "inbox") entry.linearInbox = true;
+      entries.push(entry);
+    }
   }
   return entries;
 }
 
 /**
  * Derive the lane's sections from the raw entries: the soonest meeting inside
- * the next hour, the review-requested PRs, and the open tasks. Past meetings and
- * meetings further out are left to the calendar feed.
+ * the next hour, the review-requested PRs, the Linear inbox, and the open tasks.
+ * Past meetings and meetings further out are left to the calendar feed.
  */
 export function buildLaneBuckets(entries: LaneEntry[], now: Date): LaneBuckets {
   const nowMs = now.getTime();
@@ -86,11 +108,19 @@ export function buildLaneBuckets(entries: LaneEntry[], now: Date): LaneBuckets {
     .filter((entry) => entry.service === "github" && entry.item.tone === "urgent")
     .slice(0, SECTION_LIMIT);
 
-  const tasks = entries
-    .filter((entry) => TASK_SERVICES.has(entry.service))
+  const linearInbox = entries
+    .filter((entry) => entry.service === "linear" && entry.linearInbox === true)
     .slice(0, SECTION_LIMIT);
 
-  const buckets: LaneBuckets = { reviews, tasks };
+  const tasks = entries
+    .filter(
+      (entry) =>
+        TASK_SERVICES.has(entry.service) &&
+        effectiveRole(entry.service, entry.role) === "tasks",
+    )
+    .slice(0, SECTION_LIMIT);
+
+  const buckets: LaneBuckets = { reviews, linearInbox, tasks };
   if (meeting !== undefined) buckets.meeting = meeting;
   return buckets;
 }
@@ -224,10 +254,10 @@ export function renderNeedsYouLane(
   root.dataset.flipId = "needs-you";
   root.appendChild(el("h2", "cc-lane__title", "Needs you"));
 
-  const buckets =
+  const buckets: LaneBuckets =
     model.integrationResults !== undefined
       ? buildLaneBuckets(collectEntries(model.integrationResults, model.connections), model.now)
-      : { reviews: [], tasks: [] };
+      : { reviews: [], linearInbox: [], tasks: [] };
 
   let any = false;
   if (buckets.meeting !== undefined) {
@@ -236,6 +266,10 @@ export function renderNeedsYouLane(
   }
   if (buckets.reviews.length > 0) {
     root.appendChild(renderSection("Review requested", buckets.reviews, deps));
+    any = true;
+  }
+  if (buckets.linearInbox.length > 0) {
+    root.appendChild(renderSection("Linear inbox", buckets.linearInbox, deps));
     any = true;
   }
   if (buckets.tasks.length > 0) {

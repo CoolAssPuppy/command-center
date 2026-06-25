@@ -41,6 +41,7 @@ export const SERVICES = [
   "notion",
   "github",
   "todoist",
+  "google-tasks",
 ] as const;
 export const ServiceSchema = z.enum(SERVICES);
 export type Service = z.infer<typeof ServiceSchema>;
@@ -72,6 +73,17 @@ export const ConnectionSchema = z.object({
   filter: z.unknown().optional(),
   /** GitHub: a search query, e.g. "is:open is:pr review-requested:@me". */
   query: z.string().optional(),
+  /**
+   * Where a source's items belong. "reference" (the default) shows only as a
+   * right-column data card; "tasks" also surfaces in the left lane's Tasks
+   * section. Applies to task-capable sources (Notion, Todoist, Google Tasks).
+   */
+  role: z.enum(["reference", "tasks"]).optional(),
+  /**
+   * Linear: which list to read. "assigned" (the default) reads your open
+   * assigned issues; "inbox" reads your Linear notifications.
+   */
+  linearView: z.enum(["assigned", "inbox"]).optional(),
   /** How many items to show. */
   count: z.number().int().positive().max(50).optional(),
 });

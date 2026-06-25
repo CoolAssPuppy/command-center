@@ -19,18 +19,33 @@ describe("buildLaneBuckets", () => {
     expect(buckets.meeting?.item.id).toBe("soon");
   });
 
-  it("buckets review-requested PRs and tasks by source", () => {
+  it("buckets review-requested PRs, the Linear inbox, and tasks by source", () => {
     const buckets = buildLaneBuckets(
       [
         { service: "github", item: { id: "pr", title: "Review me", tone: "urgent" } },
         { service: "github", item: { id: "mine", title: "My PR" } },
-        { service: "notion", item: { id: "note", title: "A task" } },
-        { service: "todoist", item: { id: "td", title: "A todo" } },
+        { service: "linear", item: { id: "n1", title: "Mention" }, linearInbox: true },
+        { service: "notion", item: { id: "note", title: "A task" }, role: "tasks" },
+        { service: "todoist", item: { id: "td", title: "A todo" }, role: "tasks" },
       ],
       now,
     );
     expect(buckets.reviews.map((entry) => entry.item.id)).toEqual(["pr"]);
+    expect(buckets.linearInbox.map((entry) => entry.item.id)).toEqual(["n1"]);
     expect(buckets.tasks.map((entry) => entry.item.id).sort()).toEqual(["note", "td"]);
+  });
+
+  it("keeps reference-role task sources out of the lane, but defaults Google Tasks in", () => {
+    const buckets = buildLaneBuckets(
+      [
+        { service: "notion", item: { id: "note", title: "Personal note" } },
+        { service: "notion", item: { id: "task", title: "Real task" }, role: "tasks" },
+        { service: "google-tasks", item: { id: "gt", title: "A google task" } },
+      ],
+      now,
+    );
+    // Default Notion is reference (excluded); Google Tasks defaults to tasks.
+    expect(buckets.tasks.map((entry) => entry.item.id).sort()).toEqual(["gt", "task"]);
   });
 });
 

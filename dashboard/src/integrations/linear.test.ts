@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Connection } from "../config/schema";
-import { linearIntegration } from "./linear";
+import { INBOX_QUERY, linearIntegration, linearViewOf, parseLinearInbox } from "./linear";
 import {
   NEEDS_AUTH,
   type HttpRequest,
@@ -96,5 +96,46 @@ describe("linearIntegration", () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe("Bad query");
+  });
+});
+
+const inboxBody = (nodes: unknown[]): unknown => ({ data: { notifications: { nodes } } });
+
+describe("linear inbox view", () => {
+  it("defaults to assigned and reads inbox when chosen", () => {
+    expect(linearViewOf(connection())).toBe("assigned");
+    expect(linearViewOf(connection({ linearView: "inbox" }))).toBe("inbox");
+  });
+
+  it("queries notifications in inbox mode", async () => {
+    let captured: HttpRequest | undefined;
+    await linearIntegration.fetch(
+      connection({ linearView: "inbox" }),
+      "lin_key",
+      ctx((request) => {
+        captured = request;
+        return Promise.resolve(json(inboxBody([])));
+      }),
+    );
+    const body = JSON.parse(captured?.body ?? "{}") as { query?: string };
+    expect(body.query).toBe(INBOX_QUERY);
+    expect(body.query).toContain("notifications");
+    expect(body.query).toContain("IssueNotification");
+  });
+
+  it("keeps unread, unsnoozed issue notifications and dedupes by issue", () => {
+    const result = parseLinearInbox(
+      inboxBody([
+        { id: "a", readAt: null, snoozedUntilAt: null, issue: { identifier: "ENG-1", title: "Fix", url: "https://l/1" } },
+        { id: "b", readAt: "2026-06-23T00:00:00Z", issue: { identifier: "ENG-2", title: "Read", url: "https://l/2" } },
+        { id: "c", snoozedUntilAt: "2026-06-30T00:00:00Z", issue: { identifier: "ENG-3", title: "Snoozed" } },
+        { id: "d", readAt: null, snoozedUntilAt: null, issue: { identifier: "ENG-1", title: "Fix dup" } },
+        { id: "e", readAt: null }, // no issue
+      ]),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.map((item) => item.id)).toEqual(["ENG-1"]);
+    expect(result.value[0]).toMatchObject({ title: "Fix", url: "https://l/1", meta: "ENG-1" });
   });
 });
