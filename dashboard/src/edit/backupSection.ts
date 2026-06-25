@@ -23,7 +23,12 @@ function exportConfig(config: Config): void {
 export function renderBackupSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Backup", key: "backup", collapsed: ctx.collapsed },
+    {
+      title: "Backup",
+      key: "backup",
+      collapsed: ctx.collapsed,
+      description: "Export or import your whole setup as JSON.",
+    },
     (section) => buildBackup(section, ctx),
   );
 }

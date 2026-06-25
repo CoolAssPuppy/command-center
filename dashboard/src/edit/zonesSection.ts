@@ -13,7 +13,12 @@ import { makeReorderable } from "./reorderable";
 export function renderZonesSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Timezones", key: "zones", collapsed: ctx.collapsed },
+    {
+      title: "Timezones",
+      key: "zones",
+      collapsed: ctx.collapsed,
+      description: "World clocks and the best meeting overlap window.",
+    },
     (section) => {
       const list = el("div", "cc-edit__list");
       const home = homeZone(ctx.draft);

@@ -21,7 +21,12 @@ const FREQUENCIES: ReadonlyArray<readonly [Frequency, string]> = [
 export function renderWallpaperSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Wallpaper", key: "wallpaper", collapsed: ctx.collapsed },
+    {
+      title: "Wallpaper",
+      key: "wallpaper",
+      collapsed: ctx.collapsed,
+      description: "The background behind your new tab.",
+    },
     (section) => buildWallpaper(section, ctx),
   );
 }

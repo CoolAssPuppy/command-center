@@ -13,7 +13,12 @@ import type { SectionContext } from "./editPane";
 export function renderAppearanceSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Appearance", key: "appearance", collapsed: ctx.collapsed },
+    {
+      title: "Appearance",
+      key: "appearance",
+      collapsed: ctx.collapsed,
+      description: "Theme, clock format, and the meeting window.",
+    },
     (section) => buildAppearance(section, ctx),
   );
 }

@@ -69,7 +69,13 @@ export function fieldWithHelp(
  */
 export function collapsibleSection(
   host: HTMLElement,
-  options: { title: string; key: string; collapsed: Set<string>; icon?: SVGElement },
+  options: {
+    title: string;
+    key: string;
+    collapsed: Set<string>;
+    icon?: SVGElement;
+    description?: string;
+  },
   build: (body: HTMLElement) => void,
 ): void {
   const details = document.createElement("details");
@@ -86,7 +92,12 @@ export function collapsibleSection(
     wrap.appendChild(mark);
     summary.appendChild(wrap);
   }
-  summary.appendChild(el("span", "cc-edit__section-title", options.title));
+  const titles = el("div", "cc-edit__section-titles");
+  titles.appendChild(el("span", "cc-edit__section-title", options.title));
+  if (options.description !== undefined) {
+    titles.appendChild(el("span", "cc-edit__section-desc", options.description));
+  }
+  summary.appendChild(titles);
   summary.appendChild(el("span", "cc-edit__section-caret", "›"));
   details.appendChild(summary);
 

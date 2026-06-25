@@ -34,7 +34,13 @@ let newsPickerOpen = false;
 export function renderTickersSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Tickers", key: "tickers", collapsed: ctx.collapsed, icon: tickerIcon() },
+    {
+      title: "Tickers",
+      key: "tickers",
+      collapsed: ctx.collapsed,
+      icon: tickerIcon(),
+      description: "Scrolling stocks, forex, and news headlines up top.",
+    },
     (section) => {
       section.appendChild(
         checkRow("Show stock ticker", ctx.draft.tickers.stocks.enabled, (checked) =>

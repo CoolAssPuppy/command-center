@@ -44,7 +44,12 @@ function serviceFromValue(value: string): Service {
 export function renderConnectionsSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Connections", key: "connections", collapsed: ctx.collapsed },
+    {
+      title: "Connections",
+      key: "connections",
+      collapsed: ctx.collapsed,
+      description: "Accounts and keys your data cards pull from.",
+    },
     (section) => {
       const list = el("div", "cc-edit__list");
       ctx.draft.connections.forEach((connection, index) => {

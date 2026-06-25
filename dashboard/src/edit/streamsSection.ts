@@ -71,7 +71,12 @@ function updateStream(
 export function renderStreamsSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Data cards", key: "streams", collapsed: ctx.collapsed },
+    {
+      title: "Data cards",
+      key: "streams",
+      collapsed: ctx.collapsed,
+      description: "The cards shown on your new tab.",
+    },
     (section) => {
       if (ctx.draft.connections.length === 0) {
         section.appendChild(

@@ -15,7 +15,12 @@ import { makeReorderable } from "./reorderable";
 export function renderDockSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Dock", key: "dock", collapsed: ctx.collapsed },
+    {
+      title: "Dock",
+      key: "dock",
+      collapsed: ctx.collapsed,
+      description: "App shortcuts along the bottom, plus dock options.",
+    },
     (section) => {
       section.appendChild(
         checkRow("Enable dock", ctx.draft.appearance.showDock !== false, (checked) => {

@@ -42,7 +42,13 @@ function link(href: string, text: string): HTMLAnchorElement {
 export function renderSupportSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Support", key: "support", collapsed: ctx.collapsed, icon: supportIcon() },
+    {
+      title: "Support",
+      key: "support",
+      collapsed: ctx.collapsed,
+      icon: supportIcon(),
+      description: "The source code and ways to say thanks.",
+    },
     (section) => {
       const open = el("div", "cc-edit__hint");
       open.appendChild(link(REPO_URL, "Command Center is open-source. PRs are always welcome!"));

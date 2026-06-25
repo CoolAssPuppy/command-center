@@ -13,7 +13,12 @@ type Unit = "fahrenheit" | "celsius";
 export function renderWeatherSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Weather", key: "weather", collapsed: ctx.collapsed },
+    {
+      title: "Weather",
+      key: "weather",
+      collapsed: ctx.collapsed,
+      description: "Show forecasts for home and your timezones.",
+    },
     (section) => {
       section.appendChild(
         checkRow(
