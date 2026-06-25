@@ -1,6 +1,25 @@
-import { el } from "../render/helpers";
+import { el, svgEl } from "../render/helpers";
 import { collapsibleSection } from "./controls";
 import type { SectionContext } from "./editPane";
+
+/** A small coffee-cup mark for the Support section header. */
+function supportIcon(): SVGElement {
+  const svg = svgEl("svg", {
+    viewBox: "0 0 24 24",
+    width: "16",
+    height: "16",
+    fill: "none",
+    stroke: "currentColor",
+    "stroke-width": "1.6",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  });
+  svg.appendChild(svgEl("path", { d: "M4 8h12v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z" }));
+  svg.appendChild(svgEl("path", { d: "M16 9h2a2 2 0 0 1 0 4h-2" }));
+  svg.appendChild(svgEl("line", { x1: "7.5", y1: "2", x2: "7.5", y2: "4.5" }));
+  svg.appendChild(svgEl("line", { x1: "11", y1: "2", x2: "11", y2: "4.5" }));
+  return svg;
+}
 
 /**
  * The Support section: a nudge that the project is open-source and a couple of
@@ -23,7 +42,7 @@ function link(href: string, text: string): HTMLAnchorElement {
 export function renderSupportSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Support", key: "support", collapsed: ctx.collapsed },
+    { title: "Support", key: "support", collapsed: ctx.collapsed, icon: supportIcon() },
     (section) => {
       const open = el("div", "cc-edit__hint");
       open.appendChild(link(REPO_URL, "Command Center is open-source. PRs are always welcome!"));
