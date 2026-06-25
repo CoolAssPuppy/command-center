@@ -231,22 +231,31 @@ body {
   gap: clamp(28px, 5vh, 56px);
 }
 
-/* Tier 1: orientation band. Card-less, floats on the wallpaper. The clock and
-   forecast read on the left, the timezone ribbon top-right, tickers beneath. */
+/* Tier 1: orientation. Two card-less columns typeset on the wallpaper. Left:
+   greeting, time, weather, forecast. Right: the other zones and the meeting
+   finder. Tickers span beneath. */
 .cc-orient {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  column-gap: 40px;
-  row-gap: 16px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  /* Bottom-align the columns so the right column (timezones, then the meeting
+     finder) settles level with the left column's weather block instead of
+     floating at the top and leaving the band lopsided. */
+  align-items: end;
+  column-gap: clamp(32px, 6vw, 88px);
+  row-gap: 18px;
 }
 
 .cc-orient__lead {
   min-width: 0;
+  align-self: end;
 }
 
-.cc-orient .cc-zones {
-  justify-self: end;
+.cc-orient__aside {
+  min-width: 0;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .cc-orient .cc-tickers {
@@ -257,20 +266,24 @@ body {
   .cc-orient {
     grid-template-columns: 1fr;
   }
-
-  .cc-orient .cc-zones {
-    justify-self: start;
-  }
 }
 
-/* When a wallpaper is on, foreground text flips to light over the scrim. */
+/* When a wallpaper is on, the card-less orientation text flips to light over the
+   scrim so it stays legible on a photo. The lane sits on its own sheet, so it
+   keeps token colors and is left out. */
 .cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-home__greeting,
 .cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-home__time,
 .cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-home__meta,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-home__temp,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-home__cond,
 .cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-forecast__label,
 .cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-forecast__icon,
 .cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-forecast__high,
-.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-forecast__low {
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-forecast__low,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-zone__label,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-zone__time,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-zone__meta,
+.cc-dashboard:has(.cc-wallpaper[data-enabled="true"]) .cc-zone__weather {
   color: var(--cc-on-photo);
 }
 
@@ -292,13 +305,13 @@ body {
 }
 
 .cc-home__time {
-  /* Moderate, not a billboard: the clock orients you, it is not the headline.
-     The "needs you" lane is the anchor instead. */
-  font-size: clamp(44px, 7vw, 80px);
-  font-weight: 600;
+  /* The focal point of the band: the brand primary, set heavy. Moderate size,
+     not a billboard, since the "needs you" lane is the working anchor. */
+  font-size: clamp(46px, 7vw, 82px);
+  font-weight: 700;
   line-height: 1;
   letter-spacing: -0.02em;
-  color: var(--cc-color-text, #21242a);
+  color: var(--cc-color-primary, var(--cc-color-text, #21242a));
   font-variant-numeric: var(--cc-numeric, tabular-nums);
 }
 
@@ -314,6 +327,27 @@ body {
 
 .cc-home__dot {
   opacity: 0.6;
+}
+
+.cc-home__weather {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.cc-home__temp {
+  font-size: clamp(16px, 1.8vw, 19px);
+  font-weight: 600;
+  color: var(--cc-color-text, #21242a);
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-home__cond {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--cc-color-muted, #6a6e76);
 }
 
 .cc-forecast {
@@ -537,38 +571,37 @@ body {
 
 .cc-zones {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
+  flex-direction: column;
 }
 
-/* Each zone is a compact horizontal pill, not a card: a day/night glyph, city,
-   time, offset, and temp on one line. The set reads as a quiet ribbon, freeing
-   the room four cards used to take. */
+/* A zone is a clean text row: glyph, city, time, then offset and temp. Rows are
+   separated by a faint hairline divider, not boxed. No fill, no border. */
 .cc-zone {
   position: relative;
-  flex: 0 0 auto;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--cc-color-surface, #fff) 32%, transparent);
-  border: 1px solid var(--cc-hairline);
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.cc-zone + .cc-zone {
+  border-top: 1px solid color-mix(in srgb, var(--cc-color-muted, #6a6e76) 16%, transparent);
 }
 
 .cc-zone__daynight {
+  align-self: center;
   display: inline-flex;
   color: var(--cc-color-muted, #6a6e76);
-  opacity: 0.75;
+  opacity: 0.7;
 }
 
 .cc-zone__label {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 5px;
-  font-size: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--cc-color-text, #21242a);
@@ -582,7 +615,7 @@ body {
 }
 
 .cc-zone__time {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1;
   color: var(--cc-color-text, #21242a);
@@ -591,8 +624,10 @@ body {
 
 .cc-zone__meta {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 60px;
   font-size: 12px;
   font-weight: 500;
   color: var(--cc-color-muted, #6a6e76);
@@ -604,12 +639,12 @@ body {
   font-weight: 600;
 }
 
-/* Work band: the "needs you" lane (anchor) beside a quieter feed rail. */
+/* Work band: the "needs you" lane (anchor) beside a typeset feed rail. */
 .cc-work {
   display: grid;
   grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
   align-items: start;
-  gap: clamp(16px, 2vw, 28px);
+  gap: clamp(24px, 4vw, 56px);
 }
 
 @media (max-width: 900px) {
@@ -618,16 +653,19 @@ body {
   }
 }
 
-/* The one elevated, opaque, bright surface on the page: where the eye lands. */
+/* The page's one distinguished surface: a single low-contrast solid sheet with
+   a gentle inset, so the lane reads as the anchor without looking like a glass
+   card. Everything else is typographic on the wallpaper. */
 .cc-lane {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 20px 22px;
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--cc-color-surface, #fff) 96%, transparent);
-  border: 1px solid var(--cc-hairline);
-  box-shadow: 0 10px 30px rgba(15, 18, 28, 0.16);
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cc-color-surface, #fff) 55%, var(--cc-color-bg, #11131a));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--cc-color-muted, #6a6e76) 8%, transparent);
 }
 
 .cc-lane__title {
@@ -722,6 +760,70 @@ button.cc-lane__item:hover {
   font-size: 13px;
   color: var(--cc-color-muted, #6a6e76);
   padding: 4px 10px;
+}
+
+/* Derived sections inside the lane, grouped by a small label and divided by a
+   hairline rather than boxed. */
+.cc-lane__section + .cc-lane__section {
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--cc-color-muted, #6a6e76) 14%, transparent);
+}
+
+.cc-lane__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cc-color-muted, #6a6e76);
+  margin-bottom: 4px;
+}
+
+/* The standout: the next meeting, with a countdown and a Join button. */
+.cc-lane__meeting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.cc-lane__meeting[data-tone="urgent"] {
+  background: color-mix(in srgb, var(--cc-color-urgent, #c0563f) 12%, transparent);
+}
+
+.cc-lane__meeting-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cc-color-text, #21242a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cc-lane__meeting-when {
+  font-size: 12px;
+  color: var(--cc-color-muted, #6a6e76);
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-lane__join {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cc-color-primary, #4f6bed) 16%, transparent);
+  color: var(--cc-color-text, #21242a);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cc-lane__join:hover {
+  background: color-mix(in srgb, var(--cc-color-primary, #4f6bed) 26%, transparent);
 }
 
 /* Slots filled by later phases ------------------------------------------- */
@@ -1309,71 +1411,47 @@ button.cc-lane__item:hover {
 
 .cc-streams {
   width: 100%;
-  /* A single quiet rail beside the lane; panels stack and keep their natural
-     height, so a short reference panel stays short and a busy queue runs long. */
+  /* A typeset rail beside the lane: feeds are sections divided by a hairline,
+     not boxed. Panels keep their natural height, so reference stays short and a
+     busy queue runs long. */
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-@media (max-width: 960px) {
-  .cc-mw {
-    flex-basis: 100%;
-  }
 }
 
 .cc-stream {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--cc-hairline);
-  border-radius: 14px;
-  /* Quieter and flatter than the lane: the feeds are reference, not the anchor. */
-  background: color-mix(in srgb, var(--cc-color-surface, #fff) 52%, transparent);
-  overflow: hidden;
+  padding: 14px 0;
 }
 
-/* Action queues (Linear, GitHub) earn room; reference (notes) stays shortest and
-   lowest contrast. The difference in weight is the priority signal. */
-.cc-stream[data-kind="reference"] {
-  background: color-mix(in srgb, var(--cc-color-surface, #fff) 38%, transparent);
+/* A faint divider between feeds, instead of a card around each. */
+.cc-stream + .cc-stream {
+  border-top: 1px solid color-mix(in srgb, var(--cc-color-muted, #6a6e76) 14%, transparent);
 }
 
+/* Reference (notes) stays shortest and quietest; action queues run their length.
+   The difference in weight is the priority signal. */
 .cc-stream[data-kind="reference"] .cc-stream__items {
   max-height: 168px;
   overflow-y: auto;
 }
 
-.cc-stream__count {
-  margin-left: auto;
-  min-width: 20px;
-  height: 18px;
-  padding: 0 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9px;
-  font-size: 11px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--cc-color-muted, #6a6e76);
-  background: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 16%, transparent);
-}
-
 .cc-stream__body:has(> .cc-stream__empty) {
-  padding: 2px 16px 14px;
+  padding: 2px 2px 0;
 }
 
 .cc-stream__summary {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 13px 16px;
+  gap: 9px;
+  padding: 2px 2px 8px;
   cursor: pointer;
   list-style: none;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--cc-color-text, #21242a);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cc-color-muted, #6a6e76);
 }
 
 .cc-stream__summary::-webkit-details-marker {
@@ -1392,7 +1470,7 @@ button.cc-lane__item:hover {
 }
 
 .cc-stream__body {
-  padding: 4px 16px 16px;
+  padding: 0 2px;
 }
 
 .cc-stream__text {
@@ -1620,8 +1698,22 @@ button.cc-ticker__entry {
   color: var(--cc-color-text, #21242a);
 }
 
+.cc-ticker__favicon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+  align-self: center;
+}
+
 .cc-ticker__headline {
   color: var(--cc-color-muted, #6a6e76);
+}
+
+.cc-ticker__hint {
+  font-size: 12px;
+  color: var(--cc-color-muted, #6a6e76);
+  opacity: 0.85;
 }
 
 @media (prefers-reduced-motion: reduce) {

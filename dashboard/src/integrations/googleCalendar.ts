@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { Connection } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
+import { detectConference } from "./conference";
 import { parseGoogleCalendarIds } from "./googleCalendarLink";
 import {
   NEEDS_AUTH,
@@ -24,6 +25,15 @@ const EventSchema = z.object({
   summary: z.string().optional(),
   htmlLink: z.string().optional(),
   location: z.string().optional(),
+  description: z.string().optional(),
+  hangoutLink: z.string().optional(),
+  conferenceData: z
+    .object({
+      entryPoints: z
+        .array(z.object({ entryPointType: z.string().optional(), uri: z.string().optional() }))
+        .optional(),
+    })
+    .optional(),
   start: z
     .object({ dateTime: z.string().optional(), date: z.string().optional() })
     .optional(),
@@ -140,13 +150,28 @@ function toItem(event: z.infer<typeof EventSchema>, now: Date): NormalizedItem {
   const startKey = event.start?.dateTime ?? event.start?.date;
   if (startKey !== undefined) item.sortKey = startKey;
   // A timed event about to start (or just started) is the most pressing thing
-  // on the calendar, so lift it into the "needs you" lane.
+  // on the calendar, so lift it into the "needs you" lane and carry its exact
+  // start for a live countdown.
   if (event.start?.dateTime !== undefined) {
     const startMs = Date.parse(event.start.dateTime);
     if (!Number.isNaN(startMs)) {
+      item.startMs = startMs;
       const minutesAway = (startMs - now.getTime()) / 60_000;
       if (minutesAway >= -5 && minutesAway <= 30) item.tone = "urgent";
     }
+  }
+
+  const videoUris = (event.conferenceData?.entryPoints ?? [])
+    .filter((point) => point.entryPointType === "video" && point.uri !== undefined)
+    .map((point) => point.uri ?? "");
+  const conference = detectConference({
+    ...(event.hangoutLink !== undefined ? { hangoutLink: event.hangoutLink } : {}),
+    entryPointUris: videoUris,
+    texts: [event.location, event.description].filter((text): text is string => text !== undefined),
+  });
+  if (conference !== undefined) {
+    item.joinUrl = conference.joinUrl;
+    item.conferenceProvider = conference.provider;
   }
   return item;
 }

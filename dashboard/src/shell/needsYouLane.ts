@@ -1,27 +1,22 @@
-import {
-  COMBINED_CALENDARS_ID,
-  type Connection,
-  type Zone,
-} from "../config/schema";
-import type { IntegrationResult, NormalizedItem } from "../integrations/types";
-import { el } from "../render/helpers";
+import { COMBINED_CALENDARS_ID, type Connection } from "../config/schema";
+import type {
+  ConferenceProvider,
+  IntegrationResult,
+  NormalizedItem,
+} from "../integrations/types";
+import { el, svgEl } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
-import { renderMeetingWindow } from "./meetingWindow";
 
 /**
- * The "needs you" lane: the dashboard's one anchor. Rather than four parallel
- * feeds you triage yourself, it pulls the pressing items from every connected
- * source into a single ranked list (the meeting-overlap window first, then
- * whatever is urgent, then the soonest calendar events). It reads the same
- * integration results the feeds do, so it adds synthesis without new fetches.
+ * The "needs you" lane: the dashboard's one anchor. It does not echo the feeds;
+ * it derives a few specific, glanceable sections from them. The next meeting
+ * (with a live countdown and a Join button when there is a video link), the pull
+ * requests waiting on your review, and your open tasks. Each section is grouped
+ * by a small label and a hairline, never a box.
  */
 export interface NeedsYouLaneModel {
   now: Date;
-  homeZone: Zone;
-  zones: Zone[];
   connections: Connection[];
-  hour12?: boolean;
-  showMeetingWindow?: boolean;
   integrationResults?: Record<string, IntegrationResult>;
 }
 
@@ -34,25 +29,28 @@ interface LaneEntry {
   service: string;
 }
 
-/** The most items the lane shows, so it stays a glance and not a backlog. */
-const LANE_LIMIT = 7;
+export interface LaneBuckets {
+  /** The next meeting, only when it starts within the coming hour. */
+  meeting?: LaneEntry;
+  reviews: LaneEntry[];
+  tasks: LaneEntry[];
+}
+
+/** Items per list section, so the lane stays a glance. */
+const SECTION_LIMIT = 5;
+const TASK_SERVICES = new Set(["notion", "todoist", "google-tasks"]);
+const HOUR_MS = 60 * 60 * 1000;
 
 function serviceForKey(key: string, connections: Connection[]): string | undefined {
   if (key === COMBINED_CALENDARS_ID) return "google-calendar";
   return connections.find((connection) => connection.id === key)?.service;
 }
 
-/**
- * Gather every loaded item across sources, tagged with its service. When a
- * "combine all calendars" stream is present, the individual calendar results are
- * skipped so events are not counted twice.
- */
 function collectEntries(
   results: Record<string, IntegrationResult>,
   connections: Connection[],
 ): LaneEntry[] {
-  const hasCombined =
-    results[COMBINED_CALENDARS_ID]?.status === "ok";
+  const hasCombined = results[COMBINED_CALENDARS_ID]?.status === "ok";
   const entries: LaneEntry[] = [];
   for (const [key, result] of Object.entries(results)) {
     if (result.status !== "ok" || result.items === undefined) continue;
@@ -67,30 +65,76 @@ function collectEntries(
 }
 
 /**
- * Rank what needs you: urgent items first, then the soonest upcoming calendar
- * events, deduped by id and capped. Calendar events sort ascending by start so
- * the next thing on the schedule leads its group.
+ * Derive the lane's sections from the raw entries: the soonest meeting inside
+ * the next hour, the review-requested PRs, and the open tasks. Past meetings and
+ * meetings further out are left to the calendar feed.
  */
-export function rankLaneEntries(entries: LaneEntry[]): LaneEntry[] {
-  const urgent = entries.filter((entry) => entry.item.tone === "urgent");
-  const upcomingCalendar = entries
+export function buildLaneBuckets(entries: LaneEntry[], now: Date): LaneBuckets {
+  const nowMs = now.getTime();
+
+  const meeting = entries
     .filter(
       (entry) =>
         entry.service === "google-calendar" &&
-        entry.item.tone !== "urgent" &&
-        entry.item.sortKey !== undefined,
+        entry.item.startMs !== undefined &&
+        entry.item.startMs >= nowMs - 5 * 60 * 1000 &&
+        entry.item.startMs <= nowMs + HOUR_MS,
     )
-    .sort((a, b) => (a.item.sortKey ?? "").localeCompare(b.item.sortKey ?? ""));
+    .sort((a, b) => (a.item.startMs ?? 0) - (b.item.startMs ?? 0))[0];
 
-  const ranked: LaneEntry[] = [];
-  const seen = new Set<string>();
-  for (const entry of [...urgent, ...upcomingCalendar]) {
-    if (seen.has(entry.item.id)) continue;
-    seen.add(entry.item.id);
-    ranked.push(entry);
-    if (ranked.length >= LANE_LIMIT) break;
-  }
-  return ranked;
+  const reviews = entries
+    .filter((entry) => entry.service === "github" && entry.item.tone === "urgent")
+    .slice(0, SECTION_LIMIT);
+
+  const tasks = entries
+    .filter((entry) => TASK_SERVICES.has(entry.service))
+    .slice(0, SECTION_LIMIT);
+
+  const buckets: LaneBuckets = { reviews, tasks };
+  if (meeting !== undefined) buckets.meeting = meeting;
+  return buckets;
+}
+
+/** A human countdown to a start time, or undefined once it is well underway. */
+export function formatCountdown(startMs: number, nowMs: number): string | undefined {
+  const diff = startMs - nowMs;
+  if (diff < -60_000) return undefined;
+  if (diff <= 60_000) return "now";
+  const minutes = Math.round(diff / 60_000);
+  if (minutes < 60) return `in ${String(minutes)} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `in ${String(hours)} hr` : `in ${String(hours)} hr ${String(rest)} min`;
+}
+
+const PROVIDER_COLOR: Record<ConferenceProvider, string> = {
+  meet: "#00ac47",
+  zoom: "#2d8cff",
+  teams: "#6264a7",
+  other: "currentColor",
+};
+
+const PROVIDER_LABEL: Record<ConferenceProvider, string> = {
+  meet: "Join Meet",
+  zoom: "Join Zoom",
+  teams: "Join Teams",
+  other: "Join",
+};
+
+function conferenceIcon(provider: ConferenceProvider): SVGElement {
+  const svg = svgEl("svg", {
+    viewBox: "0 0 24 24",
+    width: "14",
+    height: "14",
+    fill: "none",
+    stroke: PROVIDER_COLOR[provider],
+    "stroke-width": "2",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  });
+  svg.appendChild(svgEl("rect", { x: "2", y: "6", width: "13", height: "12", rx: "2" }));
+  svg.appendChild(svgEl("path", { d: "M22 8l-5 4 5 4V8z" }));
+  return svg;
 }
 
 function renderLaneItem(entry: LaneEntry, deps: NeedsYouLaneDeps): HTMLElement {
@@ -115,6 +159,62 @@ function renderLaneItem(entry: LaneEntry, deps: NeedsYouLaneDeps): HTMLElement {
   return row;
 }
 
+function renderSection(
+  label: string,
+  entries: LaneEntry[],
+  deps: NeedsYouLaneDeps,
+): HTMLElement {
+  const section = el("div", "cc-lane__section");
+  section.appendChild(el("div", "cc-lane__label", label));
+  const list = el("div", "cc-lane__list");
+  for (const entry of entries) list.appendChild(renderLaneItem(entry, deps));
+  section.appendChild(list);
+  return section;
+}
+
+function renderMeetingSection(
+  entry: LaneEntry,
+  now: Date,
+  deps: NeedsYouLaneDeps,
+): HTMLElement {
+  const { item } = entry;
+  const section = el("div", "cc-lane__section");
+  section.appendChild(el("div", "cc-lane__label", "Next meeting"));
+
+  const card = el("div", "cc-lane__meeting");
+  card.dataset.tone = item.tone ?? "neutral";
+  card.appendChild(el("span", "cc-lane__dot"));
+
+  const body = el("div", "cc-lane__item-body");
+  body.appendChild(el("span", "cc-lane__meeting-title", item.title));
+  const countdown =
+    item.startMs !== undefined ? formatCountdown(item.startMs, now.getTime()) : undefined;
+  const parts = [item.subtitle, countdown].filter(
+    (part): part is string => part !== undefined && part.length > 0,
+  );
+  if (parts.length > 0) {
+    body.appendChild(el("span", "cc-lane__meeting-when", parts.join(" · ")));
+  }
+  card.appendChild(body);
+
+  if (item.joinUrl !== undefined && isSafeUrl(item.joinUrl)) {
+    const provider = item.conferenceProvider ?? "other";
+    const join = el("button", "cc-lane__join");
+    join.setAttribute("type", "button");
+    join.dataset.provider = provider;
+    join.appendChild(conferenceIcon(provider));
+    join.appendChild(el("span", undefined, PROVIDER_LABEL[provider]));
+    const joinUrl = item.joinUrl;
+    join.addEventListener("click", () => {
+      deps.navigate(joinUrl);
+    });
+    card.appendChild(join);
+  }
+
+  section.appendChild(card);
+  return section;
+}
+
 export function renderNeedsYouLane(
   host: HTMLElement,
   model: NeedsYouLaneModel,
@@ -122,42 +222,32 @@ export function renderNeedsYouLane(
 ): HTMLElement {
   const root = el("section", "cc-lane");
   root.dataset.flipId = "needs-you";
+  root.appendChild(el("h2", "cc-lane__title", "Needs you"));
 
-  const head = el("div", "cc-lane__head");
-  head.appendChild(el("h2", "cc-lane__title", "Needs you"));
-  root.appendChild(head);
-
-  if (model.showMeetingWindow !== false && model.zones.length >= 2) {
-    renderMeetingWindow(root, {
-      now: model.now,
-      zones: model.zones,
-      homeZone: model.homeZone,
-      hour12: model.hour12 ?? true,
-    });
-  }
-
-  const ranked =
+  const buckets =
     model.integrationResults !== undefined
-      ? rankLaneEntries(collectEntries(model.integrationResults, model.connections))
-      : [];
+      ? buildLaneBuckets(collectEntries(model.integrationResults, model.connections), model.now)
+      : { reviews: [], tasks: [] };
 
-  if (ranked.length === 0) {
-    root.appendChild(
-      el(
-        "div",
-        "cc-lane__empty",
-        model.integrationResults === undefined
-          ? "Connect a source to see what needs you."
-          : "You are all clear. Nothing is waiting on you.",
-      ),
-    );
-    host.appendChild(root);
-    return root;
+  let any = false;
+  if (buckets.meeting !== undefined) {
+    root.appendChild(renderMeetingSection(buckets.meeting, model.now, deps));
+    any = true;
+  }
+  if (buckets.reviews.length > 0) {
+    root.appendChild(renderSection("Review requested", buckets.reviews, deps));
+    any = true;
+  }
+  if (buckets.tasks.length > 0) {
+    root.appendChild(renderSection("Tasks", buckets.tasks, deps));
+    any = true;
   }
 
-  const list = el("div", "cc-lane__list");
-  for (const entry of ranked) list.appendChild(renderLaneItem(entry, deps));
-  root.appendChild(list);
+  if (!any) {
+    root.appendChild(
+      el("div", "cc-lane__empty", "You are all clear. Nothing is waiting on you."),
+    );
+  }
 
   host.appendChild(root);
   return root;

@@ -19,6 +19,7 @@ export const CONNECT_HOSTS = [
   "https://api.github.com",
   "https://finnhub.io",
   "https://hacker-news.firebaseio.com",
+  "https://api.todoist.com",
 ] as const;
 
 interface CspDirectives {

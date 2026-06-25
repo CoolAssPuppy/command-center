@@ -16,6 +16,8 @@ export interface HomeClockModel {
   zone: Zone;
   name?: string;
   hour12?: boolean;
+  /** Current conditions for the home zone, shown beneath the date when set. */
+  currentWeather?: { temperature: number; condition: string };
   /** Multi-day forecast for the home zone, shown beneath the clock when set. */
   forecast?: DailyForecast[];
 }
@@ -59,6 +61,15 @@ export function renderHomeClock(host: HTMLElement, model: HomeClockModel): HTMLE
   meta.appendChild(el("span", "cc-home__dot", "·"));
   meta.appendChild(el("span", "cc-home__place", model.zone.label));
   root.appendChild(meta);
+
+  if (model.currentWeather !== undefined) {
+    const weather = el("div", "cc-home__weather");
+    weather.appendChild(
+      el("span", "cc-home__temp", `${String(Math.round(model.currentWeather.temperature))}°`),
+    );
+    weather.appendChild(el("span", "cc-home__cond", model.currentWeather.condition));
+    root.appendChild(weather);
+  }
 
   if (model.forecast !== undefined && model.forecast.length > 0) {
     renderForecast(root, { daily: model.forecast });

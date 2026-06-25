@@ -14,6 +14,9 @@ import type { ParseResult } from "../domain/result";
  */
 export type ItemTone = "urgent" | "positive" | "neutral";
 
+/** Video-call providers the lane can recognize and badge on a Join button. */
+export type ConferenceProvider = "meet" | "zoom" | "teams" | "other";
+
 export interface NormalizedItem {
   id: string;
   title: string;
@@ -26,6 +29,12 @@ export interface NormalizedItem {
   sortKey?: string;
   /** Urgency, used to rank the "needs you" lane and tint the row. */
   tone?: ItemTone;
+  /** Event start as epoch ms, for a live countdown (calendar items). */
+  startMs?: number;
+  /** A video-call link detected on the item, for a Join button. */
+  joinUrl?: string;
+  /** Which provider joinUrl points at, for the Join button's mark. */
+  conferenceProvider?: ConferenceProvider;
 }
 
 /** A minimal HTTP client so integrations can POST with headers, injected for tests. */

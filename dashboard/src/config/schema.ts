@@ -35,7 +35,13 @@ export type DockLink = z.infer<typeof DockLinkSchema>;
 /**
  * The services a connection can be an instance of.
  */
-export const SERVICES = ["google-calendar", "linear", "notion", "github"] as const;
+export const SERVICES = [
+  "google-calendar",
+  "linear",
+  "notion",
+  "github",
+  "todoist",
+] as const;
 export const ServiceSchema = z.enum(SERVICES);
 export type Service = z.infer<typeof ServiceSchema>;
 

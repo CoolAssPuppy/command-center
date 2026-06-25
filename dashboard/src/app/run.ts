@@ -130,8 +130,11 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     }
     model.streamExpanded = streamExpanded;
     model.integrationResults = integrationResults;
-    if (tickerStocks.length > 0) model.tickerStocks = tickerStocks;
-    if (tickerNews.length > 0) model.tickerNews = tickerNews;
+    // Always thread the ticker data (even when empty) so an enabled-but-empty
+    // strip can show its hint rather than vanishing. Enabled state rides on
+    // model.config.tickers, which the shell reads directly.
+    model.tickerStocks = tickerStocks;
+    model.tickerNews = tickerNews;
     if (wallpaperPhoto !== undefined) model.wallpaper = wallpaperPhoto;
     const renderDeps: DashboardDeps = {
       navigate: deps.navigate,

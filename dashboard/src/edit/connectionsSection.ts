@@ -23,6 +23,7 @@ const SERVICE_LABELS: ReadonlyArray<readonly [Service, string]> = [
   ["linear", "Linear"],
   ["notion", "Notion"],
   ["github", "GitHub"],
+  ["todoist", "Todoist"],
 ];
 
 function serviceFromValue(value: string): Service {
@@ -197,6 +198,7 @@ function renderConnectionFields(
       linear: "Linear API key",
       github: "GitHub token",
       notion: "Notion token",
+      todoist: "Todoist API token",
     };
     const keyLabel = placeholders[connection.service] ?? "Token";
     key.placeholder = keyLabel;
@@ -334,6 +336,17 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
           "div",
           "cc-edit__hint",
           "A fine-grained personal access token with read access to pull requests and issues. Stored locally. Leave search blank for PRs awaiting your review.",
+        ),
+      );
+    } else if (service === "todoist") {
+      const token = secretField("Todoist API token");
+      secretInput = token;
+      fieldsBox.appendChild(field("API token", token));
+      fieldsBox.appendChild(
+        el(
+          "div",
+          "cc-edit__hint",
+          "From Todoist settings, Integrations, Developer. Stored locally. Tasks show in the Needs you column.",
         ),
       );
     } else {

@@ -76,10 +76,6 @@ function renderStream(
     if (icon !== undefined) summary.appendChild(icon);
   }
   summary.appendChild(el("span", "cc-stream__title", stream.title));
-  // A count chip so a collapsed panel still tells you how much is waiting.
-  if (result?.status === "ok" && (result.items?.length ?? 0) > 0) {
-    summary.appendChild(el("span", "cc-stream__count", String(result.items?.length ?? 0)));
-  }
   details.appendChild(summary);
 
   const body = el("div", "cc-stream__body");

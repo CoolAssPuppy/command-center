@@ -11,6 +11,7 @@ import { applyTokens, type Theme } from "../theme/tokens";
 import type { Weather } from "../weather/openMeteo";
 import { captureFlipRects, playFlip } from "./flip";
 import { renderHomeClock, type HomeClockModel } from "./homeClock";
+import { renderMeetingWindow } from "./meetingWindow";
 import { renderNeedsYouLane, type NeedsYouLaneModel } from "./needsYouLane";
 import { renderTickers } from "./ticker";
 import { renderZoneRow, type ZoneRowModel } from "./zoneRow";
@@ -126,10 +127,9 @@ export function renderDashboard(
   const stage = el("div", "cc-stage");
   const home = homeZone(model.config);
 
-  // Tier 1: orientation band. A flat, card-less strip floating on the wallpaper.
-  // The clock (moderate, not a billboard) and forecast read on the left; the
-  // other zones collapse into a one-line ribbon on the right; ambient tickers
-  // sit beneath. Glance height, low priority.
+  // Tier 1: orientation. Two columns, card-less, typeset on the wallpaper. Left:
+  // greeting, home time, current weather, a small forecast. Right: the other
+  // zones as text rows and the meeting-overlap finder. Glance height.
   if (home !== undefined) {
     const orient = el("div", "cc-orient");
 
@@ -142,13 +142,18 @@ export function renderDashboard(
     if (model.config.profile.name !== undefined) {
       clockModel.name = model.config.profile.name;
     }
-    const homeForecast = model.weatherByZone?.[home.id]?.daily;
-    if (model.config.weather.showForHome && homeForecast !== undefined) {
-      clockModel.forecast = homeForecast;
+    const homeWeather = model.weatherByZone?.[home.id];
+    if (model.config.weather.showForHome && homeWeather !== undefined) {
+      clockModel.currentWeather = {
+        temperature: homeWeather.temperature,
+        condition: homeWeather.condition,
+      };
+      if (homeWeather.daily !== undefined) clockModel.forecast = homeWeather.daily;
     }
     renderHomeClock(lead, clockModel);
     orient.appendChild(lead);
 
+    const aside = el("div", "cc-orient__aside");
     const others = otherZones(model.config);
     if (others.length > 0) {
       const rowModel: ZoneRowModel = {
@@ -164,13 +169,27 @@ export function renderDashboard(
         const reorder = deps.onReorder;
         rowModel.onReorder = (fromId, toId) => reorder("zones", fromId, toId);
       }
-      renderZoneRow(orient, rowModel);
+      renderZoneRow(aside, rowModel);
     }
+    if (
+      model.config.appearance.showMeetingWindow !== false &&
+      model.config.zones.length >= 2
+    ) {
+      renderMeetingWindow(aside, {
+        now: model.now,
+        zones: model.config.zones,
+        homeZone: home,
+        hour12: model.config.appearance.hour12,
+      });
+    }
+    if (aside.childElementCount > 0) orient.appendChild(aside);
 
     renderTickers(
       orient,
       {
         reducedMotion,
+        stocksEnabled: model.config.tickers.stocks.enabled,
+        newsEnabled: model.config.tickers.news.enabled,
         ...(model.tickerStocks !== undefined ? { stocks: model.tickerStocks } : {}),
         ...(model.tickerNews !== undefined ? { news: model.tickerNews } : {}),
       },
@@ -178,18 +197,13 @@ export function renderDashboard(
     );
     stage.appendChild(orient);
 
-    // Tier 2 + 3: the work band. The "needs you" lane is the one elevated,
-    // brighter surface (the anchor); the source feeds sit in a quieter rail
-    // beside it, sized by content rather than forced to a common height.
+    // Tier 2: the work band. The "needs you" lane is the one distinguished
+    // surface (the anchor); the source feeds sit typeset in a quieter rail.
     const work = el("div", "cc-work");
 
     const laneModel: NeedsYouLaneModel = {
       now: model.now,
-      homeZone: home,
-      zones: model.config.zones,
       connections: model.config.connections,
-      hour12: model.config.appearance.hour12,
-      showMeetingWindow: model.config.appearance.showMeetingWindow !== false,
     };
     if (model.integrationResults !== undefined) {
       laneModel.integrationResults = model.integrationResults;

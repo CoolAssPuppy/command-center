@@ -2,6 +2,7 @@ import { githubIntegration } from "./github";
 import { googleCalendarIntegration } from "./googleCalendar";
 import { linearIntegration } from "./linear";
 import { notionIntegration } from "./notion";
+import { todoistIntegration } from "./todoist";
 import type { Integration } from "./types";
 
 /**
@@ -13,6 +14,7 @@ export const INTEGRATIONS: Integration[] = [
   linearIntegration,
   notionIntegration,
   githubIntegration,
+  todoistIntegration,
 ];
 
 export function integrationById(id: string): Integration | undefined {

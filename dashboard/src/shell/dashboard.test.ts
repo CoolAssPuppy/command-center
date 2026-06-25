@@ -101,4 +101,33 @@ describe("renderDashboard", () => {
     renderDashboard(root, { now, config }, { navigate: () => {} });
     expect(getByText(root, /Sam\./)).toBeInTheDocument();
   });
+
+  it("shows a ticker hint when news is enabled but has no data", () => {
+    const config = ConfigSchema.parse({
+      zones: [{ id: "h", label: "Home", timeZone: "UTC", isHome: true }],
+      tickers: { news: { enabled: true } },
+    });
+    const root = host();
+    renderDashboard(root, { now, config, tickerNews: [] }, { navigate: () => {} });
+    expect(root.querySelector(".cc-ticker__hint")).not.toBeNull();
+  });
+
+  it("renders news headlines when ticker data is present", () => {
+    const config = ConfigSchema.parse({
+      zones: [{ id: "h", label: "Home", timeZone: "UTC", isHome: true }],
+      tickers: { news: { enabled: true } },
+    });
+    const root = host();
+    renderDashboard(
+      root,
+      {
+        now,
+        config,
+        tickerNews: [{ title: "A headline", url: "https://example.com", source: "Hacker News" }],
+      },
+      { navigate: () => {} },
+    );
+    expect(root.querySelector(".cc-ticker__headline")?.textContent).toBe("A headline");
+    expect(root.querySelector(".cc-ticker__hint")).toBeNull();
+  });
 });

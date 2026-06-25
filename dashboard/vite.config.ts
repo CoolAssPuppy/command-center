@@ -35,6 +35,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/__cc-proxy\/hackernews/, ""),
       },
+      "/__cc-proxy/todoist": {
+        target: "https://api.todoist.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/todoist/, ""),
+      },
       "/__cc-proxy/google": {
         target: "https://www.googleapis.com",
         changeOrigin: true,

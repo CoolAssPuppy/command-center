@@ -7,12 +7,16 @@ import { isSafeUrl } from "../security/url";
  * Ambient ticker strips for the orientation band: a quiet, slowly scrolling
  * marquee of stock quotes and one of news headlines. Deliberately low contrast,
  * so it never competes with the "needs you" lane. With reduced motion it holds
- * still and simply clips. Renders nothing when there is no data.
+ * still and simply clips. When a strip is enabled but empty it shows a short
+ * hint rather than vanishing, so it never looks broken; off strips render nothing.
  */
 export interface TickerOptions {
   reducedMotion: boolean;
   stocks?: StockQuote[];
   news?: NewsItem[];
+  /** Whether each strip is switched on, so an empty one can explain itself. */
+  stocksEnabled?: boolean;
+  newsEnabled?: boolean;
 }
 
 /** Seconds of scroll per item, so longer strips drift at a steady pace. */
@@ -62,10 +66,28 @@ function renderStockStrip(quotes: StockQuote[], reducedMotion: boolean): HTMLEle
   return strip;
 }
 
+/** Map a news source to the domain whose favicon stands in for its name. */
+const SOURCE_DOMAIN: Record<string, string> = {
+  "Hacker News": "news.ycombinator.com",
+};
+
+function sourceFavicon(source: string): HTMLImageElement {
+  const domain = SOURCE_DOMAIN[source] ?? "news.ycombinator.com";
+  const icon = document.createElement("img");
+  icon.className = "cc-ticker__favicon";
+  // The Google favicon service is already allowed by the manifest's img-src.
+  icon.src = `https://www.google.com/s2/favicons?sz=32&domain=${domain}`;
+  icon.alt = source;
+  icon.width = 14;
+  icon.height = 14;
+  icon.setAttribute("aria-hidden", "true");
+  return icon;
+}
+
 function newsEntry(item: NewsItem, navigate: (url: string) => void): HTMLElement {
   const navigable = isSafeUrl(item.url);
   const entry = el(navigable ? "button" : "span", "cc-ticker__entry cc-ticker__entry--news");
-  entry.appendChild(el("span", "cc-ticker__source", item.source));
+  entry.appendChild(sourceFavicon(item.source));
   entry.appendChild(el("span", "cc-ticker__headline", item.title));
   if (navigable) {
     entry.setAttribute("type", "button");
@@ -91,6 +113,13 @@ function renderNewsStrip(
   return strip;
 }
 
+/** A still, quiet line for an enabled-but-empty strip, so it does not look broken. */
+function hintStrip(text: string): HTMLElement {
+  const strip = el("div", "cc-ticker cc-ticker--hint");
+  strip.appendChild(el("span", "cc-ticker__hint", text));
+  return strip;
+}
+
 export function renderTickers(
   host: HTMLElement,
   options: TickerOptions,
@@ -98,11 +127,15 @@ export function renderTickers(
 ): HTMLElement | undefined {
   const stocks = options.stocks ?? [];
   const news = options.news ?? [];
-  if (stocks.length === 0 && news.length === 0) return undefined;
+  const stockHint = (options.stocksEnabled ?? false) && stocks.length === 0;
+  const newsHint = (options.newsEnabled ?? false) && news.length === 0;
+  if (stocks.length === 0 && news.length === 0 && !stockHint && !newsHint) return undefined;
 
   const wrap = el("div", "cc-tickers");
   if (stocks.length > 0) wrap.appendChild(renderStockStrip(stocks, options.reducedMotion));
+  else if (stockHint) wrap.appendChild(hintStrip("Add a Finnhub key in Customize to show stocks."));
   if (news.length > 0) wrap.appendChild(renderNewsStrip(news, options.reducedMotion, navigate));
+  else if (newsHint) wrap.appendChild(hintStrip("News unavailable right now."));
   host.appendChild(wrap);
   return wrap;
 }
