@@ -1590,6 +1590,42 @@ button.cc-lane__item:hover {
   margin-top: 8px;
 }
 
+/* A chevron dropdown wrapping a multi-select checklist (news sources, etc.). */
+.cc-edit__picker-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cc-color-text, #21242a);
+}
+
+.cc-edit__picker-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cc-edit__picker-chevron {
+  display: inline-flex;
+  font-size: 15px;
+  color: var(--cc-color-muted, #6a6e76);
+  transition: transform calc(var(--cc-motion-speed, 1) * 140ms) ease;
+}
+
+.cc-edit__picker[open] .cc-edit__picker-chevron {
+  transform: rotate(90deg);
+}
+
+.cc-edit__picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
 .cc-edit__nested {
   display: flex;
   flex-direction: column;

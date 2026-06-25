@@ -21,6 +21,12 @@ function tickerIcon(): SVGElement {
 }
 
 /**
+ * Whether the news-sources dropdown is open, kept across the pane's re-renders
+ * (toggling a source re-renders the whole pane). Collapsed by default.
+ */
+let newsPickerOpen = false;
+
+/**
  * The Tickers section: the ambient strips in the orientation band. Stocks need a
  * free Finnhub key (kept in Secrets) and a list of symbols; news reads Hacker
  * News with no key. Both are off until enabled, and render nothing when empty.
@@ -81,10 +87,29 @@ export function renderTickersSection(host: HTMLElement, ctx: SectionContext): vo
         ),
       );
 
-      // When the news ticker is on, pick which curated feeds it pulls from.
+      // When the news ticker is on, pick which curated feeds it pulls from,
+      // tucked into a chevron dropdown so the list stays compact.
       if (ctx.draft.tickers.news.enabled) {
-        const list = el("div", "cc-edit__nested");
         const active = new Set(ctx.draft.tickers.news.sources);
+
+        const details = document.createElement("details");
+        details.className = "cc-edit__field cc-edit__picker";
+        details.open = newsPickerOpen;
+        details.addEventListener("toggle", () => {
+          newsPickerOpen = details.open;
+        });
+
+        const summary = document.createElement("summary");
+        summary.className = "cc-edit__picker-summary";
+        const chevron = el("span", "cc-edit__picker-chevron", "›");
+        chevron.setAttribute("aria-hidden", "true");
+        summary.appendChild(chevron);
+        summary.appendChild(
+          el("span", undefined, `News sources · ${String(active.size)} selected`),
+        );
+        details.appendChild(summary);
+
+        const list = el("div", "cc-edit__picker-list");
         for (const feed of NEWS_FEEDS) {
           list.appendChild(
             checkRow(feed.name, active.has(feed.id), (checked) =>
@@ -97,7 +122,8 @@ export function renderTickersSection(host: HTMLElement, ctx: SectionContext): vo
             ),
           );
         }
-        section.appendChild(list);
+        details.appendChild(list);
+        section.appendChild(details);
       }
     },
   );
