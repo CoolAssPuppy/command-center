@@ -13,27 +13,33 @@ There is a one-time $5 registration fee.
 
 ```bash
 cd dashboard
-pnpm package      # build:extension, then zip dist-extension into command-center.zip
+pnpm package      # build:extension, then write command-center.zip for the store
 ```
 
 Upload `command-center.zip`. It is a Manifest V3 extension with the name,
-description, and 16/48/128 icons already set.
+description, and 16/48/128 icons already set. The Web Store rejects a manifest
+that contains a `key` field, so `pnpm package` strips `key` from the zip
+automatically while leaving it in your local dev build (see section 3).
 
 ## 3. The extension ID and OAuth (read this first)
 
-Google sign-in depends on the extension ID. Locally, the manifest `key` pins the
-ID to `biamcfihjdgcgokoimebcijddccfmdbe`, and the OAuth redirect is
-`https://biamcfihjdgcgokoimebcijddccfmdbe.chromiumapp.org/`. When you publish,
-the Web Store assigns its own ID, which differs unless you sync the key. So:
+Google sign-in depends on the extension ID. Locally, the `key` in
+`public/manifest.json` pins the ID to `biamcfihjdgcgokoimebcijddccfmdbe`, and the
+OAuth redirect is `https://biamcfihjdgcgokoimebcijddccfmdbe.chromiumapp.org/`.
+The Web Store does not allow `key` in an uploaded manifest (it assigns its own
+ID), which is why `pnpm package` strips it. So:
 
-1. Create the item and upload once to get the **published extension ID** (shown
-   in the dashboard, along with the item's public key).
-2. Set the manifest `key` to that item's public key so local development and
-   production share one ID, then rebuild and reupload.
-3. In Google Cloud Console, add `https://<published-id>.chromiumapp.org/` as an
+1. Create the item and upload the (key-stripped) zip once to get the
+   **published extension ID**, shown in the dashboard along with the item's
+   public key.
+2. In Google Cloud Console, add `https://<published-id>.chromiumapp.org/` as an
    authorized redirect URI on the Web OAuth client.
+3. To make local development use that same ID, set the `key` in
+   `public/manifest.json` to the published item's public key. It stays only in
+   your local build; `pnpm package` keeps stripping it from uploads.
 
-Skip this and Google sign-in works in development but breaks for installed users.
+Skip step 2 and Google sign-in works in development but breaks for installed
+users, because the published redirect URI would not be registered.
 
 ## 4. Store listing assets
 
@@ -113,7 +119,8 @@ review. Review usually takes from a few hours to a few days.
 
 ## 9. After it is approved
 
-- Confirm the manifest `key` matches the published item so the ID is stable.
+- Set the `key` in `public/manifest.json` to the published item's public key so
+  local development shares the published ID (the upload stays key-free).
 - Confirm `https://<published-id>.chromiumapp.org/` is registered on the OAuth
   client, then test Google sign-in on the installed version.
 - For later updates: bump `version` in the manifest, run `pnpm package`, and
