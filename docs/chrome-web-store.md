@@ -1,7 +1,8 @@
 # Submitting Command Center to the Chrome Web Store
 
-This is the step-by-step guide for publishing the extension. For building and
-running it unpacked, see `packaging.md`. All commands run from `dashboard/`.
+The step-by-step guide for publishing, plus every listing field ready to copy and
+paste. For building and running unpacked, see `packaging.md`. Commands run from
+`dashboard/`.
 
 ## 1. One-time setup
 
@@ -16,108 +17,173 @@ cd dashboard
 pnpm package      # build:extension, then write command-center.zip for the store
 ```
 
-Upload `command-center.zip`. It is a Manifest V3 extension with the name,
-description, and 16/48/128 icons already set. The Web Store rejects a manifest
-that contains a `key` field, so `pnpm package` strips `key` from the zip
-automatically while leaving it in your local dev build (see section 3).
+Upload `command-center.zip`. The Web Store rejects a manifest that contains a
+`key` field, so `pnpm package` strips `key` from the zip automatically while
+leaving it in your local dev build (see section 3).
 
-## 3. The extension ID and OAuth (read this first)
+## 3. Extension ID and OAuth (read this first)
 
 Google sign-in depends on the extension ID. Locally, the `key` in
 `public/manifest.json` pins the ID to `biamcfihjdgcgokoimebcijddccfmdbe`, and the
-OAuth redirect is `https://biamcfihjdgcgokoimebcijddccfmdbe.chromiumapp.org/`.
-The Web Store does not allow `key` in an uploaded manifest (it assigns its own
-ID), which is why `pnpm package` strips it. So:
+OAuth redirect is `https://biamcfihjdgcgokoimebcijddccfmdbe.chromiumapp.org/`. The
+Web Store does not allow `key` in an uploaded manifest and assigns its own ID, so:
 
-1. Create the item and upload the (key-stripped) zip once to get the
-   **published extension ID**, shown in the dashboard along with the item's
-   public key.
+1. Upload the key-stripped zip once to get the **published extension ID** (shown
+   in the dashboard, with the item's public key).
 2. In Google Cloud Console, add `https://<published-id>.chromiumapp.org/` as an
-   authorized redirect URI on the Web OAuth client.
-3. To make local development use that same ID, set the `key` in
+   authorized redirect URI on the same OAuth client. This is a config change on
+   the existing client, not a new app, and needs no re-approval.
+3. To make local development share the published ID, set the `key` in
    `public/manifest.json` to the published item's public key. It stays only in
    your local build; `pnpm package` keeps stripping it from uploads.
 
-Skip step 2 and Google sign-in works in development but breaks for installed
-users, because the published redirect URI would not be registered.
+## 4. Listing text (copy and paste)
 
-## 4. Store listing assets
+Item name (max 75 characters):
 
-- A **128x128 icon** (already in the package).
-- At least one **screenshot**, 1280x800 or 640x400.
-- A description, a category (Productivity), and a language.
-- A **privacy policy URL** (required, see section 6).
+```
+Command Center: a calm new tab dashboard
+```
+
+Summary, the short description (max 132 characters):
+
+```
+A calm new tab: clocks, weather, your tasks, pull requests, and Linear, plus stock and news tickers. Your data stays on device.
+```
+
+Detailed description:
+
+```
+Command Center turns your new tab into a calm, glanceable home base.
+
+It shows the time where you are and across your other time zones, with the best meeting overlap window so you can see when distant teammates are awake. Current weather and a five-day forecast sit beside it.
+
+Below that, a "Needs you" lane pulls together what actually wants your attention: your next meeting with a one-click join button, pull requests waiting on your review, your Linear inbox, and your tasks. Your own data cards sit alongside, and you can drag any card wherever you want it across two columns.
+
+Connect only the services you use. Each connection is your own account or API key, stored on your device:
+- Google Calendar and Google Tasks
+- Notion
+- Linear, with views for assigned work, issues you created, what is due soon, your inbox, projects, and initiatives
+- GitHub pull requests and issues
+- Todoist
+
+Add ambient tickers along the top: stock and currency quotes, and a news ticker from sources you choose (Hacker News, The Verge, TechCrunch, Ars Technica, BBC, NYT, NPR, Techmeme).
+
+Make it yours with ten themes, from a stark black-and-white Paper to a candlelit Hogwarts, each held to a readable contrast bar, plus your own wallpaper. You can build, export, and share custom themes as JSON.
+
+Private by design. Everything stays in your browser. Your settings sync through Chrome; your tokens never leave your device. There is no analytics, no tracking, and no server the developer runs. Command Center talks only to the services you connect, and only to show that data to you.
+```
+
+Category:
+
+```
+Productivity
+```
+
+Language:
+
+```
+English (United States)
+```
+
+Single purpose (Privacy practices tab):
+
+```
+Command Center replaces the new tab page with a personal dashboard that shows the user's own clocks, weather, work items, and chosen feeds.
+```
+
+## 5. Permission justifications (copy and paste)
+
+storage:
+
+```
+Stores the user's own settings: time zones, data cards, themes, and ticker choices. Kept on the device and in the user's Chrome sync. No other data is stored.
+```
+
+identity:
+
+```
+Lets the user sign in to their own Google account through chrome.identity so the extension can read that account's Google Calendar and Google Tasks. It is used for nothing else.
+```
+
+Host permissions:
+
+```
+The extension fetches data only from the services the user connects, each over HTTPS, and only to show it on the new tab:
+- googleapis.com: the user's Google Calendar and Google Tasks
+- api.notion.com, api.linear.app, api.github.com, api.todoist.com: the user's notes, issues, pull requests, and tasks
+- finnhub.io and api.frankfurter.dev: stock quotes and currency rates
+- hacker-news.firebaseio.com and the chosen news feeds (theverge.com, techcrunch.com, arstechnica.com, bbc.co.uk, nytimes.com, npr.org, techmeme.com): the news ticker
+- api.open-meteo.com and geocoding-api.open-meteo.com: weather
+- api.unsplash.com and images.unsplash.com: optional wallpaper photos
+- google.com/s2/favicons: small source and link icons
+No data is sent anywhere else.
+```
+
+Remote code: answer No. The extension runs only the code in the package and does
+not load or execute remote code.
+
+## 6. Privacy policy (host this text, then paste its URL)
+
+Host the text below at a public URL (a GitHub Pages page or a gist works) and
+paste that URL into the Privacy practices tab. Adjust the contact line first.
+
+```
+Command Center privacy policy
+
+Command Center runs entirely in your browser. Your settings are stored with Chrome's storage on your device and your Chrome sync. Your API tokens and Google sign-in tokens are stored locally on your device and are never synced.
+
+The extension talks only to the services you connect (Google, Notion, Linear, GitHub, Todoist, Finnhub, weather, and the news feeds you choose), and only to show that data to you on your new tab. It sends your data to no one else. There is no analytics, tracking, or developer-operated server, and the developer cannot see any of your data.
+
+Remove a connection at any time in the customize pane to delete its stored credential. Uninstalling the extension removes all stored data.
+
+Questions: <your contact email>
+```
+
+## 7. Data use declarations
+
+In the Privacy practices tab, declare that Command Center does not collect or
+transmit user data to the developer or any third party. All data stays on the
+user's device or moves directly between the user's browser and the services they
+connect. If the form makes you pick a handled data type, the one that applies is
+Authentication information (the user's API and OAuth tokens), stored locally and
+never sent to the developer. Then check the three required certifications:
+
+- I do not sell user data.
+- I do not use or transfer user data for purposes unrelated to the single purpose.
+- I do not use or transfer user data to determine creditworthiness or for lending.
+
+## 8. Visual assets
+
+- A 128x128 icon (already in the package).
+- At least one screenshot, 1280x800 or 640x400.
 - Optionally a 440x280 promo tile.
 
-Note: a new-tab override extension gets extra review scrutiny, so the listing
-should make clear it is a personal dashboard.
+A new-tab override extension gets extra review scrutiny, so the screenshots and
+description should make clear it is a personal dashboard.
 
-## 5. Permission justifications
-
-The review asks why each permission is needed. Suggested wording:
-
-- **storage**: Saves the user's own settings (zones, cards, themes) on their
-  device and in their Chrome sync.
-- **identity**: Used only for the user to sign in to their own Google account so
-  the extension can read their calendars and tasks.
-- **Host permissions** (the API and feed hosts): The extension fetches data only
-  from the services the user connects, each over HTTPS:
-  - `googleapis.com` for the user's Google Calendar and Tasks
-  - `api.notion.com`, `api.linear.app`, `api.github.com`, `api.todoist.com` for
-    the user's notes, issues, pull requests, and tasks
-  - `finnhub.io` for stock quotes, `api.frankfurter.dev` for currency rates
-  - `hacker-news.firebaseio.com` and the news RSS hosts (The Verge, TechCrunch,
-    Ars Technica, BBC, NYT, NPR, Techmeme) for the news ticker
-  - `api.open-meteo.com` and `geocoding-api.open-meteo.com` for weather
-  - `api.unsplash.com` / `images.unsplash.com` for optional wallpaper photos
-  - `google.com/s2/favicons` for the small source and link icons
-
-Keep a **single-purpose** statement: a calm new-tab dashboard that shows the
-user's own clocks, weather, work items, and chosen feeds.
-
-## 6. Privacy policy
-
-A privacy policy URL is required because the extension handles user data
-(OAuth tokens and the content of calendars, tasks, issues, and pull requests).
-Host the text below somewhere public (a GitHub Pages page or a gist works) and
-paste its URL into the dashboard's Privacy practices tab.
-
-> **Command Center privacy policy**
->
-> Command Center runs entirely in your browser. Your settings are stored with
-> Chrome's storage on your device and your Chrome sync. Your API tokens and
-> Google sign-in tokens are stored locally on your device and are never synced.
->
-> The extension talks only to the services you connect (Google, Notion, Linear,
-> GitHub, Todoist, Finnhub, weather, and the news feeds you choose), and only to
-> show that data to you on your new tab. It sends your data to no one else. There
-> is no analytics, tracking, or developer-operated server, and the developer
-> cannot see any of your data.
->
-> Remove a connection at any time in the customize pane to delete its stored
-> credential. Uninstalling the extension removes all stored data.
-
-Adjust to match your hosting and contact details before publishing.
-
-## 7. Google OAuth verification
+## 9. Google OAuth verification
 
 The Google scopes are `calendar.readonly` and `tasks.readonly`, which Google
-treats as **sensitive**.
+treats as sensitive.
 
-- For **personal use**, keep the OAuth app in testing mode and add your own
-  accounts as test users. No verification is needed.
-- To let the **public** connect their Google accounts, the OAuth consent screen
-  must pass **Google's verification** (a brand and scope review that can take
-  days to weeks). If you would rather not wait, publish the extension as
-  **Unlisted** and keep the OAuth app in testing.
+- For an Internal (Google Workspace) app approved by your admin, no public
+  verification is needed; only accounts in your org can sign in.
+- For personal use, keep the OAuth app in testing mode with your accounts as test
+  users.
+- To let the general public connect any Google account, the consent screen must
+  pass Google's verification, which can take days to weeks.
 
-## 8. Submit
+Adding the published extension's redirect URI to the same OAuth client does not
+change which app is approved and does not trigger re-approval.
+
+## 10. Submit
 
 Upload the package, fill in the listing, privacy practices, and permission
 justifications, choose visibility (Public, Unlisted, or Private), and submit for
 review. Review usually takes from a few hours to a few days.
 
-## 9. After it is approved
+## 11. After it is approved
 
 - Set the `key` in `public/manifest.json` to the published item's public key so
   local development shares the published ID (the upload stays key-free).
@@ -125,3 +191,4 @@ review. Review usually takes from a few hours to a few days.
   client, then test Google sign-in on the installed version.
 - For later updates: bump `version` in the manifest, run `pnpm package`, and
   upload the new zip.
+```
