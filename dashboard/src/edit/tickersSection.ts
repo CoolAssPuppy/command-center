@@ -1,6 +1,23 @@
-import { el } from "../render/helpers";
+import { el, svgEl } from "../render/helpers";
 import { collapsibleSection, field, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
+
+/** A small upward line-chart mark for the Tickers section header. */
+function tickerIcon(): SVGElement {
+  const svg = svgEl("svg", {
+    viewBox: "0 0 24 24",
+    width: "16",
+    height: "16",
+    fill: "none",
+    stroke: "currentColor",
+    "stroke-width": "1.6",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+  });
+  svg.appendChild(svgEl("polyline", { points: "3 16 9 10 13 14 21 6" }));
+  svg.appendChild(svgEl("polyline", { points: "15 6 21 6 21 12" }));
+  return svg;
+}
 
 /**
  * The Tickers section: the ambient strips in the orientation band. Stocks need a
@@ -10,7 +27,7 @@ import type { SectionContext } from "./editPane";
 export function renderTickersSection(host: HTMLElement, ctx: SectionContext): void {
   collapsibleSection(
     host,
-    { title: "Tickers", key: "tickers", collapsed: ctx.collapsed },
+    { title: "Tickers", key: "tickers", collapsed: ctx.collapsed, icon: tickerIcon() },
     (section) => {
       section.appendChild(
         checkRow("Show stock ticker", ctx.draft.tickers.stocks.enabled, (checked) =>

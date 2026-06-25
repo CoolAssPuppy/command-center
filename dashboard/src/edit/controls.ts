@@ -35,6 +35,33 @@ export function field(labelText: string, control: HTMLElement): HTMLElement {
 }
 
 /**
+ * A small "?" help circle whose tooltip carries the explanation, so dense fields
+ * can drop their long hint text. The text is both the title (hover) and the
+ * aria-label (assistive tech).
+ */
+export function helpIcon(text: string): HTMLElement {
+  const mark = el("span", "cc-edit__help", "?");
+  mark.setAttribute("role", "img");
+  mark.setAttribute("aria-label", text);
+  mark.setAttribute("title", text);
+  return mark;
+}
+
+/** A labelled field whose label carries a help icon with a tooltip. */
+export function fieldWithHelp(
+  labelText: string,
+  control: HTMLElement,
+  helpText: string,
+): HTMLElement {
+  const wrap = el("div", "cc-edit__field");
+  const label = el("label", "cc-edit__field-label", labelText);
+  label.appendChild(helpIcon(helpText));
+  wrap.appendChild(label);
+  wrap.appendChild(control);
+  return wrap;
+}
+
+/**
  * A collapsible edit-pane section built on native <details>, so keyboard and
  * accessibility come for free. The open/closed state lives in the caller's
  * `collapsed` set (keyed by `key`) so it survives the pane's full re-renders.
@@ -42,7 +69,7 @@ export function field(labelText: string, control: HTMLElement): HTMLElement {
  */
 export function collapsibleSection(
   host: HTMLElement,
-  options: { title: string; key: string; collapsed: Set<string> },
+  options: { title: string; key: string; collapsed: Set<string>; icon?: SVGElement },
   build: (body: HTMLElement) => void,
 ): void {
   const details = document.createElement("details");
@@ -51,7 +78,9 @@ export function collapsibleSection(
 
   const summary = document.createElement("summary");
   summary.className = "cc-edit__section-summary";
-  const mark = sectionIcon(options.key);
+  // An explicit icon wins; otherwise fall back to the per-key registry. Absent
+  // either, the layout is unchanged (no icon slot rendered).
+  const mark = options.icon ?? sectionIcon(options.key);
   if (mark !== undefined) {
     const wrap = el("span", "cc-edit__section-icon");
     wrap.appendChild(mark);

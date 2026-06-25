@@ -5,6 +5,7 @@ import { newId } from "../util/id";
 import {
   collapsibleSection,
   field,
+  fieldWithHelp,
   iconButton,
   reorderInArray,
   textInput,
@@ -114,6 +115,113 @@ function renderConnectionRow(
   return row;
 }
 
+interface CalendarOption {
+  id: string;
+  summary?: string;
+}
+
+/**
+ * Fetch the signed-in account's calendar list directly (googleapis.com is
+ * permitted). Best-effort: returns undefined when fetch is unavailable, the
+ * token is rejected, or the shape is unexpected, so the caller can fall back to
+ * a plain calendar-id input.
+ */
+async function fetchCalendarList(accessToken: string): Promise<CalendarOption[] | undefined> {
+  const globalFetch = (globalThis as { fetch?: typeof fetch }).fetch;
+  if (globalFetch === undefined) return undefined;
+  try {
+    const response = await globalFetch(
+      "https://www.googleapis.com/calendar/v3/users/me/calendarList",
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    if (!response.ok) return undefined;
+    const body = (await response.json()) as { items?: unknown };
+    if (!Array.isArray(body.items)) return undefined;
+    const options: CalendarOption[] = [];
+    for (const raw of body.items) {
+      if (typeof raw !== "object" || raw === null) continue;
+      const item = raw as { id?: unknown; summary?: unknown };
+      if (typeof item.id !== "string") continue;
+      options.push(
+        typeof item.summary === "string"
+          ? { id: item.id, summary: item.summary }
+          : { id: item.id },
+      );
+    }
+    return options;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The plain calendar-id text input, used when the live list cannot be fetched. */
+function calendarIdInput(connection: Connection, ctx: SectionContext): HTMLInputElement {
+  const input = textInput("primary");
+  input.value = connection.calendarId ?? "";
+  input.setAttribute("aria-label", "Calendar id");
+  input.addEventListener("change", () => {
+    updateConnection(ctx, connection.id, (item) => {
+      const value = input.value.trim();
+      if (value.length > 0) item.calendarId = value;
+      else delete item.calendarId;
+    });
+  });
+  return input;
+}
+
+/**
+ * The "Select calendar" control: a dropdown of the account's real calendars when
+ * connected, populated async, with a "Loading calendars…" placeholder. Falls
+ * back to a plain id input when there is no token or the fetch fails.
+ */
+function renderCalendarPicker(
+  wrap: HTMLElement,
+  connection: Connection,
+  ctx: SectionContext,
+  accessToken: string | undefined,
+): void {
+  const fieldWrap = el("div", "cc-edit__field");
+  fieldWrap.appendChild(el("label", "cc-edit__field-label", "Select calendar"));
+
+  if (accessToken === undefined) {
+    fieldWrap.appendChild(calendarIdInput(connection, ctx));
+    wrap.appendChild(fieldWrap);
+    return;
+  }
+
+  const select = document.createElement("select");
+  select.className = "cc-edit__input";
+  select.setAttribute("aria-label", "Select calendar");
+  select.disabled = true;
+  const loading = document.createElement("option");
+  loading.textContent = "Loading calendars…";
+  select.appendChild(loading);
+  fieldWrap.appendChild(select);
+  wrap.appendChild(fieldWrap);
+
+  void fetchCalendarList(accessToken).then((calendars) => {
+    if (calendars === undefined || calendars.length === 0) {
+      fieldWrap.replaceChild(calendarIdInput(connection, ctx), select);
+      return;
+    }
+    select.replaceChildren();
+    select.disabled = false;
+    const current = connection.calendarId ?? "primary";
+    for (const calendar of calendars) {
+      const option = document.createElement("option");
+      option.value = calendar.id;
+      option.textContent = calendar.summary ?? calendar.id;
+      if (calendar.id === current) option.selected = true;
+      select.appendChild(option);
+    }
+    select.addEventListener("change", () => {
+      updateConnection(ctx, connection.id, (item) => {
+        item.calendarId = select.value;
+      });
+    });
+  });
+}
+
 function renderConnectionFields(
   connection: Connection,
   ctx: SectionContext,
@@ -122,10 +230,24 @@ function renderConnectionFields(
 
   if (connection.service === "google-calendar" || connection.service === "google-tasks") {
     const connect = ctx.runtime.connectGoogleAccount;
-    if (connect !== undefined) {
-      const connected = ctx.draftSecrets.googleTokens[connection.id];
-      const label = connected !== undefined ? "Switch account" : "Connect Google account";
-      const button = el("button", "cc-edit__add-btn", label);
+    const connected = ctx.draftSecrets.googleTokens[connection.id];
+
+    if (connected !== undefined) {
+      // Connected: show the account email and a Disconnect link that clears the
+      // token, reverting the row to a Connect button on re-render.
+      const accountRow = el("div", "cc-edit__account");
+      accountRow.appendChild(el("span", "cc-edit__account-email", connected.email ?? "Connected"));
+      const disconnect = el("button", "cc-edit__link-btn", "Disconnect");
+      disconnect.setAttribute("type", "button");
+      disconnect.addEventListener("click", () => {
+        ctx.updateSecrets((secrets) => {
+          delete secrets.googleTokens[connection.id];
+        });
+      });
+      accountRow.appendChild(disconnect);
+      wrap.appendChild(field("Account", accountRow));
+    } else if (connect !== undefined) {
+      const button = el("button", "cc-edit__add-btn", "Connect Google account");
       button.setAttribute("type", "button");
       button.addEventListener("click", () => {
         void connect(connection.id).then((token) => {
@@ -136,9 +258,7 @@ function renderConnectionFields(
           }
         });
       });
-      // Name the signed-in account so several calendars stay distinguishable.
-      const account = connected?.email ?? "Not connected";
-      wrap.appendChild(field(account, button));
+      wrap.appendChild(field("Account", button));
     } else {
       wrap.appendChild(
         el(
@@ -148,50 +268,9 @@ function renderConnectionFields(
         ),
       );
     }
-    if (connection.service === "google-calendar") {
-    const calendarId = textInput("primary");
-    calendarId.value = connection.calendarId ?? "";
-    calendarId.setAttribute("aria-label", "Calendar");
-    calendarId.addEventListener("change", () => {
-      updateConnection(ctx, connection.id, (item) => {
-        const value = calendarId.value.trim();
-        if (value.length > 0) item.calendarId = value;
-        else delete item.calendarId;
-      });
-    });
-    wrap.appendChild(field("Calendar (optional)", calendarId));
-    wrap.appendChild(
-      el(
-        "div",
-        "cc-edit__hint",
-        "Leave blank for your main calendar. For another, paste its ID from Google Calendar settings, Integrate calendar.",
-      ),
-    );
 
-    const merge = document.createElement("textarea");
-    merge.className = "cc-edit__input cc-edit__textarea";
-    merge.rows = 3;
-    merge.placeholder = "Paste a calendar link or id, one per line";
-    merge.value = (connection.calendarIds ?? []).join("\n");
-    merge.setAttribute("aria-label", "Calendars to merge");
-    merge.addEventListener("change", () => {
-      updateConnection(ctx, connection.id, (item) => {
-        const lines = merge.value
-          .split("\n")
-          .map((line) => line.trim())
-          .filter((line) => line.length > 0);
-        if (lines.length > 0) item.calendarIds = lines;
-        else delete item.calendarIds;
-      });
-    });
-    wrap.appendChild(field("Merge calendars (optional)", merge));
-    wrap.appendChild(
-      el(
-        "div",
-        "cc-edit__hint",
-        "Paste a calendar's share link or id, one per line, to merge its events into this card. From Google Calendar settings, Integrate calendar, copy the Public URL, the Embed src, or the Calendar ID. You can only see calendars your signed-in account can access.",
-      ),
-    );
+    if (connection.service === "google-calendar") {
+      renderCalendarPicker(wrap, connection, ctx, connected?.accessToken);
     }
   } else {
     const key = document.createElement("input");
@@ -242,12 +321,11 @@ function renderConnectionFields(
         else delete item.query;
       });
     });
-    wrap.appendChild(field("Search", query));
     wrap.appendChild(
-      el(
-        "div",
-        "cc-edit__hint",
-        "A GitHub search. Blank shows pull requests awaiting your review. Try is:open is:pr author:@me for your own, or is:open assignee:@me for issues.",
+      fieldWithHelp(
+        "Search",
+        query,
+        "Blank shows PRs awaiting your review. Try is:open is:pr author:@me for your own, or is:open assignee:@me for issues.",
       ),
     );
   }
