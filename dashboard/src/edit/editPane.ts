@@ -67,6 +67,22 @@ const SECTIONS: SectionRenderer[] = [
   renderBackupSection,
 ];
 
+/**
+ * The collapsed-state key of every section, in render order, so "Collapse all"
+ * can reach all of them. Kept beside SECTIONS so the two stay in step.
+ */
+const SECTION_KEYS = [
+  "zones",
+  "weather",
+  "dock",
+  "connections",
+  "streams",
+  "tickers",
+  "wallpaper",
+  "appearance",
+  "backup",
+];
+
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
@@ -115,9 +131,32 @@ export function openEditPane(host: HTMLElement, deps: EditPaneDeps): EditPaneHan
 
   const header = el("div", "cc-edit__header");
   header.appendChild(el("h2", "cc-edit__title", "Customize"));
+  const actions = el("div", "cc-edit__header-actions");
+
+  const openAll = el("button", "cc-edit__toolbtn", "⤢");
+  openAll.setAttribute("type", "button");
+  openAll.setAttribute("title", "Open all");
+  openAll.setAttribute("aria-label", "Open all sections");
+  openAll.addEventListener("click", () => {
+    collapsed.clear();
+    renderBody();
+  });
+  actions.appendChild(openAll);
+
+  const collapseAll = el("button", "cc-edit__toolbtn", "⤡");
+  collapseAll.setAttribute("type", "button");
+  collapseAll.setAttribute("title", "Collapse all");
+  collapseAll.setAttribute("aria-label", "Collapse all sections");
+  collapseAll.addEventListener("click", () => {
+    for (const key of SECTION_KEYS) collapsed.add(key);
+    renderBody();
+  });
+  actions.appendChild(collapseAll);
+
   const done = el("button", "cc-edit__done", "Done");
   done.setAttribute("type", "button");
-  header.appendChild(done);
+  actions.appendChild(done);
+  header.appendChild(actions);
   panel.appendChild(header);
 
   const body = el("div", "cc-edit__body");

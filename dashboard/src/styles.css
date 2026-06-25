@@ -1094,6 +1094,32 @@ button.cc-lane__item:hover {
   color: var(--cc-color-text, #21242a);
 }
 
+.cc-edit__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cc-edit__toolbtn {
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cc-color-muted, #6a6e76);
+  background: transparent;
+  border: 1px solid var(--cc-hairline);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.cc-edit__toolbtn:hover {
+  color: var(--cc-color-text, #21242a);
+}
+
 .cc-edit__done {
   font: inherit;
   font-size: 13px;
