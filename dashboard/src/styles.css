@@ -1728,11 +1728,12 @@ button.cc-lane__item:hover {
 /* A column is a drop zone for cards; it lifts faintly while a card hovers it. */
 .cc-streams.is-drop-target {
   border-radius: 10px;
-  background: color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 7%, transparent);
+  /* The live drop target reads green. */
+  background: color-mix(in srgb, var(--cc-color-positive, #2f7a6f) 9%, transparent);
 }
 
 /* Empty-column drop target: a thin dashed placeholder so a card can land in an
-   otherwise-empty column. Quiet until the column is a live drop target. */
+   otherwise-empty column. Quiet at rest; marches while a drag is live. */
 .cc-streams__empty {
   min-height: 44px;
   display: flex;
@@ -1745,17 +1746,54 @@ button.cc-lane__item:hover {
   opacity: 0.55;
 }
 
-.cc-streams.is-drop-target .cc-streams__empty {
-  border-color: color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 60%, transparent);
+/* Marching ants: the dashed edge is drawn with four edge gradients whose offset
+   animates, so the dashes crawl. It keeps the accent color while a drag is live
+   and turns green on the active target. The global reduced-motion rule freezes
+   it to a plain dash. */
+body.cc-dragging .cc-streams__empty {
+  --cc-ant: color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 80%, transparent);
+  border-color: transparent;
   opacity: 1;
+  background-image:
+    linear-gradient(90deg, var(--cc-ant) 50%, transparent 0),
+    linear-gradient(90deg, var(--cc-ant) 50%, transparent 0),
+    linear-gradient(0deg, var(--cc-ant) 50%, transparent 0),
+    linear-gradient(0deg, var(--cc-ant) 50%, transparent 0);
+  background-size: 12px 1.5px, 12px 1.5px, 1.5px 12px, 1.5px 12px;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  animation: cc-march 0.55s linear infinite;
 }
 
-/* The insertion indicator: a thin accent line marking the slot a drop lands in. */
+body.cc-dragging .cc-streams.is-drop-target .cc-streams__empty {
+  --cc-ant: var(--cc-color-positive, #2f7a6f);
+}
+
+@keyframes cc-march {
+  to {
+    background-position: 12px 0, -12px 100%, 0 -12px, 100% 12px;
+  }
+}
+
+/* The insertion indicator marks the live drop slot, so it is always green and
+   its dashes march along its length. */
 .cc-streams__indicator {
   height: 2px;
   margin: 3px 0;
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 80%, transparent);
+  background-image: linear-gradient(
+    90deg,
+    var(--cc-color-positive, #2f7a6f) 55%,
+    transparent 0
+  );
+  background-size: 10px 2px;
+  background-repeat: repeat-x;
+  animation: cc-march-x 0.5s linear infinite;
+}
+
+@keyframes cc-march-x {
+  to {
+    background-position: 10px 0;
+  }
 }
 
 .cc-stream {

@@ -91,6 +91,9 @@ export function makeColumnDropZone(
     const cardId = event.dataTransfer.getData(CARD_MIME);
     const beforeId = insertBeforeId(container, event.clientY);
     clearIndicator(container);
+    // The drop repaints and can detach the dragged card before its dragend
+    // fires, so clear the surface dragging flag here too.
+    container.ownerDocument.body.classList.remove("cc-dragging");
     if (cardId.length > 0) onMove(cardId, column, beforeId);
   });
 }
@@ -116,9 +119,13 @@ export function makeCardDraggable(
     event.dataTransfer?.setData(CARD_MIME, cardId);
     if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
     card.classList.add("is-dragging");
+    // Mark the whole surface as dragging so the drop targets march only while a
+    // drag is live, not at rest.
+    card.ownerDocument.body.classList.add("cc-dragging");
   });
   card.addEventListener("dragend", () => {
     card.classList.remove("is-dragging");
+    card.ownerDocument.body.classList.remove("cc-dragging");
   });
 
   const applyMove = (toColumn: CardColumn, beforeId: string | null): void => {
