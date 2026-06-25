@@ -59,6 +59,21 @@ export interface Theme {
   tokens: ThemeTokens;
 }
 
+/**
+ * A whole theme (meta plus tokens), used to validate a theme imported or shared
+ * as JSON before it is trusted as a custom theme.
+ */
+export const ThemeSchema = z.object({
+  meta: ThemeMetaSchema,
+  tokens: ThemeTokensSchema,
+});
+
+/** Parse unknown JSON into a Theme, or undefined when it is not a valid theme. */
+export function parseTheme(raw: unknown): Theme | undefined {
+  const result = ThemeSchema.safeParse(raw);
+  return result.success ? result.data : undefined;
+}
+
 /** Flatten tokens into the CSS custom properties the renderers consume. */
 export function tokensToCssVars(tokens: ThemeTokens): Record<string, string> {
   return {

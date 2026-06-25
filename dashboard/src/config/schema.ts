@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { ThemeSchema } from "../theme/tokens";
+
 /**
  * The single source of truth for everything the new tab shows. The whole app is
  * config-driven: this object lives in chrome.storage (synced), is validated on
@@ -186,6 +188,8 @@ export const ConfigSchema = z.object({
     stocks: { enabled: false, symbols: [] },
     news: { enabled: false },
   }),
+  /** User-imported themes, selectable alongside the shipped ones. */
+  customThemes: z.array(ThemeSchema).default([]),
 });
 export type Config = z.infer<typeof ConfigSchema>;
 

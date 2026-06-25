@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { aurora } from "./aurora";
-import { applyTokens, ThemeTokensSchema, tokensToCssVars } from "./tokens";
+import { applyTokens, parseTheme, ThemeTokensSchema, tokensToCssVars } from "./tokens";
 
 describe("ThemeTokensSchema", () => {
   it("accepts the Aurora tokens", () => {
@@ -19,6 +19,19 @@ describe("ThemeTokensSchema", () => {
       background: { ...aurora.tokens.background, mode: "hologram" },
     };
     expect(ThemeTokensSchema.safeParse(broken).success).toBe(false);
+  });
+});
+
+describe("parseTheme", () => {
+  it("accepts a whole valid theme", () => {
+    const theme = parseTheme(JSON.parse(JSON.stringify(aurora)));
+    expect(theme?.meta.themeId).toBe(aurora.meta.themeId);
+  });
+
+  it("rejects JSON missing tokens or meta", () => {
+    expect(parseTheme({ meta: aurora.meta })).toBeUndefined();
+    expect(parseTheme({ tokens: aurora.tokens })).toBeUndefined();
+    expect(parseTheme({ meta: { name: "x" }, tokens: aurora.tokens })).toBeUndefined();
   });
 });
 

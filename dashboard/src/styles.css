@@ -1201,6 +1201,17 @@ button.cc-lane__item:hover {
   text-align: center;
 }
 
+/* The remove control on a custom (imported) theme chip. */
+.cc-edit__chip-x {
+  margin-left: 6px;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.cc-edit__chip-x:hover {
+  opacity: 1;
+}
+
 .cc-edit__icon-btn {
   font: inherit;
   font-size: 13px;

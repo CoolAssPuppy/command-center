@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ConfigSchema, type Config } from "../config/schema";
+import { aurora } from "./aurora";
 import { AUTO_THEME, isDaytime, resolveActiveTheme } from "./resolve";
 
 const config = (theme?: string): Config =>
@@ -36,6 +37,20 @@ describe("resolveActiveTheme", () => {
     expect(resolveActiveTheme(config(), nightInstant).meta.themeId).toBe(
       "com.strategicnerds.twilight",
     );
+  });
+
+  it("resolves a custom imported theme by id", () => {
+    const customId = "custom.user.midnight";
+    const custom = {
+      meta: { ...aurora.meta, themeId: customId, name: "Midnight" },
+      tokens: aurora.tokens,
+    };
+    const cfg = ConfigSchema.parse({
+      zones: [{ id: "home", label: "Home", timeZone: "America/New_York", isHome: true }],
+      appearance: { theme: customId, hour12: true },
+      customThemes: [custom],
+    });
+    expect(resolveActiveTheme(cfg, dayInstant).meta.themeId).toBe(customId);
   });
 });
 

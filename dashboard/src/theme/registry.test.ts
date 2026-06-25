@@ -35,4 +35,12 @@ describe("themeById", () => {
     const paper = themeById("com.strategicnerds.paper");
     expect(themeById("nope", paper)).toBe(paper);
   });
+
+  it("finds a theme among extra custom themes", () => {
+    const custom = {
+      meta: { ...DEFAULT_THEME.meta, themeId: "custom.user.x", name: "X" },
+      tokens: DEFAULT_THEME.tokens,
+    };
+    expect(themeById("custom.user.x", DEFAULT_THEME, [custom]).meta.name).toBe("X");
+  });
 });

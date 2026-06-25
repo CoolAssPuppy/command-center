@@ -32,7 +32,10 @@ export function isDaytime(config: Config, now: Date): boolean {
 export function resolveActiveTheme(config: Config, now: Date): Theme {
   const id = config.appearance.theme;
   if (id !== undefined && id !== AUTO_THEME) {
-    const explicit = SHIPPED_THEMES.find((theme) => theme.meta.themeId === id);
+    // Custom themes are searched alongside the shipped ones, so an imported
+    // theme resolves exactly like a built-in.
+    const all = [...SHIPPED_THEMES, ...config.customThemes];
+    const explicit = all.find((theme) => theme.meta.themeId === id);
     if (explicit !== undefined) return explicit;
   }
   return isDaytime(config, now) ? mineral : twilight;
