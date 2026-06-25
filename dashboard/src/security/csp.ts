@@ -27,6 +27,7 @@ export const CONNECT_HOSTS = [
   "https://feeds.bbci.co.uk",
   "https://rss.nytimes.com",
   "https://feeds.npr.org",
+  "https://www.techmeme.com",
 ] as const;
 
 interface CspDirectives {

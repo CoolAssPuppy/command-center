@@ -31,10 +31,11 @@
     "https://feeds.bbci.co.uk/*",
     "https://rss.nytimes.com/*",
     "https://feeds.npr.org/*",
+    "https://www.techmeme.com/*",
     "https://www.googleapis.com/*",
     "https://www.google.com/s2/favicons*"
   ],
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; connect-src 'self' https://api.open-meteo.com https://api.unsplash.com https://api.notion.com https://geocoding-api.open-meteo.com https://www.googleapis.com https://api.linear.app https://api.github.com https://finnhub.io https://hacker-news.firebaseio.com https://api.todoist.com https://api.frankfurter.dev https://www.theverge.com https://techcrunch.com https://feeds.arstechnica.com https://feeds.bbci.co.uk https://rss.nytimes.com https://feeds.npr.org; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    "extension_pages": "default-src 'self'; connect-src 'self' https://api.open-meteo.com https://api.unsplash.com https://api.notion.com https://geocoding-api.open-meteo.com https://www.googleapis.com https://api.linear.app https://api.github.com https://finnhub.io https://hacker-news.firebaseio.com https://api.todoist.com https://api.frankfurter.dev https://www.theverge.com https://techcrunch.com https://feeds.arstechnica.com https://feeds.bbci.co.uk https://rss.nytimes.com https://feeds.npr.org https://www.techmeme.com; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
   }
 }

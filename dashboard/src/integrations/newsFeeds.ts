@@ -22,6 +22,7 @@ export const NEWS_FEEDS: readonly NewsFeed[] = [
   { id: "bbc-news", name: "BBC News", url: "https://feeds.bbci.co.uk/news/rss.xml", host: "bbc.co.uk", kind: "rss" },
   { id: "nyt", name: "NYT", url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", host: "nytimes.com", kind: "rss" },
   { id: "npr", name: "NPR", url: "https://feeds.npr.org/1001/rss.xml", host: "npr.org", kind: "rss" },
+  { id: "techmeme", name: "Techmeme", url: "https://www.techmeme.com/feed.xml", host: "techmeme.com", kind: "rss" },
 ];
 
 /** Default active sources: Hacker News only, preserving today's behavior. */

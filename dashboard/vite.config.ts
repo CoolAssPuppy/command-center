@@ -75,6 +75,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/__cc-proxy\/npr/, ""),
       },
+      "/__cc-proxy/techmeme": {
+        target: "https://www.techmeme.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/__cc-proxy\/techmeme/, ""),
+      },
       "/__cc-proxy/google": {
         target: "https://www.googleapis.com",
         changeOrigin: true,

@@ -25,6 +25,7 @@ const PROXIED_HOSTS: ReadonlyArray<readonly [string, string]> = [
   ["https://feeds.bbci.co.uk", "/__cc-proxy/bbc"],
   ["https://rss.nytimes.com", "/__cc-proxy/nyt"],
   ["https://feeds.npr.org", "/__cc-proxy/npr"],
+  ["https://www.techmeme.com", "/__cc-proxy/techmeme"],
   ["https://www.googleapis.com", "/__cc-proxy/google"],
   ["https://api.unsplash.com", "/__cc-proxy/unsplash"],
 ];
