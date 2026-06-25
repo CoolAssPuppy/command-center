@@ -54,24 +54,24 @@ A calm new tab: clocks, weather, your tasks, pull requests, and Linear, plus sto
 Detailed description:
 
 ```
-Command Center turns your new tab into a calm, glanceable home base.
+Command Center turns your new tab into a calm home base. Open a tab and you see what matters, and nothing you do not.
 
-It shows the time where you are and across your other time zones, with the best meeting overlap window so you can see when distant teammates are awake. Current weather and a five-day forecast sit beside it.
+See the time where you are and wherever your people are, with the overlap window that shows when they are awake. Today's weather and the days ahead sit beside it.
 
-Below that, a "Needs you" lane pulls together what actually wants your attention: your next meeting with a one-click join button, pull requests waiting on your review, your Linear inbox, and your tasks. Your own data cards sit alongside, and you can drag any card wherever you want it across two columns.
+A "Needs you" lane gathers whatever is actually waiting on you: your next meeting, ready to join in one click; pull requests that need your review; your Linear inbox; your tasks. Everything else you care about sits alongside, arranged however suits you.
 
-Connect only the services you use. Each connection is your own account or API key, stored on your device:
+Bring in only the services you use, each with your own account:
 - Google Calendar and Google Tasks
 - Notion
-- Linear, with views for assigned work, issues you created, what is due soon, your inbox, projects, and initiatives
+- Linear: assigned work, issues you created, what is due soon, your inbox, projects, and initiatives
 - GitHub pull requests and issues
 - Todoist
 
-Add ambient tickers along the top: stock and currency quotes, and a news ticker from sources you choose (Hacker News, The Verge, TechCrunch, Ars Technica, BBC, NYT, NPR, Techmeme).
+Keep a quiet eye on the markets and the day's headlines with optional tickers along the top, from the sources you choose.
 
-Make it yours with ten themes, from a stark black-and-white Paper to a candlelit Hogwarts, each held to a readable contrast bar, plus your own wallpaper. You can build, export, and share custom themes as JSON.
+Make it yours. Ten themes, from a stark black-and-white to a warm candlelit dark, all easy on the eyes, with your own wallpaper and themes you can design and share.
 
-Private by design. Everything stays in your browser. Your settings sync through Chrome; your tokens never leave your device. There is no analytics, no tracking, and no server the developer runs. Command Center talks only to the services you connect, and only to show that data to you.
+And it stays yours. Everything lives in your browser. Your settings follow you through Chrome; your accounts never leave your device. No tracking, no analytics, no server in the middle. Command Center talks only to the services you connect, and only ever to show you your own day.
 ```
 
 Category:
