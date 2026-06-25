@@ -395,18 +395,18 @@ body {
 
 /* Meeting-window widget --------------------------------------------------- */
 
+/* Borderless and compact: the meeting window is a divided section of the
+   orientation column, sharing the timezone rows' language, not a boxed widget. */
 .cc-mw {
-  flex: 0 1 470px;
   display: flex;
   flex-direction: column;
-  /* Centre the content so the box looks balanced when it stretches to match a
-     taller hero (the forecast strip under the clock). */
-  justify-content: center;
-  gap: 16px;
-  padding: 20px 22px;
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--cc-color-surface, #fff) 78%, transparent);
-  border: 1px solid var(--cc-hairline);
+  gap: 9px;
+}
+
+/* A hairline tucks it snugly under the timezones, so the two read as one column. */
+.cc-orient__aside .cc-zones + .cc-mw {
+  border-top: 1px solid color-mix(in srgb, var(--cc-color-muted, #6a6e76) 16%, transparent);
+  padding-top: 14px;
 }
 
 .cc-mw__header {
@@ -424,12 +424,12 @@ body {
 .cc-mw__verdict {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
 .cc-mw__headline {
-  font-size: 17px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--cc-color-text, #21242a);
 }
@@ -455,19 +455,19 @@ body {
 
 .cc-mw__grid {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .cc-mw__labels {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  width: 30px;
+  gap: 6px;
+  width: 26px;
   flex-shrink: 0;
 }
 
 .cc-mw__label {
-  height: 8px;
+  height: 6px;
   display: flex;
   align-items: center;
   font-size: 10px;
@@ -486,13 +486,13 @@ body {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 6px;
 }
 
 .cc-mw__track {
   position: relative;
-  height: 8px;
-  border-radius: 4px;
+  height: 6px;
+  border-radius: 3px;
   background: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 16%, transparent);
 }
 
@@ -543,7 +543,7 @@ body {
 .cc-mw__axis {
   display: flex;
   justify-content: space-between;
-  padding-left: 42px;
+  padding-left: 36px;
   font-size: 10px;
   font-weight: 500;
   color: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 78%, transparent);
