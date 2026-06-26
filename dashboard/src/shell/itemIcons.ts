@@ -41,6 +41,12 @@ const BUILDERS: Record<ItemIcon, () => SVGElement> = {
     glyph(square(4, 4, 7, 1.5), square(13, 4, 7, 1.5), square(4, 13, 7, 1.5), square(13, 13, 7, 1.5)),
   // Concentric rings, a goal to aim at.
   "linear-initiative": () => glyph(circle(8.5), circle(3.5)),
+  // A dog-eared page, a document.
+  "linear-document": () =>
+    glyph(
+      svgEl("path", { d: "M14 4H7a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8z" }),
+      svgEl("path", { d: "M14 4v4h4" }),
+    ),
 };
 
 /** Build the glyph for an item icon hint. */

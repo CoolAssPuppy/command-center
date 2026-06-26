@@ -91,7 +91,9 @@ export const CardConfigSchema = z.object({
   /**
    * Linear: which pre-defined view to read. "assigned" (the default) lists open
    * issues you created or own; the rest are other viewer-scoped issue lists, the
-   * notification inbox, projects, or initiatives.
+   * notification inbox, projects, or initiatives. "projects-initiatives" merges
+   * the projects and initiatives you created into one list; "favorites" lists
+   * the items you have starred.
    */
   linearView: z
     .enum([
@@ -103,6 +105,8 @@ export const CardConfigSchema = z.object({
       "inbox",
       "projects",
       "initiatives",
+      "projects-initiatives",
+      "favorites",
     ])
     .optional(),
   /** How many items to show. */

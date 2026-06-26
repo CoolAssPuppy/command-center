@@ -14,8 +14,9 @@ import {
  * The Linear integration. Uses the connection's personal API key (a secret) in
  * the Authorization header and reads one of several viewer-scoped pre-defined
  * views: open issue lists (assigned, created, in progress, due soon, recently
- * updated), the notification inbox, the viewer's projects, or initiatives. Each
- * is normalized into text-only items linking to Linear, tagged with a type icon.
+ * updated), the notification inbox, projects, initiatives, the projects and
+ * initiatives you created (merged), or your favorites. Each is normalized into
+ * text-only items linking to Linear, tagged with a type icon.
  */
 const ENDPOINT = "https://api.linear.app/graphql";
 
@@ -71,6 +72,36 @@ export const INITIATIVES_QUERY = `query CommandCenterInitiatives($first: Int!) {
     nodes { id name url targetDate }
   }
 }`;
+
+// The "my projects & initiatives" view scopes both lists to the ones the viewer
+// created, via Linear's `creator: { isMe: { eq: true } }` filter, then merges them.
+export const MY_PROJECTS_QUERY = `query CommandCenterMyProjects($first: Int!) {
+  projects(first: $first, filter: { creator: { isMe: { eq: true } } }) {
+    nodes { id name url targetDate }
+  }
+}`;
+
+export const MY_INITIATIVES_QUERY = `query CommandCenterMyInitiatives($first: Int!) {
+  initiatives(first: $first, filter: { creator: { isMe: { eq: true } } }) {
+    nodes { id name url targetDate }
+  }
+}`;
+
+// Favorites can be any kind of entity (issues, projects, initiatives, documents,
+// and types we do not render). Over-fetch, keep the kinds we know, then cap.
+export const FAVORITES_QUERY = `query CommandCenterFavorites($first: Int!) {
+  favorites(first: $first) {
+    nodes {
+      id
+      issue { identifier title url }
+      project { id name url targetDate }
+      initiative { id name url targetDate }
+      document { id title url }
+    }
+  }
+}`;
+
+const FAVORITES_FETCH = 100;
 
 /**
  * How many notifications to pull for the inbox. Linear returns the newest
@@ -257,6 +288,85 @@ export function parseInitiatives(payload: unknown): ParseResult<NormalizedItem[]
   };
 }
 
+const FavoriteIssueNode = z.object({
+  identifier: z.string(),
+  title: z.string(),
+  url: z.string().optional(),
+});
+
+const FavoriteDocNode = z.object({
+  id: z.string(),
+  title: z.string(),
+  url: z.string().optional(),
+});
+
+const FavoriteNode = z.object({
+  issue: FavoriteIssueNode.nullable().optional(),
+  project: NamedNode.nullable().optional(),
+  initiative: NamedNode.nullable().optional(),
+  document: FavoriteDocNode.nullable().optional(),
+});
+
+const FavoritesSchema = z.object({
+  data: z.object({ favorites: z.object({ nodes: z.array(FavoriteNode) }) }).optional(),
+  errors: z.array(z.object({ message: z.string() })).optional(),
+});
+
+/** Turn one favorite into an item by whichever entity it points at; the kinds we
+ *  do not render (cycles, views, labels) come back without any of these and are
+ *  dropped. */
+function favoriteToItem(node: z.infer<typeof FavoriteNode>): NormalizedItem | undefined {
+  if (node.issue !== undefined && node.issue !== null) {
+    const item: NormalizedItem = {
+      id: node.issue.identifier,
+      title: node.issue.title,
+      icon: "linear-issue",
+      meta: node.issue.identifier,
+    };
+    if (node.issue.url !== undefined) item.url = node.issue.url;
+    return item;
+  }
+  if (node.project !== undefined && node.project !== null) {
+    return namedToItem(node.project, "linear-project");
+  }
+  if (node.initiative !== undefined && node.initiative !== null) {
+    return namedToItem(node.initiative, "linear-initiative");
+  }
+  if (node.document !== undefined && node.document !== null) {
+    const item: NormalizedItem = {
+      id: node.document.id,
+      title: node.document.title,
+      icon: "linear-document",
+    };
+    if (node.document.url !== undefined) item.url = node.document.url;
+    return item;
+  }
+  return undefined;
+}
+
+/**
+ * Parse a favorites response into items, sorted alphabetically by title and
+ * capped to the display count after the wide fetch.
+ */
+export function parseFavorites(
+  payload: unknown,
+  count: number,
+): ParseResult<NormalizedItem[]> {
+  const result = FavoritesSchema.safeParse(payload);
+  if (!result.success) {
+    return { ok: false, error: firstIssue(result.error, "invalid Linear response") };
+  }
+  const error = graphqlError(result.data.errors);
+  if (error !== undefined) return { ok: false, error };
+  if (result.data.data === undefined) return { ok: false, error: "Linear returned no data" };
+
+  const items = result.data.data.favorites.nodes
+    .map(favoriteToItem)
+    .filter((item): item is NormalizedItem => item !== undefined);
+  items.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+  return { ok: true, value: items.slice(0, count) };
+}
+
 /**
  * Parse a notifications response into items: keep unread, unsnoozed issue
  * notifications, dedupe by issue (one issue can ping many times), newest first.
@@ -290,11 +400,20 @@ export function parseLinearInbox(payload: unknown): ParseResult<NormalizedItem[]
   return { ok: true, value: items };
 }
 
-/** The GraphQL query and fetch count for a view. */
-function queryFor(view: LinearView, count: number): { query: string; first: number } {
+/**
+ * The single-request views. "projects-initiatives" is excluded: it fans out to
+ * two queries and is handled separately in fetch, so the switches below stay
+ * exhaustive over the views that map to exactly one query.
+ */
+type SingleView = Exclude<LinearView, "projects-initiatives">;
+
+/** The GraphQL query and fetch count for a single-request view. */
+function queryFor(view: SingleView, count: number): { query: string; first: number } {
   switch (view) {
     case "inbox":
       return { query: INBOX_QUERY, first: INBOX_FETCH };
+    case "favorites":
+      return { query: FAVORITES_QUERY, first: FAVORITES_FETCH };
     case "projects":
       return { query: PROJECTS_QUERY, first: count };
     case "initiatives":
@@ -313,7 +432,7 @@ function queryFor(view: LinearView, count: number): { query: string; first: numb
 }
 
 function parseFor(
-  view: LinearView,
+  view: SingleView,
   payload: unknown,
   count: number,
 ): ParseResult<NormalizedItem[]> {
@@ -323,6 +442,8 @@ function parseFor(
       // Filtered to unread already; cap to the display count after the wide fetch.
       return parsed.ok ? { ok: true, value: parsed.value.slice(0, count) } : parsed;
     }
+    case "favorites":
+      return parseFavorites(payload, count);
     case "projects":
       return parseProjects(payload);
     case "initiatives":
@@ -336,6 +457,61 @@ function parseFor(
     case "in-progress":
       return parseIssues(payload, { sort: "due" });
   }
+}
+
+/** POST one GraphQL query with the connection key, mapping transport and auth
+ *  failures to a ParseResult so callers compose cleanly. */
+async function postLinear(
+  ctx: IntegrationContext,
+  secret: string,
+  query: string,
+  first: number,
+): Promise<ParseResult<unknown>> {
+  try {
+    const response = await ctx.fetch({
+      url: ENDPOINT,
+      method: "POST",
+      headers: { Authorization: secret, "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables: { first } }),
+    });
+    if (response.status === 401 || response.status === 400) {
+      return { ok: false, error: NEEDS_AUTH };
+    }
+    if (!response.ok) {
+      return { ok: false, error: `Linear request failed (${response.status})` };
+    }
+    return { ok: true, value: await response.json() };
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : "Linear request failed";
+    return { ok: false, error: message };
+  }
+}
+
+/**
+ * The "projects & initiatives" view: fetch both viewer-created lists in parallel,
+ * merge them, sort alphabetically by title, and cap to the display count. Either
+ * request failing fails the card.
+ */
+async function fetchProjectsInitiatives(
+  ctx: IntegrationContext,
+  secret: string,
+  count: number,
+): Promise<ParseResult<NormalizedItem[]>> {
+  const [projects, initiatives] = await Promise.all([
+    postLinear(ctx, secret, MY_PROJECTS_QUERY, count),
+    postLinear(ctx, secret, MY_INITIATIVES_QUERY, count),
+  ]);
+  if (!projects.ok) return projects;
+  if (!initiatives.ok) return initiatives;
+
+  const projectItems = parseProjects(projects.value);
+  if (!projectItems.ok) return projectItems;
+  const initiativeItems = parseInitiatives(initiatives.value);
+  if (!initiativeItems.ok) return initiativeItems;
+
+  const merged = [...initiativeItems.value, ...projectItems.value];
+  merged.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+  return { ok: true, value: merged.slice(0, count) };
 }
 
 export const linearIntegration: Integration = {
@@ -353,28 +529,14 @@ export const linearIntegration: Integration = {
 
     const view = linearViewOf(connection);
     const count = connection.count ?? 6;
-    const { query, first } = queryFor(view, count);
 
-    let payload: unknown;
-    try {
-      const response = await ctx.fetch({
-        url: ENDPOINT,
-        method: "POST",
-        headers: { Authorization: secret, "Content-Type": "application/json" },
-        body: JSON.stringify({ query, variables: { first } }),
-      });
-      if (response.status === 401 || response.status === 400) {
-        return { ok: false, error: NEEDS_AUTH };
-      }
-      if (!response.ok) {
-        return { ok: false, error: `Linear request failed (${response.status})` };
-      }
-      payload = await response.json();
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "Linear request failed";
-      return { ok: false, error: message };
+    if (view === "projects-initiatives") {
+      return fetchProjectsInitiatives(ctx, secret, count);
     }
 
-    return parseFor(view, payload, count);
+    const { query, first } = queryFor(view, count);
+    const payload = await postLinear(ctx, secret, query, first);
+    if (!payload.ok) return payload;
+    return parseFor(view, payload.value, count);
   },
 };

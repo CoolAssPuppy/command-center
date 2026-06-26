@@ -196,6 +196,8 @@ const LINEAR_VIEWS: ReadonlyArray<readonly [NonNullable<Stream["linearView"]>, s
   ["inbox", "Inbox"],
   ["projects", "Projects"],
   ["initiatives", "Initiatives"],
+  ["projects-initiatives", "Projects & initiatives"],
+  ["favorites", "Favorites"],
 ];
 
 function linearViewField(stream: Stream, ctx: SectionContext): HTMLElement {

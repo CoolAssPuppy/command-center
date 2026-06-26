@@ -5,9 +5,12 @@ import {
   ASSIGNED_QUERY,
   CREATED_QUERY,
   DUE_QUERY,
+  FAVORITES_QUERY,
   INBOX_QUERY,
   IN_PROGRESS_QUERY,
   INITIATIVES_QUERY,
+  MY_INITIATIVES_QUERY,
+  MY_PROJECTS_QUERY,
   PROJECTS_QUERY,
   RECENT_QUERY,
   linearIntegration,
@@ -346,5 +349,124 @@ describe("linear projects and initiatives", () => {
   it("requests the projects and initiatives queries for those views", async () => {
     expect(await queryFor("projects")).toBe(PROJECTS_QUERY);
     expect(await queryFor("initiatives")).toBe(INITIATIVES_QUERY);
+  });
+});
+
+describe("linear projects & initiatives view", () => {
+  it("scopes both lists to the viewer with a creator filter", () => {
+    expect(MY_PROJECTS_QUERY).toContain("creator: { isMe: { eq: true } }");
+    expect(MY_INITIATIVES_QUERY).toContain("creator: { isMe: { eq: true } }");
+  });
+
+  it("fans out to both queries and merges them alphabetically by title", async () => {
+    const queries: string[] = [];
+    const fetch = (request: HttpRequest): Promise<HttpResponseLike> => {
+      const { query } = JSON.parse(request.body ?? "{}") as { query: string };
+      queries.push(query);
+      if (query === MY_PROJECTS_QUERY) {
+        return Promise.resolve(
+          json({ data: { projects: { nodes: [{ id: "p1", name: "Alpha", url: "https://l/p1" }] } } }),
+        );
+      }
+      return Promise.resolve(
+        json({ data: { initiatives: { nodes: [{ id: "i1", name: "Zephyr", url: "https://l/i1" }] } } }),
+      );
+    };
+
+    const result = await linearIntegration.fetch(
+      connection({ linearView: "projects-initiatives", count: 6 }),
+      "lin_key",
+      ctx(fetch),
+    );
+
+    expect(queries).toContain(MY_PROJECTS_QUERY);
+    expect(queries).toContain(MY_INITIATIVES_QUERY);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Alphabetical, not grouped by type: the project "Alpha" precedes the
+    // initiative "Zephyr".
+    expect(result.value.map((item) => item.title)).toEqual(["Alpha", "Zephyr"]);
+    expect(result.value[0]?.icon).toBe("linear-project");
+    expect(result.value[1]?.icon).toBe("linear-initiative");
+  });
+
+  it("fails the card when either request errors", async () => {
+    const fetch = (request: HttpRequest): Promise<HttpResponseLike> => {
+      const { query } = JSON.parse(request.body ?? "{}") as { query: string };
+      if (query === MY_INITIATIVES_QUERY) {
+        return Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve(json({ data: { projects: { nodes: [] } } }));
+    };
+
+    const result = await linearIntegration.fetch(
+      connection({ linearView: "projects-initiatives" }),
+      "lin_key",
+      ctx(fetch),
+    );
+    expect(result.ok).toBe(false);
+  });
+});
+
+const favoritesBody = (nodes: unknown[]): unknown => ({ data: { favorites: { nodes } } });
+
+describe("linear favorites view", () => {
+  it("requests the favorites query when chosen", async () => {
+    let captured: HttpRequest | undefined;
+    await linearIntegration.fetch(
+      connection({ linearView: "favorites" }),
+      "lin_key",
+      ctx((request) => {
+        captured = request;
+        return Promise.resolve(json(favoritesBody([])));
+      }),
+    );
+    const body = JSON.parse(captured?.body ?? "{}") as { query?: string };
+    expect(body.query).toBe(FAVORITES_QUERY);
+  });
+
+  it("normalizes each kind, drops unknown kinds, and sorts alphabetically", async () => {
+    const result = await linearIntegration.fetch(
+      connection({ linearView: "favorites", count: 10 }),
+      "lin_key",
+      ctx(() =>
+        Promise.resolve(
+          json(
+            favoritesBody([
+              { issue: { identifier: "ENG-9", title: "Wiring", url: "https://l/e9" } },
+              { project: { id: "p1", name: "Apollo", url: "https://l/p1" } },
+              { initiative: { id: "i1", name: "Mercury", url: "https://l/i1" } },
+              { document: { id: "d1", title: "Brief", url: "https://l/d1" } },
+              { cycle: { id: "c1" } },
+            ]),
+          ),
+        ),
+      ),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // The cycle favorite has none of the rendered entities, so it is dropped.
+    expect(result.value.map((item) => item.title)).toEqual(["Apollo", "Brief", "Mercury", "Wiring"]);
+    const byTitle = Object.fromEntries(result.value.map((item) => [item.title, item.icon]));
+    expect(byTitle).toMatchObject({
+      Apollo: "linear-project",
+      Brief: "linear-document",
+      Mercury: "linear-initiative",
+      Wiring: "linear-issue",
+    });
+  });
+
+  it("caps to the display count after the wide fetch", async () => {
+    const nodes = Array.from({ length: 12 }, (_value, index) => ({
+      project: { id: `p${String(index)}`, name: `Project ${String(index).padStart(2, "0")}` },
+    }));
+    const result = await linearIntegration.fetch(
+      connection({ linearView: "favorites", count: 5 }),
+      "lin_key",
+      ctx(() => Promise.resolve(json(favoritesBody(nodes)))),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value).toHaveLength(5);
   });
 });

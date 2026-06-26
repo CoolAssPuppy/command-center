@@ -18,7 +18,11 @@ export type ItemTone = "urgent" | "positive" | "neutral";
 export type ConferenceProvider = "meet" | "zoom" | "teams" | "other";
 
 /** A small type glyph an item can carry, drawn before its title. Extensible. */
-export type ItemIcon = "linear-issue" | "linear-project" | "linear-initiative";
+export type ItemIcon =
+  | "linear-issue"
+  | "linear-project"
+  | "linear-initiative"
+  | "linear-document";
 
 /**
  * Task detail shared across task sources (Notion, Todoist, Google Tasks), so the
