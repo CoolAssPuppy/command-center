@@ -4,6 +4,8 @@ Patterns learned during the build, so mistakes are not repeated. Reviewed at the
 
 ## Process
 
+- Persisted enum/value renames are breaking changes. Renaming a config value that users already have saved (e.g. a Linear `linearView` value) orphans their stored config: `parseConfig` fails validation and falls back to empty, blanking the dashboard. Always add a `migrateConfig` mapping (old value to new) in the same change as the rename, and prefer keeping the persisted value stable while changing only the user-facing label.
+- Config parsing must degrade gracefully. A single bad field (a value from a newer build, a malformed card) must not blank the whole dashboard. `parseConfig` prunes invalid streams and re-parses before any empty fallback; the absolute fallback should never silently wipe zones/links/connections.
 - Verify before asserting. The Safari new tab override was first claimed impossible from memory and turned out to be supported. Check primary sources before stating a hard constraint.
 - App Groups are team-scoped. They cannot be the cross-developer transport. The open platform uses the local endpoint and a well-known directory instead.
 

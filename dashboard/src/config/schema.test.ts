@@ -228,6 +228,32 @@ describe("config migration (connection config moves onto cards)", () => {
     expect(config.streams.filter((s) => s.connectionId === "lin")).toHaveLength(1);
   });
 
+  it("renames the legacy projects+initiatives Linear view so old configs still load", () => {
+    const config = parseConfig({
+      connections: [{ id: "ln", name: "Linear", service: "linear" }],
+      streams: [
+        { id: "s1", title: "Mine", connectionId: "ln", linearView: "my-projects-initiatives" },
+      ],
+    });
+    expect(config.streams[0]?.linearView).toBe("projects-initiatives");
+  });
+
+  it("drops a single malformed card instead of blanking the whole config", () => {
+    const config = parseConfig({
+      zones: [{ id: "home", label: "Lisbon", timeZone: "Europe/Lisbon", isHome: true }],
+      links: [{ id: "gh", title: "GitHub", url: "https://github.com" }],
+      connections: [{ id: "ln", name: "Linear", service: "linear" }],
+      streams: [
+        { id: "good", title: "Issues", connectionId: "ln" },
+        { id: "bad", title: "Broken", connectionId: "ln", linearView: "from-a-newer-build" },
+      ],
+    });
+    // Zones, links, and the valid card survive; only the unparseable card is gone.
+    expect(config.zones).toHaveLength(1);
+    expect(config.links).toHaveLength(1);
+    expect(config.streams.map((s) => s.id)).toEqual(["good"]);
+  });
+
   it("leaves a new-model config unchanged (idempotent)", () => {
     const input = {
       connections: [{ id: "c1", name: "Roadmap", service: "notion" }],

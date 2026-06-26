@@ -372,21 +372,45 @@ export function migrateConfig(raw: unknown): unknown {
   }
 
   // Seed surface order from the array position when a card has none, so the
-  // current arrangement carries over. Existing orders are left untouched.
+  // current arrangement carries over, and rename any legacy Linear view value so
+  // configs saved before a rename keep validating. Existing orders are untouched.
   const seeded = nextStreams.map((entry, index): unknown => {
     const stream = asRecord(entry);
     if (stream === undefined) return entry;
-    if (typeof stream.order === "number") return stream;
-    return { ...stream, order: index };
+    const next = { ...stream };
+    // The merged projects + initiatives view was briefly "my-projects-initiatives".
+    if (next.linearView === "my-projects-initiatives") {
+      next.linearView = "projects-initiatives";
+    }
+    if (typeof next.order !== "number") next.order = index;
+    return next;
   });
 
   return { ...root, streams: seeded };
 }
 
-/** Parse unknown storage data into a Config, falling back to defaults per field. */
+/** Drop the streams (data cards) that fail to validate, keeping the rest of the
+ *  config, so one malformed card cannot blank the whole dashboard. */
+function pruneInvalidStreams(migrated: unknown): unknown {
+  const root = asRecord(migrated);
+  if (root === undefined) return migrated;
+  if (!Array.isArray(root.streams)) return migrated;
+  const streams = root.streams.filter((entry) => StreamSchema.safeParse(entry).success);
+  return { ...root, streams };
+}
+
+/**
+ * Parse unknown storage data into a Config, failing gracefully. A clean parse
+ * wins; otherwise a single bad card is dropped and the rest is kept, so a view
+ * or field from a newer build never wipes a working dashboard. A wholly
+ * unreadable blob falls back to the empty defaults.
+ */
 export function parseConfig(raw: unknown): Config {
-  const result = ConfigSchema.safeParse(migrateConfig(raw ?? {}));
-  return result.success ? result.data : ConfigSchema.parse({});
+  const migrated = migrateConfig(raw ?? {});
+  const result = ConfigSchema.safeParse(migrated);
+  if (result.success) return result.data;
+  const retry = ConfigSchema.safeParse(pruneInvalidStreams(migrated));
+  return retry.success ? retry.data : ConfigSchema.parse({});
 }
 
 export function parseSecrets(raw: unknown): Secrets {
