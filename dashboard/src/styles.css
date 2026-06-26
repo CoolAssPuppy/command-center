@@ -33,8 +33,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: clamp(32px, 5vh, 56px) clamp(24px, 4vw, 64px) 104px;
+  /* Broadsheet: the masthead sits near the top like a front page rather than
+     floating in the vertical center, and the stage fills the height so the
+     ambient ticker can settle at the foot above the dock. */
+  justify-content: flex-start;
+  padding: clamp(36px, 6vh, 72px) clamp(28px, 4.5vw, 72px) 104px;
   background: var(--cc-bg, #ece8e0);
 }
 
@@ -223,12 +226,14 @@ body {
   z-index: 1;
   width: 100%;
   max-width: 1200px;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  /* One deliberate section break between the orientation band and the work
-     band, rather than a uniform gap on everything. */
-  gap: clamp(28px, 5vh, 56px);
+  /* One deliberate section break between the masthead and the work band, rather
+     than a uniform gap on everything. */
+  gap: clamp(26px, 4vh, 44px);
 }
 
 /* Tier 1: orientation. Two card-less columns typeset on the wallpaper. Left:
@@ -256,10 +261,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.cc-orient .cc-tickers {
-  grid-column: 1 / -1;
 }
 
 @media (max-width: 900px) {
@@ -640,12 +641,16 @@ body {
 }
 
 /* Work band: two columns (left ~3/5, right ~2/5). The "needs you" lane is pinned
-   at the top of the left column; data cards flow below it and fill the right. */
+   at the top of the left column; data cards flow below it and fill the right. A
+   single full-width hairline rule divides the masthead from the work below, the
+   page's one structural line. */
 .cc-work {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   align-items: start;
   gap: clamp(24px, 4vw, 56px);
+  padding-top: clamp(22px, 3.5vh, 38px);
+  border-top: 1px solid var(--cc-hairline);
 }
 
 /* Each column stacks its contents (the lane, then cards) with breathing room. */
@@ -662,19 +667,17 @@ body {
   }
 }
 
-/* The page's one distinguished surface: a single low-contrast solid sheet with
-   a gentle inset, so the lane reads as the anchor without looking like a glass
-   card. Everything else is typographic on the wallpaper. */
+/* The page's one distinguished surface: a subtle, low-contrast lift behind the
+   "needs you" anchor, hairline-bordered, so it reads as the thing that needs you
+   first without a heavy block. Everything else is typographic on the wallpaper. */
 .cc-lane {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px 20px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--cc-color-surface, #fff) 55%, var(--cc-color-bg, #11131a));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, var(--cc-color-muted, #6a6e76) 8%, transparent);
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cc-color-surface, #fff) 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cc-color-muted, #6a6e76) 14%, transparent);
 }
 
 .cc-lane__title {
@@ -1963,8 +1966,7 @@ button.cc-stream__item:hover {
   text-overflow: ellipsis;
 }
 
-.cc-stream__item-sub,
-.cc-stream__item-meta {
+.cc-stream__item-sub {
   font-size: 12px;
   color: var(--cc-color-text, #21242a);
   white-space: nowrap;
@@ -1972,19 +1974,27 @@ button.cc-stream__item:hover {
   text-overflow: ellipsis;
 }
 
-/* Secondary detail (e.g. a location). It yields space to the title and time,
-   and truncates instead of wrapping across them. */
+/* Trailing detail like a Linear issue key or a location. It recedes: small,
+   muted, tabular, yielding space to the title and truncating before it wraps. */
 .cc-stream__item-meta {
   flex: 0 1 auto;
   min-width: 0;
-  max-width: 45%;
+  max-width: 42%;
   text-align: right;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--cc-color-muted, #6a6e76);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* An urgent feed row lifts its title in the urgent color; positive goes green.
-   The lane is where urgency really lives, so this stays understated. */
+/* An urgent feed row leans its title toward the urgent hue, but blended with ink
+   so a column of them stays calm. The lane is where urgency really lives. */
 .cc-stream__item[data-tone="urgent"] .cc-stream__item-title {
-  color: var(--cc-color-urgent, #c0563f);
+  color: color-mix(in srgb, var(--cc-color-urgent, #c0563f) 52%, var(--cc-color-text, #21242a));
   font-weight: 600;
 }
 
@@ -1994,17 +2004,22 @@ button.cc-stream__item:hover {
 
 /* Ambient tickers ---------------------------------------------------------- */
 
+/* Ambient ticker footer: pinned to the foot of the stage (margin-top: auto),
+   one quiet band over a single hairline, lower-contrast than the work above so
+   it reads as background texture, not content. */
 .cc-tickers {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: clamp(16px, 2.5vh, 28px);
+  border-top: 1px solid var(--cc-hairline);
+  opacity: 0.78;
 }
 
 .cc-ticker {
   overflow: hidden;
-  border-top: 1px solid var(--cc-hairline);
-  padding: 6px 0;
+  padding: 4px 0;
 }
 
 /* The stock/forex strip is clickable to toggle percent vs amount. */

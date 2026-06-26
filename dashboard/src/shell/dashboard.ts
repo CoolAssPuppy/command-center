@@ -200,22 +200,6 @@ export function renderDashboard(
       });
     }
     if (aside.childElementCount > 0) orient.appendChild(aside);
-
-    renderTickers(
-      orient,
-      {
-        reducedMotion,
-        stocksEnabled: model.config.tickers.stocks.enabled,
-        newsEnabled: model.config.tickers.news.enabled,
-        ...(model.tickerStocks !== undefined ? { stocks: model.tickerStocks } : {}),
-        ...(model.tickerNews !== undefined ? { news: model.tickerNews } : {}),
-        ...(model.tickerMode !== undefined ? { mode: model.tickerMode } : {}),
-        ...(deps.onTickerModeChange !== undefined
-          ? { onTickerModeChange: deps.onTickerModeChange }
-          : {}),
-      },
-      deps.navigate,
-    );
     stage.appendChild(orient);
 
     // Tier 2: the work band. Two columns (left ~3/5, right ~2/5). The "needs you"
@@ -260,6 +244,24 @@ export function renderDashboard(
     work.appendChild(leftCol);
     work.appendChild(rightCol);
     stage.appendChild(work);
+
+    // Tier 3: the ambient ticker, a single quiet band pinned to the foot of the
+    // stage (above the dock) rather than crowding the masthead.
+    renderTickers(
+      stage,
+      {
+        reducedMotion,
+        stocksEnabled: model.config.tickers.stocks.enabled,
+        newsEnabled: model.config.tickers.news.enabled,
+        ...(model.tickerStocks !== undefined ? { stocks: model.tickerStocks } : {}),
+        ...(model.tickerNews !== undefined ? { news: model.tickerNews } : {}),
+        ...(model.tickerMode !== undefined ? { mode: model.tickerMode } : {}),
+        ...(deps.onTickerModeChange !== undefined
+          ? { onTickerModeChange: deps.onTickerModeChange }
+          : {}),
+      },
+      deps.navigate,
+    );
   }
 
   // Dock of links, pinned along the bottom of the page, unless hidden.
