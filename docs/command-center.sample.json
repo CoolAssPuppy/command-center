@@ -85,7 +85,7 @@
     },
     {
       "id": "conn-47160492",
-      "name": "Linear Inbox",
+      "name": "Linear",
       "service": "linear"
     },
     {
@@ -168,7 +168,7 @@
       "collapsedByDefault": false,
       "column": "right",
       "order": 2,
-      "linearView": "due"
+      "linearView": "inbox"
     },
     {
       "id": "stream-f9c29a1b",
@@ -178,6 +178,15 @@
       "column": "right",
       "order": 3,
       "query": "is:pr assignee:@me"
+    },
+    {
+      "id": "stream-5354ee72",
+      "title": "My Projects and Initiatives",
+      "connectionId": "conn-47160492",
+      "collapsedByDefault": false,
+      "column": "right",
+      "order": 4,
+      "linearView": "projects-initiatives"
     }
   ],
   "wallpaper": {
@@ -191,7 +200,7 @@
     "scrim": 0.1
   },
   "appearance": {
-    "theme": "com.strategicnerds.supa",
+    "theme": "com.strategicnerds.aurora",
     "hour12": true,
     "showMeetingWindow": false,
     "showDock": false,
