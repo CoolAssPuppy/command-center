@@ -242,9 +242,8 @@ body {
 .cc-orient {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  /* Bottom-align the columns so the right column (timezones, then the meeting
-     finder) settles level with the left column's weather block instead of
-     floating at the top and leaving the band lopsided. */
+  /* Bottom-align the columns so the other zones, then the meeting finder, settle
+     level with the left column's forecast rather than floating at the top. */
   align-items: end;
   column-gap: clamp(32px, 6vw, 88px);
   row-gap: 18px;
@@ -676,6 +675,9 @@ body {
   gap: 12px;
   padding: 14px 16px;
   border-radius: 10px;
+  /* The anchor sits one step up the scale from the reference streams (14px), so
+     items read at a deliberate 15px instead of the inherited body size. */
+  font-size: 15px;
   background: color-mix(in srgb, var(--cc-color-surface, #fff) 34%, transparent);
   border: 1px solid color-mix(in srgb, var(--cc-color-muted, #6a6e76) 14%, transparent);
 }
@@ -913,24 +915,27 @@ button.cc-lane__item:hover {
   font-variant-numeric: tabular-nums;
 }
 
+/* A quiet outline affordance, not a filled button: a hairline pill with an
+   accent label, so the one action in the lane reads without weighing it down. */
 .cc-lane__join {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  border: 0;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--cc-color-primary, #4f6bed) 16%, transparent);
-  color: var(--cc-color-text, #21242a);
+  padding: 5px 11px;
+  border: 1px solid color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 40%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--cc-color-accent, #2f7a6f);
   font: inherit;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: background calc(var(--cc-motion-speed, 1) * 120ms) ease-out;
 }
 
 .cc-lane__join:hover {
-  background: color-mix(in srgb, var(--cc-color-primary, #4f6bed) 26%, transparent);
+  background: color-mix(in srgb, var(--cc-color-accent, #2f7a6f) 12%, transparent);
 }
 
 /* Slots filled by later phases ------------------------------------------- */
