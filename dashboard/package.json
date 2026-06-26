@@ -1,6 +1,6 @@
 {
   "name": "command-center-dashboard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Command Center: a calm Chrome new tab with world clocks, a dock, work streams, and wallpaper.",
