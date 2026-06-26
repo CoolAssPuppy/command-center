@@ -310,12 +310,12 @@ body {
 }
 
 .cc-home__time {
-  /* The focal point of the band: the brand primary, set heavy. Moderate size,
-     not a billboard, since the "needs you" lane is the working anchor. */
-  font-size: clamp(46px, 7vw, 82px);
+  /* The focal point of the band: the brand primary, set heavy and large so the
+     time is the first thing read at a glance. */
+  font-size: clamp(64px, 9vw, 112px);
   font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  line-height: 0.95;
+  letter-spacing: -0.025em;
   color: var(--cc-color-primary, var(--cc-color-text, #21242a));
   font-variant-numeric: var(--cc-numeric, tabular-nums);
 }
@@ -334,22 +334,17 @@ body {
   opacity: 0.6;
 }
 
-.cc-home__weather {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-top: 2px;
-}
-
+/* Current conditions now ride the meta line, so the temperature matches its
+   size and only leans on weight + ink for a touch of emphasis. */
 .cc-home__temp {
-  font-size: clamp(16px, 1.8vw, 19px);
+  font-size: inherit;
   font-weight: 600;
   color: var(--cc-color-text, #21242a);
   font-variant-numeric: tabular-nums;
 }
 
 .cc-home__cond {
-  font-size: 13px;
+  font-size: inherit;
   font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--cc-color-muted, #6a6e76);

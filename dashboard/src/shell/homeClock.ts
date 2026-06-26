@@ -56,20 +56,21 @@ export function renderHomeClock(host: HTMLElement, model: HomeClockModel): HTMLE
   time.setAttribute("data-phase", phaseLabel(hour).toLowerCase());
   root.appendChild(time);
 
+  // One quiet line beneath the time: date · place · current conditions. The
+  // weather folds in here rather than sitting on its own row, so the band reads
+  // as a single legible sentence ("Friday, June 26 · Lisbon · 24° Clear").
   const meta = el("div", "cc-home__meta");
   meta.appendChild(el("span", "cc-home__date", formatDate(model.now, model.zone.timeZone)));
   meta.appendChild(el("span", "cc-home__dot", "·"));
   meta.appendChild(el("span", "cc-home__place", model.zone.label));
-  root.appendChild(meta);
-
   if (model.currentWeather !== undefined) {
-    const weather = el("div", "cc-home__weather");
-    weather.appendChild(
+    meta.appendChild(el("span", "cc-home__dot", "·"));
+    meta.appendChild(
       el("span", "cc-home__temp", `${String(Math.round(model.currentWeather.temperature))}°`),
     );
-    weather.appendChild(el("span", "cc-home__cond", model.currentWeather.condition));
-    root.appendChild(weather);
+    meta.appendChild(el("span", "cc-home__cond", model.currentWeather.condition));
   }
+  root.appendChild(meta);
 
   if (model.forecast !== undefined && model.forecast.length > 0) {
     renderForecast(root, { daily: model.forecast });
