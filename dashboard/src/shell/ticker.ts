@@ -27,15 +27,51 @@ export interface TickerOptions {
 /** Seconds of scroll per item, so longer strips drift at a steady pace. */
 const SECONDS_PER_ITEM = 5;
 
-function marquee(reducedMotion: boolean, count: number): HTMLElement {
+/**
+ * Widen each copy of the strip to at least the viewport so a short list (even a
+ * single quote) spreads across the whole band via space-around, instead of
+ * clustering at the left. Keeping the two copies equal in width is also what
+ * makes the -50% scroll loop seamlessly. A ResizeObserver re-fits on width
+ * changes and drops itself once the strip leaves the document.
+ */
+function fitGroupsToViewport(viewport: HTMLElement, groups: HTMLElement[]): void {
+  if (typeof ResizeObserver === "undefined") return;
+  const observer = new ResizeObserver(() => {
+    if (!viewport.isConnected) {
+      observer.disconnect();
+      return;
+    }
+    const width = viewport.clientWidth;
+    if (width === 0) return;
+    for (const group of groups) group.style.minWidth = `${String(width)}px`;
+  });
+  observer.observe(viewport);
+}
+
+/**
+ * A scrolling viewport holding two identical content groups. Callers fill both
+ * groups with the same entries; rendering the content twice lets the -50% loop
+ * run without a visible seam, and each group is widened to the viewport so the
+ * band is never empty on the right.
+ */
+function marquee(
+  reducedMotion: boolean,
+  count: number,
+): { viewport: HTMLElement; groups: [HTMLElement, HTMLElement] } {
   const viewport = el("div", "cc-ticker__viewport");
   const track = el("div", "cc-ticker__track");
   if (!reducedMotion) {
     track.classList.add("cc-ticker__track--scroll");
     track.style.setProperty("--cc-ticker-duration", `${String(count * SECONDS_PER_ITEM)}s`);
   }
+  const groups: [HTMLElement, HTMLElement] = [
+    el("div", "cc-ticker__group"),
+    el("div", "cc-ticker__group"),
+  ];
+  track.append(groups[0], groups[1]);
   viewport.appendChild(track);
-  return viewport;
+  fitGroupsToViewport(viewport, groups);
+  return { viewport, groups };
 }
 
 function formatPrice(quote: StockQuote): string {
@@ -103,14 +139,13 @@ function renderStockStrip(
   strip.setAttribute("aria-label", "Toggle ticker between percent change and amount");
   strip.title = "Click to switch between percent and amount";
 
-  const viewport = marquee(reducedMotion, quotes.length);
-  const track = viewport.querySelector(".cc-ticker__track");
+  const { viewport, groups } = marquee(reducedMotion, quotes.length);
   const deltas: Array<{ quote: StockQuote; span: HTMLElement }> = [];
-  // Two passes of the content so the loop has no visible seam.
-  for (let pass = 0; pass < 2; pass += 1) {
+  // Two identical passes of the content so the loop has no visible seam.
+  for (const group of groups) {
     for (const quote of quotes) {
       const { entry, delta } = stockEntry(quote, mode);
-      track?.appendChild(entry);
+      group.appendChild(entry);
       deltas.push({ quote, span: delta });
     }
   }
@@ -168,10 +203,9 @@ function renderNewsStrip(
   navigate: (url: string) => void,
 ): HTMLElement {
   const strip = el("div", "cc-ticker cc-ticker--news");
-  const viewport = marquee(reducedMotion, items.length);
-  const track = viewport.querySelector(".cc-ticker__track");
-  for (let pass = 0; pass < 2; pass += 1) {
-    for (const item of items) track?.appendChild(newsEntry(item, navigate));
+  const { viewport, groups } = marquee(reducedMotion, items.length);
+  for (const group of groups) {
+    for (const item of items) group.appendChild(newsEntry(item, navigate));
   }
   strip.appendChild(viewport);
   return strip;

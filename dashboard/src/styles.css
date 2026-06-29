@@ -2044,11 +2044,24 @@ button.cc-stream__item:hover {
 }
 
 .cc-ticker__track {
-  display: inline-flex;
-  align-items: center;
-  gap: 26px;
+  display: flex;
+  align-items: stretch;
   white-space: nowrap;
   will-change: transform;
+}
+
+/* Each copy of the strip. JS widens it to at least the viewport so a short list
+   spreads across the band instead of clustering at the left; space-around does
+   the spreading. The inline padding is half the item gap, so where the two
+   copies meet the spacing matches the gap between items and the -50% loop has
+   no seam. */
+.cc-ticker__group {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-around;
+  gap: 26px;
+  padding-inline: 13px;
 }
 
 .cc-ticker__track--scroll {
