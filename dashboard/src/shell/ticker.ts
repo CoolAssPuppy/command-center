@@ -18,6 +18,12 @@ export interface TickerOptions {
   /** Whether each strip is switched on, so an empty one can explain itself. */
   stocksEnabled?: boolean;
   newsEnabled?: boolean;
+  /**
+   * Stock (non-forex) symbols are configured but no Finnhub key is set, so the
+   * equities were dropped. Surfaces a hint, since forex alone would otherwise
+   * make the missing symbols a silent mystery.
+   */
+  stocksNeedKey?: boolean;
   /** Whether the stock/forex delta reads as a percent or an absolute amount. */
   mode?: TickerMode;
   /** Persist the new mode after the user clicks the strip to toggle it. */
@@ -30,22 +36,45 @@ const SECONDS_PER_ITEM = 5;
 /**
  * Widen each copy of the strip to at least the viewport so a short list (even a
  * single quote) spreads across the whole band via space-around, instead of
- * clustering at the left. Keeping the two copies equal in width is also what
- * makes the -50% scroll loop seamlessly. A ResizeObserver re-fits on width
- * changes and drops itself once the strip leaves the document.
+ * clustering at the left. The two copies stay equal in width, so the track (sized
+ * to its content) is exactly twice a copy and the -50% scroll loops seamlessly.
+ *
+ * The new tab can be laid out at zero width until it is actually shown, where a
+ * lone ResizeObserver would fire once at width 0 and never again. requestAnimation-
+ * Frame is paused while the page is hidden, so retrying on frames waits until the
+ * band has a real width; a ResizeObserver then keeps it right on later resizes.
  */
 function fitGroupsToViewport(viewport: HTMLElement, groups: HTMLElement[]): void {
-  if (typeof ResizeObserver === "undefined") return;
-  const observer = new ResizeObserver(() => {
-    if (!viewport.isConnected) {
-      observer.disconnect();
-      return;
-    }
+  const apply = (): boolean => {
     const width = viewport.clientWidth;
-    if (width === 0) return;
+    if (width === 0) return false;
     for (const group of groups) group.style.minWidth = `${String(width)}px`;
-  });
-  observer.observe(viewport);
+    return true;
+  };
+
+  const raf = (
+    globalThis as { requestAnimationFrame?: (cb: FrameRequestCallback) => number }
+  ).requestAnimationFrame;
+  if (!apply() && raf !== undefined) {
+    let frames = 0;
+    const retry = (): void => {
+      if (!viewport.isConnected || frames > 240) return;
+      frames += 1;
+      if (!apply()) raf(retry);
+    };
+    raf(retry);
+  }
+
+  if (typeof ResizeObserver !== "undefined") {
+    const observer = new ResizeObserver(() => {
+      if (!viewport.isConnected) {
+        observer.disconnect();
+        return;
+      }
+      apply();
+    });
+    observer.observe(viewport);
+  }
 }
 
 /**
@@ -239,8 +268,19 @@ export function renderTickers(
         options.onTickerModeChange,
       ),
     );
+    // Forex renders, but equities were dropped for lack of a key. Say so quietly,
+    // so the missing symbols are explained rather than silently gone.
+    if (options.stocksNeedKey === true) {
+      wrap.appendChild(hintStrip("Add a Finnhub key in Customize to show stocks."));
+    }
   } else if (stockHint) {
-    wrap.appendChild(hintStrip("Add a Finnhub key in Customize to show stocks."));
+    wrap.appendChild(
+      hintStrip(
+        options.stocksNeedKey === true
+          ? "Add a Finnhub key in Customize to show stocks."
+          : "Stock quotes are unavailable right now.",
+      ),
+    );
   }
   if (news.length > 0) wrap.appendChild(renderNewsStrip(news, options.reducedMotion, navigate));
   else if (newsHint) wrap.appendChild(hintStrip("News unavailable right now."));

@@ -2043,9 +2043,12 @@ button.cc-stream__item:hover {
   overflow: hidden;
 }
 
+/* Sized to its content (the two copies), so translateX(-50%) advances by exactly
+   one copy and the loop is seamless. A block-level flex box would clamp to the
+   viewport and scroll only half a copy. */
 .cc-ticker__track {
-  display: flex;
-  align-items: stretch;
+  display: inline-flex;
+  align-items: center;
   white-space: nowrap;
   will-change: transform;
 }

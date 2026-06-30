@@ -136,6 +136,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     | undefined;
   let integrationResults: Record<string, IntegrationResult> = {};
   let tickerStocks: StockQuote[] = [];
+  let tickerStocksNeedKey = false;
   let tickerNews: NewsItem[] = [];
   const weatherByZone: Record<string, Weather> = {};
   // Stable for this page load, so the "on new tab" wallpaper holds across config
@@ -162,6 +163,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     // strip can show its hint rather than vanishing. Enabled state rides on
     // model.config.tickers, which the shell reads directly.
     model.tickerStocks = tickerStocks;
+    model.tickerStocksNeedKey = tickerStocksNeedKey;
     model.tickerNews = tickerNews;
     model.tickerMode = tickerMode;
     if (wallpaperPhoto !== undefined) model.wallpaper = wallpaperPhoto;
@@ -517,6 +519,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     // Screenshot mode: serve canned quotes and headlines for the enabled strips.
     if (isDemoMode()) {
       tickerStocks = stocks.enabled ? demoStocks : [];
+      tickerStocksNeedKey = false;
       tickerNews = news.enabled ? demoNews : [];
       paint();
       return;
@@ -527,6 +530,9 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       // Finnhub (which needs a key). Forex still works without a key.
       const { forex, stocks: stockSymbols } = splitSymbols(stocks.symbols);
       const key = (await deps.store.loadSecrets()).finnhubKey;
+      // Equity symbols are configured but no key is set, so they cannot be fetched.
+      tickerStocksNeedKey =
+        stockSymbols.length > 0 && (key === undefined || key.trim().length === 0);
       const [equities, currencies] = await Promise.all([
         stockSymbols.length > 0 && key !== undefined && key.trim().length > 0
           ? fetchStockQuotes(stockSymbols, key, httpFetch)
@@ -536,6 +542,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       tickerStocks = [...equities, ...currencies];
     } else {
       tickerStocks = [];
+      tickerStocksNeedKey = false;
     }
 
     tickerNews = news.enabled ? await fetchNews(httpFetch, news.sources) : [];

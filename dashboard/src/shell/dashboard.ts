@@ -47,6 +47,8 @@ export interface DashboardModel {
   integrationResults?: Record<string, IntegrationResult>;
   /** Stock quotes for the ambient ticker, once fetched. */
   tickerStocks?: StockQuote[];
+  /** Equity symbols are set but no Finnhub key, so they were dropped. */
+  tickerStocksNeedKey?: boolean;
   /** News headlines for the ambient ticker, once fetched. */
   tickerNews?: NewsItem[];
   /** Persisted Tasks-section filter and sort. */
@@ -253,6 +255,7 @@ export function renderDashboard(
         reducedMotion,
         stocksEnabled: model.config.tickers.stocks.enabled,
         newsEnabled: model.config.tickers.news.enabled,
+        stocksNeedKey: model.tickerStocksNeedKey === true,
         ...(model.tickerStocks !== undefined ? { stocks: model.tickerStocks } : {}),
         ...(model.tickerNews !== undefined ? { news: model.tickerNews } : {}),
         ...(model.tickerMode !== undefined ? { mode: model.tickerMode } : {}),
