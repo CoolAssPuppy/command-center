@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { IntegrationSource } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
 import { detectConference } from "./conference";
+import { fetchJson } from "./http";
 import { parseGoogleCalendarIds } from "./googleCalendarLink";
 import {
   NEEDS_AUTH,
@@ -196,22 +197,21 @@ async function fetchCalendar(
   connection: IntegrationSource,
   ctx: IntegrationContext,
 ): Promise<CalendarFetch> {
-  let payload: unknown;
-  try {
-    const response = await ctx.fetch({
+  const outcome = await fetchJson(
+    ctx.fetch,
+    {
       url: buildUrl(calendarId, connection, ctx.now),
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
-    });
-    if (response.status === 401 || response.status === 403) return { kind: "auth" };
-    if (!response.ok) {
-      return { kind: "error", error: `Calendar request failed (${response.status})` };
-    }
-    payload = await response.json();
-  } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "Calendar request failed";
-    return { kind: "error", error: message };
+    },
+    "Calendar",
+  );
+  if (outcome.transportError !== undefined) return { kind: "error", error: outcome.transportError };
+  if (outcome.status === 401 || outcome.status === 403) return { kind: "auth" };
+  if (!outcome.ok) {
+    return { kind: "error", error: `Calendar request failed (${outcome.status})` };
   }
+  const payload = outcome.body;
 
   const result = ResponseSchema.safeParse(payload);
   if (!result.success) {

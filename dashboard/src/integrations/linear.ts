@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { IntegrationSource } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
+import { fetchJson } from "./http";
 import { formatTaskDue } from "./task";
 import {
   NEEDS_AUTH,
@@ -467,24 +468,22 @@ async function postLinear(
   query: string,
   first: number,
 ): Promise<ParseResult<unknown>> {
-  try {
-    const response = await ctx.fetch({
+  const outcome = await fetchJson(
+    ctx.fetch,
+    {
       url: ENDPOINT,
       method: "POST",
       headers: { Authorization: secret, "Content-Type": "application/json" },
       body: JSON.stringify({ query, variables: { first } }),
-    });
-    if (response.status === 401 || response.status === 400) {
-      return { ok: false, error: NEEDS_AUTH };
-    }
-    if (!response.ok) {
-      return { ok: false, error: `Linear request failed (${response.status})` };
-    }
-    return { ok: true, value: await response.json() };
-  } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "Linear request failed";
-    return { ok: false, error: message };
-  }
+    },
+    "Linear",
+  );
+  if (outcome.transportError !== undefined) return { ok: false, error: outcome.transportError };
+  // Only 401 means the API key is bad. 400 is a malformed query (a real error to
+  // surface), not an auth failure, so it must not be reported as "needs auth".
+  if (outcome.status === 401) return { ok: false, error: NEEDS_AUTH };
+  if (!outcome.ok) return { ok: false, error: `Linear request failed (${outcome.status})` };
+  return { ok: true, value: outcome.body };
 }
 
 /**

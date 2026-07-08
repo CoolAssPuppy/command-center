@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { IntegrationSource } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
+import { fetchJson } from "./http";
 import { formatTaskDue, taskTone } from "./task";
 import {
   NEEDS_AUTH,
@@ -54,25 +55,16 @@ export const todoistIntegration: Integration = {
       return { ok: false, error: NEEDS_AUTH };
     }
 
-    let payload: unknown;
-    try {
-      const response = await ctx.fetch({
-        url: ENDPOINT,
-        headers: { Authorization: `Bearer ${secret}` },
-      });
-      if (response.status === 401 || response.status === 403) {
-        return { ok: false, error: NEEDS_AUTH };
-      }
-      if (!response.ok) {
-        return { ok: false, error: `Todoist request failed (${response.status})` };
-      }
-      payload = await response.json();
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "Todoist request failed";
-      return { ok: false, error: message };
-    }
+    const outcome = await fetchJson(
+      ctx.fetch,
+      { url: ENDPOINT, headers: { Authorization: `Bearer ${secret}` } },
+      "Todoist",
+    );
+    if (outcome.transportError !== undefined) return { ok: false, error: outcome.transportError };
+    if (outcome.status === 401 || outcome.status === 403) return { ok: false, error: NEEDS_AUTH };
+    if (!outcome.ok) return { ok: false, error: `Todoist request failed (${outcome.status})` };
 
-    const result = ResponseSchema.safeParse(payload);
+    const result = ResponseSchema.safeParse(outcome.body);
     if (!result.success) {
       return { ok: false, error: firstIssue(result.error, "invalid Todoist response") };
     }

@@ -103,6 +103,19 @@ describe("linearIntegration", () => {
     if (!result.ok) expect(result.error).toBe(NEEDS_AUTH);
   });
 
+  it("reports a 400 as a request failure, not needs-auth (a bad query is not bad auth)", async () => {
+    const result = await linearIntegration.fetch(
+      connection(),
+      "lin_key",
+      ctx(() => Promise.resolve({ ok: false, status: 400, json: () => Promise.resolve({}) })),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).not.toBe(NEEDS_AUTH);
+      expect(result.error).toContain("400");
+    }
+  });
+
   it("surfaces a GraphQL error", async () => {
     const result = await linearIntegration.fetch(
       connection(),

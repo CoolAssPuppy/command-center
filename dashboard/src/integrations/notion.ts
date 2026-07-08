@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { IntegrationSource } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
+import { fetchJson } from "./http";
 import { formatTaskDue, taskTone } from "./task";
 import {
   NEEDS_AUTH,
@@ -218,9 +219,9 @@ export const notionIntegration: Integration = {
     const body: Record<string, unknown> = { page_size: connection.count ?? 6 };
     if (connection.filter !== undefined) body.filter = connection.filter;
 
-    let payload: unknown;
-    try {
-      const response = await ctx.fetch({
+    const outcome = await fetchJson(
+      ctx.fetch,
+      {
         url: `${QUERY_BASE}/${encodeURIComponent(databaseId)}/query`,
         method: "POST",
         headers: {
@@ -229,33 +230,29 @@ export const notionIntegration: Integration = {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
-      });
-      if (response.status === 401) return { ok: false, error: NEEDS_AUTH };
-      if (!response.ok) {
-        // Notion's error body carries a precise message; surface it verbatim
-        // instead of a bare status, so the real cause is visible.
-        const detail = asRecord(await response.json().catch(() => undefined));
-        const apiMessage =
-          detail !== undefined && typeof detail.message === "string"
-            ? detail.message
-            : undefined;
-        if (response.status === 404) {
-          return {
-            ok: false,
-            error:
-              apiMessage ??
-              "Not found. Share the database with your integration, and check its id.",
-          };
-        }
-        return { ok: false, error: apiMessage ?? `Notion request failed (${response.status})` };
+      },
+      "Notion",
+    );
+    if (outcome.transportError !== undefined) return { ok: false, error: outcome.transportError };
+    if (outcome.status === 401) return { ok: false, error: NEEDS_AUTH };
+    if (!outcome.ok) {
+      // Notion's error body carries a precise message; surface it verbatim
+      // instead of a bare status, so the real cause is visible.
+      const detail = asRecord(outcome.body);
+      const apiMessage =
+        detail !== undefined && typeof detail.message === "string" ? detail.message : undefined;
+      if (outcome.status === 404) {
+        return {
+          ok: false,
+          error:
+            apiMessage ??
+            "Not found. Share the database with your integration, and check its id.",
+        };
       }
-      payload = await response.json();
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "Notion request failed";
-      return { ok: false, error: message };
+      return { ok: false, error: apiMessage ?? `Notion request failed (${outcome.status})` };
     }
 
-    const result = QueryResponseSchema.safeParse(payload);
+    const result = QueryResponseSchema.safeParse(outcome.body);
     if (!result.success) {
       return { ok: false, error: firstIssue(result.error, "invalid Notion response") };
     }

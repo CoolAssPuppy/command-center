@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { IntegrationSource } from "../config/schema";
 import { firstIssue, type ParseResult } from "../domain/result";
+import { fetchJson } from "./http";
 import {
   NEEDS_AUTH,
   type Integration,
@@ -69,9 +70,9 @@ export const githubIntegration: Integration = {
       `${ENDPOINT}?q=${encodeURIComponent(query)}` +
       `&per_page=${perPage}&sort=updated&order=desc`;
 
-    let payload: unknown;
-    try {
-      const response = await ctx.fetch({
+    const outcome = await fetchJson(
+      ctx.fetch,
+      {
         url,
         method: "GET",
         headers: {
@@ -79,22 +80,20 @@ export const githubIntegration: Integration = {
           Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": API_VERSION,
         },
-      });
-      if (response.status === 401) return { ok: false, error: NEEDS_AUTH };
-      if (!response.ok) {
-        // GitHub's error body carries a precise message; surface it verbatim
-        // instead of a bare status, so a bad query reads as such.
-        const detail = ResponseSchema.safeParse(await response.json().catch(() => undefined));
-        const apiMessage = detail.success ? detail.data.message : undefined;
-        return { ok: false, error: apiMessage ?? `GitHub request failed (${response.status})` };
-      }
-      payload = await response.json();
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "GitHub request failed";
-      return { ok: false, error: message };
+      },
+      "GitHub",
+    );
+    if (outcome.transportError !== undefined) return { ok: false, error: outcome.transportError };
+    if (outcome.status === 401) return { ok: false, error: NEEDS_AUTH };
+    if (!outcome.ok) {
+      // GitHub's error body carries a precise message; surface it verbatim
+      // instead of a bare status, so a bad query reads as such.
+      const detail = ResponseSchema.safeParse(outcome.body);
+      const apiMessage = detail.success ? detail.data.message : undefined;
+      return { ok: false, error: apiMessage ?? `GitHub request failed (${outcome.status})` };
     }
 
-    const result = ResponseSchema.safeParse(payload);
+    const result = ResponseSchema.safeParse(outcome.body);
     if (!result.success) {
       return { ok: false, error: firstIssue(result.error, "invalid GitHub response") };
     }

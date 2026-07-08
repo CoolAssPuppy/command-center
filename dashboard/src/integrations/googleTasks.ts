@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { IntegrationSource } from "../config/schema";
 import type { ParseResult } from "../domain/result";
+import { fetchJson } from "./http";
 import { formatTaskDue, taskTone } from "./task";
 import {
   NEEDS_AUTH,
@@ -85,21 +86,14 @@ export const googleTasksIntegration: Integration = {
     }
     const headers = { Authorization: `Bearer ${token}` };
 
-    let listIds: string[];
-    try {
-      const response = await ctx.fetch({ url: LISTS_URL, headers });
-      if (response.status === 401 || response.status === 403) {
-        return { ok: false, error: NEEDS_AUTH };
-      }
-      if (!response.ok) {
-        return { ok: false, error: `Google Tasks request failed (${String(response.status)})` };
-      }
-      const parsed = ListsSchema.safeParse(await response.json());
-      listIds = parsed.success ? (parsed.data.items ?? []).map((list) => list.id) : [];
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "Google Tasks request failed";
-      return { ok: false, error: message };
+    const outcome = await fetchJson(ctx.fetch, { url: LISTS_URL, headers }, "Google Tasks");
+    if (outcome.transportError !== undefined) return { ok: false, error: outcome.transportError };
+    if (outcome.status === 401 || outcome.status === 403) return { ok: false, error: NEEDS_AUTH };
+    if (!outcome.ok) {
+      return { ok: false, error: `Google Tasks request failed (${String(outcome.status)})` };
     }
+    const parsed = ListsSchema.safeParse(outcome.body);
+    const listIds = parsed.success ? (parsed.data.items ?? []).map((list) => list.id) : [];
     if (listIds.length === 0) return { ok: true, value: [] };
 
     const perList = await Promise.all(
