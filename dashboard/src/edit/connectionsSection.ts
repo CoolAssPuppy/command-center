@@ -97,6 +97,12 @@ function renderConnectionRow(
       ctx.update((config) => {
         config.connections = config.connections.filter((item) => item.id !== connection.id);
       });
+      // Remove the connection's stored credential and OAuth token too, so a
+      // deleted connection never leaves a secret behind in device-local storage.
+      ctx.updateSecrets((secrets) => {
+        delete secrets.connectionSecrets[connection.id];
+        delete secrets.googleTokens[connection.id];
+      });
     }),
   );
   head.appendChild(controls);
@@ -142,13 +148,18 @@ function renderCredential(connection: Connection, ctx: SectionContext): HTMLElem
       const button = el("button", "cc-edit__add-btn", "Connect Google account");
       button.setAttribute("type", "button");
       button.addEventListener("click", () => {
-        void connect(connection.id).then((token) => {
-          if (token !== undefined) {
-            ctx.updateSecrets((secrets) => {
-              secrets.googleTokens[connection.id] = token;
-            });
-          }
-        });
+        connect(connection.id)
+          .then((token) => {
+            if (token !== undefined) {
+              ctx.updateSecrets((secrets) => {
+                secrets.googleTokens[connection.id] = token;
+              });
+            }
+          })
+          .catch((error: unknown) => {
+            // Sign-in can reject (popup closed, network); don't leave it unhandled.
+            console.warn("Google sign-in did not complete.", error);
+          });
       });
       wrap.appendChild(field("Account", button));
     } else {

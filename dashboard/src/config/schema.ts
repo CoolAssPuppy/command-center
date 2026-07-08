@@ -265,7 +265,8 @@ export const TickerSettingsSchema = z.object({
 export type TickerSettings = z.infer<typeof TickerSettingsSchema>;
 
 export const ConfigSchema = z.object({
-  /** Schema version, for future migrations. */
+  /** Informational schema version. Migration is driven by the data's shape (see
+   *  migrateConfig), not by this number, so it is a marker, not a gate. */
   version: z.number().int().positive().default(2),
   profile: ProfileSchema.default({}),
   zones: z.array(ZoneSchema).default([]),

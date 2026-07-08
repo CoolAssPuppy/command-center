@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { worstContrastAgainstBackground } from "./contrast";
+import { contrastRatio, worstContrastAgainstBackground } from "./contrast";
 import { SHIPPED_THEMES } from "./registry";
 
 /**
@@ -13,6 +13,14 @@ import { SHIPPED_THEMES } from "./registry";
 const TEXT_MIN = 7;
 const MUTED_MIN = 4.5;
 const PRIMARY_MIN = 4.5;
+
+describe("contrast on shorthand hex", () => {
+  it("treats #fff / #000 like their 6-digit forms instead of black", () => {
+    // Black on white is 21:1; if #fff were mis-parsed as black it would be 1:1.
+    expect(contrastRatio("#000", "#fff")).toBeCloseTo(21, 0);
+    expect(contrastRatio("#fff", "#ffffff")).toBeCloseTo(1, 5);
+  });
+});
 
 describe("theme contrast", () => {
   for (const theme of SHIPPED_THEMES) {

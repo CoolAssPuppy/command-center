@@ -49,7 +49,6 @@ export function defaultConfig(options: DefaultConfigOptions = {}): Config {
   );
 
   return ConfigSchema.parse({
-    version: 1,
     zones: [home, ...others],
     links: [
       { id: "gmail", title: "Gmail", url: "https://mail.google.com" },

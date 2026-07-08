@@ -113,6 +113,18 @@ interface LocatedZone {
   lon: number;
 }
 
+/**
+ * Fire-and-forget a persistence write, but surface a failure instead of losing
+ * it silently. A rejected chrome.storage write (quota, offline, rate-limited)
+ * otherwise vanishes as an unhandled rejection and the user never learns the
+ * edit did not persist.
+ */
+function persist(write: Promise<void>, what: string): void {
+  void write.catch((error: unknown) => {
+    console.warn(`Command Center could not save ${what}.`, error);
+  });
+}
+
 export async function runDashboard(deps: RunDeps): Promise<void> {
   const reducedMotion = deps.reducedMotion ?? prefersReducedMotion();
   const loadCache = deps.loadCache ?? ((): Config | undefined => loadCachedConfig());
@@ -206,7 +218,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         secrets,
         applyConfig: (next) => {
           config = next;
-          void deps.store.save(next);
+          persist(deps.store.save(next), "your settings");
           saveCache(next);
           paint();
           void resolveAndPaintWallpaper();
@@ -215,7 +227,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
           void refreshTickers();
         },
         applySecrets: (next) => {
-          void deps.store.saveSecrets(next);
+          persist(deps.store.saveSecrets(next), "your credentials");
           void resolveAndPaintWallpaper(next);
           void refreshIntegrations();
           void refreshTickers();
@@ -355,7 +367,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
           stored !== undefined && stored.expiresAt > nowMs ? stored.accessToken : undefined;
       }
     }
-    if (changed) await deps.store.saveSecrets(secrets);
+    if (changed) persist(deps.store.saveSecrets(secrets), "your credentials");
     return byConnection;
   }
 
@@ -623,7 +635,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
           ? move(config.streams)
           : move(config.links);
     if (changed) {
-      void deps.store.save(config);
+      persist(deps.store.save(config), "your layout");
       saveCache(config);
       paint();
     }
@@ -643,7 +655,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     const next = moveCard(config.streams, cardId, column, beforeId);
     if (next === config.streams) return;
     config.streams = next;
-    void deps.store.save(config);
+    persist(deps.store.save(config), "your layout");
     saveCache(config);
     paint();
   }

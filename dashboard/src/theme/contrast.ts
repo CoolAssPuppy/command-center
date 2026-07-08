@@ -12,9 +12,16 @@ interface Rgb {
 }
 
 function parseHex(hex: string): Rgb | undefined {
-  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (match === null) return undefined;
-  const n = Number.parseInt(match[1] ?? "", 16);
+  const body = hex.trim().replace(/^#/, "");
+  // Expand the 3-digit shorthand (#abc -> #aabbcc) so it is not silently treated
+  // as black; anything that is not 3- or 6-digit hex stays unparseable.
+  const full = /^[0-9a-f]{3}$/i.test(body)
+    ? body.replace(/./g, (ch) => ch + ch)
+    : /^[0-9a-f]{6}$/i.test(body)
+      ? body
+      : undefined;
+  if (full === undefined) return undefined;
+  const n = Number.parseInt(full, 16);
   return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
 }
 
@@ -39,9 +46,9 @@ export function contrastRatio(a: string, b: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/** Every #rrggbb stop in a CSS value (gradient or otherwise), in order. */
+/** Every #rrggbb or #rgb stop in a CSS value (gradient or otherwise), in order. */
 export function extractHexStops(value: string): string[] {
-  return value.match(/#[0-9a-fA-F]{6}/g) ?? [];
+  return value.match(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g) ?? [];
 }
 
 /**
