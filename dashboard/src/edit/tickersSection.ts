@@ -1,6 +1,6 @@
 import { NEWS_FEEDS } from "../integrations/newsFeeds";
 import { el, svgEl } from "../render/helpers";
-import { collapsibleSection, field, textInput } from "./controls";
+import { checkRow, collapsibleSection, field, secretInput, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
 /** A small upward line-chart mark for the Tickers section header. */
@@ -63,10 +63,7 @@ export function renderTickersSection(host: HTMLElement, ctx: SectionContext): vo
       });
       section.appendChild(field("Symbols", symbols));
 
-      const key = document.createElement("input");
-      key.type = "password";
-      key.className = "cc-edit__input";
-      key.placeholder = "Finnhub API key";
+      const key = secretInput("Finnhub API key");
       key.setAttribute("aria-label", "Finnhub API key");
       key.value = ctx.draftSecrets.finnhubKey ?? "";
       key.addEventListener("change", () => {
@@ -133,21 +130,4 @@ export function renderTickersSection(host: HTMLElement, ctx: SectionContext): vo
       }
     },
   );
-}
-
-function checkRow(
-  label: string,
-  checked: boolean,
-  onChange: (checked: boolean) => void,
-): HTMLElement {
-  const row = el("label", "cc-edit__check");
-  const box = document.createElement("input");
-  box.type = "checkbox";
-  box.checked = checked;
-  box.addEventListener("change", () => {
-    onChange(box.checked);
-  });
-  row.appendChild(box);
-  row.appendChild(el("span", undefined, label));
-  return row;
 }

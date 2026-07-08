@@ -7,6 +7,7 @@ import {
   field,
   iconButton,
   reorderInArray,
+  secretInput,
   textInput,
 } from "./controls";
 import type { SectionContext } from "./editPane";
@@ -174,12 +175,8 @@ function renderCredential(connection: Connection, ctx: SectionContext): HTMLElem
     return wrap;
   }
 
-  const key = document.createElement("input");
-  key.type = "password";
-  key.className = "cc-edit__input";
   const keyLabel = SECRET_PLACEHOLDERS[connection.service] ?? "Token";
-  key.placeholder = keyLabel;
-  key.setAttribute("aria-label", keyLabel);
+  const key = secretInput(keyLabel);
   key.value = ctx.draftSecrets.connectionSecrets[connection.id] ?? "";
   key.addEventListener("change", () => {
     ctx.updateSecrets((secrets) => {
@@ -190,16 +187,6 @@ function renderCredential(connection: Connection, ctx: SectionContext): HTMLElem
   });
   wrap.appendChild(field(connection.service === "linear" ? "API key" : "Token", key));
   return wrap;
-}
-
-/** A password field for a credential. */
-function secretField(placeholder: string): HTMLInputElement {
-  const input = document.createElement("input");
-  input.type = "password";
-  input.className = "cc-edit__input";
-  input.placeholder = placeholder;
-  input.setAttribute("aria-label", placeholder);
-  return input;
 }
 
 /**
@@ -226,11 +213,11 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
 
   // Rebuilt whenever the service changes; holds the credential field (if any).
   const fieldsBox = el("div", "cc-edit__add-fields");
-  let secretInput: HTMLInputElement | undefined;
+  let tokenField: HTMLInputElement | undefined;
 
   const rebuildFields = (): void => {
     fieldsBox.replaceChildren();
-    secretInput = undefined;
+    tokenField = undefined;
     const service = serviceFromValue(select.value);
 
     if (usesGoogleAccount(service)) {
@@ -244,8 +231,8 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
       return;
     }
     const placeholder = SECRET_PLACEHOLDERS[service] ?? "Token";
-    const token = secretField(placeholder);
-    secretInput = token;
+    const token = secretInput(placeholder);
+    tokenField = token;
     fieldsBox.appendChild(field(service === "linear" ? "API key" : "Token", token));
     fieldsBox.appendChild(
       el("div", "cc-edit__hint", "Stored locally, never synced."),
@@ -275,7 +262,7 @@ function renderAddConnection(ctx: SectionContext): HTMLElement {
     }
     const service = serviceFromValue(select.value);
     const id = newId("conn");
-    const secret = secretInput?.value.trim();
+    const secret = tokenField?.value.trim();
 
     ctx.update((config) => {
       config.connections.push({ id, name: nameValue, service });

@@ -300,6 +300,25 @@ function selectedCalendarIds(stream: Stream): Set<string> {
 /** Card calendar disclosure open-state, kept across the pane's re-renders. */
 const expandedCalendars = new Set<string>();
 
+/**
+ * Calendar lists cached per access token for the page's lifetime. The pane
+ * rebuilds every section on each edit, so without this an open calendar picker
+ * would refire a live Google request on every keystroke elsewhere in the pane.
+ * A failed fetch is not cached, so it can retry.
+ */
+const calendarListCache = new Map<string, Promise<CalendarListEntry[] | undefined>>();
+
+function cachedCalendarList(token: string): Promise<CalendarListEntry[] | undefined> {
+  const existing = calendarListCache.get(token);
+  if (existing !== undefined) return existing;
+  const pending = fetchGoogleCalendarList(realHttpFetch, token).then((calendars) => {
+    if (calendars === undefined) calendarListCache.delete(token);
+    return calendars;
+  });
+  calendarListCache.set(token, pending);
+  return pending;
+}
+
 function renderCalendarPicker(
   wrap: HTMLElement,
   stream: Stream,
@@ -337,7 +356,7 @@ function renderCalendarPicker(
   details.appendChild(listBox);
   wrap.appendChild(details);
 
-  void fetchGoogleCalendarList(realHttpFetch, accessToken).then((calendars) => {
+  void cachedCalendarList(accessToken).then((calendars) => {
     if (calendars === undefined || calendars.length === 0) {
       const fieldWrap = el("div", "cc-edit__field cc-edit__calendars");
       fieldWrap.appendChild(el("label", "cc-edit__field-label", "Calendar"));
@@ -427,7 +446,7 @@ function renderCombineCalendarPicker(
 
   void Promise.all(
     accounts.map((account) =>
-      fetchGoogleCalendarList(realHttpFetch, account.token).then((calendars) => ({
+      cachedCalendarList(account.token).then((calendars) => ({
         connection: account.connection,
         calendars,
       })),

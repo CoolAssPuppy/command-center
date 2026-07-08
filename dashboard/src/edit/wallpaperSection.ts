@@ -1,6 +1,6 @@
 import type { Wallpaper } from "../config/schema";
 import { el } from "../render/helpers";
-import { collapsibleSection, field, textInput } from "./controls";
+import { collapsibleSection, field, secretInput, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 
 type Source = Wallpaper["source"];
@@ -95,12 +95,8 @@ function buildWallpaper(section: HTMLElement, ctx: SectionContext): void {
       ),
     );
 
-    const key = document.createElement("input");
-    key.type = "password";
-    key.className = "cc-edit__input";
-    key.placeholder = "Unsplash access key";
+    const key = secretInput("Unsplash access key");
     key.value = ctx.draftSecrets.unsplashAccessKey ?? "";
-    key.setAttribute("aria-label", "Unsplash access key");
     key.addEventListener("change", () => {
       ctx.updateSecrets((secrets) => {
         const value = key.value.trim();

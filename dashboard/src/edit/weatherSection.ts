@@ -1,5 +1,5 @@
 import { el } from "../render/helpers";
-import { collapsibleSection, field } from "./controls";
+import { checkRow, collapsibleSection, field } from "./controls";
 import type { SectionContext } from "./editPane";
 
 type Unit = "fahrenheit" | "celsius";
@@ -58,21 +58,4 @@ export function renderWeatherSection(host: HTMLElement, ctx: SectionContext): vo
       section.appendChild(field("Units", units));
     },
   );
-}
-
-function checkRow(
-  label: string,
-  checked: boolean,
-  onChange: (checked: boolean) => void,
-): HTMLElement {
-  const row = el("label", "cc-edit__check");
-  const box = document.createElement("input");
-  box.type = "checkbox";
-  box.checked = checked;
-  box.addEventListener("change", () => {
-    onChange(box.checked);
-  });
-  row.appendChild(box);
-  row.appendChild(el("span", undefined, label));
-  return row;
 }

@@ -2,7 +2,7 @@ import type { DockLink } from "../config/schema";
 import { el } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
 import { newId } from "../util/id";
-import { collapsibleSection, iconButton, reorderInArray, textInput } from "./controls";
+import { checkRow, collapsibleSection, iconButton, reorderInArray, textInput } from "./controls";
 import type { SectionContext } from "./editPane";
 import { makeReorderable } from "./reorderable";
 
@@ -159,24 +159,4 @@ function renderAddLink(ctx: SectionContext): HTMLElement {
   wrap.appendChild(form);
   wrap.appendChild(error);
   return wrap;
-}
-
-/** A labeled checkbox row, matching the other edit-pane toggles. */
-function checkRow(
-  label: string,
-  checked: boolean,
-  onChange: (checked: boolean) => void,
-  disabled = false,
-): HTMLElement {
-  const row = el("label", "cc-edit__check");
-  const box = document.createElement("input");
-  box.type = "checkbox";
-  box.checked = checked;
-  box.disabled = disabled;
-  box.addEventListener("change", () => {
-    onChange(box.checked);
-  });
-  row.appendChild(box);
-  row.appendChild(el("span", undefined, label));
-  return row;
 }

@@ -26,6 +26,34 @@ export function textInput(placeholder: string, type = "text"): HTMLInputElement 
   return input;
 }
 
+/** A password field, so a secret is masked as the user pastes it. The placeholder
+ *  doubles as the accessible name, since secret fields carry no visible label. */
+export function secretInput(placeholder: string): HTMLInputElement {
+  const input = textInput(placeholder, "password");
+  input.setAttribute("aria-label", placeholder);
+  return input;
+}
+
+/** A labelled checkbox row: the one toggle every settings section shares. */
+export function checkRow(
+  label: string,
+  checked: boolean,
+  onChange: (checked: boolean) => void,
+  disabled = false,
+): HTMLElement {
+  const row = el("label", "cc-edit__check");
+  const box = document.createElement("input");
+  box.type = "checkbox";
+  box.checked = checked;
+  box.disabled = disabled;
+  box.addEventListener("change", () => {
+    onChange(box.checked);
+  });
+  row.appendChild(box);
+  row.appendChild(el("span", undefined, label));
+  return row;
+}
+
 /** A labelled field wrapper around a control. */
 export function field(labelText: string, control: HTMLElement): HTMLElement {
   const wrap = el("div", "cc-edit__field");

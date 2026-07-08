@@ -1609,6 +1609,60 @@ button.cc-lane__item:hover {
   accent-color: var(--cc-color-accent, #2f7a6f);
 }
 
+/* Clear space above the calendar picker, separating it from the account row. */
+.cc-edit__calendars {
+  margin-top: 12px;
+}
+
+.cc-edit__calendars-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cc-color-text, #21242a);
+}
+
+.cc-edit__calendars-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cc-edit__calendars-chevron {
+  display: inline-flex;
+  font-size: 15px;
+  color: var(--cc-color-muted, #6a6e76);
+  transition: transform calc(var(--cc-motion-speed, 1) * 140ms) ease;
+}
+
+.cc-edit__calendars-disclosure[open] .cc-edit__calendars-chevron {
+  transform: rotate(90deg);
+}
+
+.cc-edit__calendar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 168px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+/* Account heading above each group of calendars in the combined-card picker. */
+.cc-edit__calendar-account {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cc-color-muted, #6a6e76);
+  margin-top: 8px;
+}
+
+.cc-edit__calendar-account:first-child {
+  margin-top: 0;
+}
+
 /* A chevron dropdown wrapping a multi-select checklist (news sources, etc.). */
 .cc-edit__picker-summary {
   display: flex;
