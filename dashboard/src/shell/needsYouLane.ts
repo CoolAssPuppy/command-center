@@ -1,12 +1,12 @@
 import { COMBINED_CALENDARS_ID, type Connection, type Stream } from "../config/schema";
 import type {
-  ConferenceProvider,
   IntegrationResult,
   NormalizedItem,
   TaskFields,
 } from "../integrations/types";
 import { el, svgEl } from "../render/helpers";
 import { isSafeUrl } from "../security/url";
+import { conferenceIcon, PROVIDER_LABEL } from "./conferenceIcons";
 import { itemIcon } from "./itemIcons";
 import { DEFAULT_TASK_FILTER, type TaskFilterState } from "./taskFilterState";
 
@@ -185,36 +185,6 @@ export function formatCountdown(startMs: number, nowMs: number): string | undefi
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   return rest === 0 ? `in ${String(hours)} hr` : `in ${String(hours)} hr ${String(rest)} min`;
-}
-
-const PROVIDER_COLOR: Record<ConferenceProvider, string> = {
-  meet: "#00ac47",
-  zoom: "#2d8cff",
-  teams: "#6264a7",
-  other: "currentColor",
-};
-
-const PROVIDER_LABEL: Record<ConferenceProvider, string> = {
-  meet: "Join Meet",
-  zoom: "Join Zoom",
-  teams: "Join Teams",
-  other: "Join",
-};
-
-function conferenceIcon(provider: ConferenceProvider): SVGElement {
-  const svg = svgEl("svg", {
-    viewBox: "0 0 24 24",
-    width: "14",
-    height: "14",
-    fill: "none",
-    stroke: PROVIDER_COLOR[provider],
-    "stroke-width": "2",
-    "stroke-linecap": "round",
-    "stroke-linejoin": "round",
-  });
-  svg.appendChild(svgEl("rect", { x: "2", y: "6", width: "13", height: "12", rx: "2" }));
-  svg.appendChild(svgEl("path", { d: "M22 8l-5 4 5 4V8z" }));
-  return svg;
 }
 
 function renderLaneItem(entry: LaneEntry, deps: NeedsYouLaneDeps): HTMLElement {
