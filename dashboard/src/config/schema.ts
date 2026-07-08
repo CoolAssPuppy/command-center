@@ -1,6 +1,18 @@
 import { z } from "zod";
 
+import { isSafeUrl } from "../security/url";
 import { ThemeSchema } from "../theme/tokens";
+
+/** True when a string is a time zone Intl can format, so the render path (which
+ *  calls Intl.DateTimeFormat with it) never throws on a typo'd or hostile zone. */
+function isUsableTimeZone(timeZone: string): boolean {
+  try {
+    new Intl.DateTimeFormat(undefined, { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * The single source of truth for everything the new tab shows. The whole app is
@@ -14,8 +26,9 @@ import { ThemeSchema } from "../theme/tokens";
 export const ZoneSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
-  /** IANA time zone, e.g. "America/New_York". */
-  timeZone: z.string().min(1),
+  /** IANA time zone, e.g. "America/New_York". Rejected if Intl cannot format it,
+   *  so a bad zone is dropped at parse rather than throwing during render. */
+  timeZone: z.string().min(1).refine(isUsableTimeZone, { message: "unknown time zone" }),
   /** Latitude/longitude, when known, power the day/night tint and weather. */
   lat: z.number().optional(),
   lon: z.number().optional(),
@@ -28,9 +41,15 @@ export type Zone = z.infer<typeof ZoneSchema>;
 export const DockLinkSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
-  url: z.string().url(),
+  /** Scheme is checked here, at the storage boundary: a javascript:/data: link
+   *  never reaches storage, not just the render/navigate guards downstream. */
+  url: z.string().url().refine((value) => isSafeUrl(value), { message: "unsafe URL" }),
   /** Optional explicit icon; otherwise a favicon is resolved from the url. */
-  iconUrl: z.string().url().optional(),
+  iconUrl: z
+    .string()
+    .url()
+    .refine((value) => isSafeUrl(value), { message: "unsafe URL" })
+    .optional(),
 });
 export type DockLink = z.infer<typeof DockLinkSchema>;
 
@@ -389,27 +408,63 @@ export function migrateConfig(raw: unknown): unknown {
   return { ...root, streams: seeded };
 }
 
-/** Drop the streams (data cards) that fail to validate, keeping the rest of the
- *  config, so one malformed card cannot blank the whole dashboard. */
-function pruneInvalidStreams(migrated: unknown): unknown {
+/** Array sections whose bad entries are dropped individually. */
+const ARRAY_SECTIONS: ReadonlyArray<readonly [string, z.ZodTypeAny]> = [
+  ["zones", ZoneSchema],
+  ["links", DockLinkSchema],
+  ["connections", ConnectionSchema],
+  ["streams", StreamSchema],
+  ["customThemes", ThemeSchema],
+];
+
+/** Defaulted object sections whose whole value is dropped (so the schema default
+ *  applies) rather than failing the parse. */
+const OBJECT_SECTIONS: ReadonlyArray<readonly [string, z.ZodTypeAny]> = [
+  ["profile", ProfileSchema],
+  ["wallpaper", WallpaperSchema],
+  ["appearance", AppearanceSchema],
+  ["weather", WeatherSettingsSchema],
+  ["tickers", TickerSettingsSchema],
+];
+
+/**
+ * Drop only the entries that fail to validate, keeping everything else, so one
+ * malformed zone, link, connection, card, custom theme, or settings block cannot
+ * blank the whole dashboard. Bad array entries are filtered out; a bad defaulted
+ * object section is removed so its default takes over.
+ */
+function pruneInvalidEntries(migrated: unknown): unknown {
   const root = asRecord(migrated);
   if (root === undefined) return migrated;
-  if (!Array.isArray(root.streams)) return migrated;
-  const streams = root.streams.filter((entry) => StreamSchema.safeParse(entry).success);
-  return { ...root, streams };
+  const next = { ...root };
+  for (const [key, schema] of ARRAY_SECTIONS) {
+    const value = next[key];
+    if (Array.isArray(value)) {
+      next[key] = value.filter((entry) => schema.safeParse(entry).success);
+    }
+  }
+  for (const [key, schema] of OBJECT_SECTIONS) {
+    if (next[key] !== undefined && !schema.safeParse(next[key]).success) {
+      delete next[key];
+    }
+  }
+  if (next.version !== undefined && !z.number().int().positive().safeParse(next.version).success) {
+    delete next.version;
+  }
+  return next;
 }
 
 /**
  * Parse unknown storage data into a Config, failing gracefully. A clean parse
- * wins; otherwise a single bad card is dropped and the rest is kept, so a view
- * or field from a newer build never wipes a working dashboard. A wholly
- * unreadable blob falls back to the empty defaults.
+ * wins; otherwise each malformed entry is dropped and the rest is kept, so a bad
+ * zone, link, card, theme, or a field from a newer build never wipes a working
+ * dashboard. A wholly unreadable blob falls back to the empty defaults.
  */
 export function parseConfig(raw: unknown): Config {
   const migrated = migrateConfig(raw ?? {});
   const result = ConfigSchema.safeParse(migrated);
   if (result.success) return result.data;
-  const retry = ConfigSchema.safeParse(pruneInvalidStreams(migrated));
+  const retry = ConfigSchema.safeParse(pruneInvalidEntries(migrated));
   return retry.success ? retry.data : ConfigSchema.parse({});
 }
 

@@ -7,22 +7,34 @@ import { z } from "zod";
  * urgent is shown in the theme's urgent color.
  */
 
+/**
+ * A CSS color value from a theme. Applied via setProperty, which already ignores
+ * invalid CSS (so this is not an injection sink), but a custom or imported theme
+ * is untrusted, so reject the substrings that could smuggle a request or markup
+ * while leaving hex/rgb/hsl/oklch/named syntax open for theme authors.
+ */
+const DANGEROUS_CSS = /[<>]|url\(|expression\(|javascript:/i;
+const cssColor = z
+  .string()
+  .min(1)
+  .refine((value) => !DANGEROUS_CSS.test(value), { message: "unsafe color value" });
+
 export const ThemeTokensSchema = z.object({
   color: z.object({
-    bg: z.string(),
-    surface: z.string(),
-    text: z.string(),
-    muted: z.string(),
-    accent: z.string(),
-    positive: z.string(),
-    urgent: z.string(),
+    bg: cssColor,
+    surface: cssColor,
+    text: cssColor,
+    muted: cssColor,
+    accent: cssColor,
+    positive: cssColor,
+    urgent: cssColor,
     // The brand palette the redesign paints with: a primary and secondary, plus
     // three accents used for skylines, daylight gradients, and chart series.
-    primary: z.string(),
-    secondary: z.string(),
-    accent1: z.string(),
-    accent2: z.string(),
-    accent3: z.string(),
+    primary: cssColor,
+    secondary: cssColor,
+    accent1: cssColor,
+    accent2: cssColor,
+    accent3: cssColor,
   }),
   type: z.object({
     fontFamily: z.string(),

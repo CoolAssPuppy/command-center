@@ -51,6 +51,16 @@ describe("parseFeed", () => {
     expect(parseFeed("", "X")).toEqual([]);
     expect(parseFeed("<html><body>nope</body></html>", "X")).toEqual([]);
   });
+
+  it("drops an item whose link is an unsafe scheme", () => {
+    const feed = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>Safe</title><link>https://ex.com/ok</link></item>
+  <item><title>Evil</title><link>javascript:alert(1)</link></item>
+</channel></rss>`;
+    const items = parseFeed(feed, "Test");
+    expect(items.map((item) => item.title)).toEqual(["Safe"]);
+  });
 });
 
 describe("fetchNews", () => {

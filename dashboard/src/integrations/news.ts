@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { isSafeUrl } from "../security/url";
 import { DEFAULT_NEWS_SOURCES, NEWS_FEEDS, type NewsFeed } from "./newsFeeds";
 import type { HttpFetch } from "./types";
 
@@ -112,6 +113,9 @@ export function parseFeed(xml: string, sourceName: string, iconHost?: string): N
     const title = textOf(node, "title");
     const link = isAtom ? atomLink(node) : textOf(node, "link");
     if (title === undefined || link === undefined) continue;
+    // The link is untrusted feed content; only http(s) reaches a ticker item so
+    // a hijacked feed cannot inject a javascript:/data: navigation.
+    if (!isSafeUrl(link)) continue;
 
     const item: NewsItem = { title, url: link, source: sourceName };
     if (iconHost !== undefined) item.iconHost = iconHost;

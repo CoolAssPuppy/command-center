@@ -151,6 +151,59 @@ describe("config parsing", () => {
   });
 });
 
+describe("config parsing drops only the bad entries, never the whole config", () => {
+  it("keeps the valid zones when one zone is malformed", () => {
+    const config = parseConfig({
+      zones: [
+        { id: "home", label: "Home", timeZone: "America/New_York", isHome: true },
+        { id: "bad", label: "Bad" }, // no timeZone
+        { id: "tokyo", label: "Tokyo", timeZone: "Asia/Tokyo" },
+      ],
+    });
+    expect(config.zones.map((zone) => zone.id)).toEqual(["home", "tokyo"]);
+  });
+
+  it("drops a zone whose time zone Intl cannot format", () => {
+    const config = parseConfig({
+      zones: [
+        { id: "home", label: "Home", timeZone: "America/New_York", isHome: true },
+        { id: "bogus", label: "Nowhere", timeZone: "Not/AZone" },
+      ],
+    });
+    expect(config.zones.map((zone) => zone.id)).toEqual(["home"]);
+  });
+
+  it("drops a dock link with a javascript: scheme but keeps the safe ones", () => {
+    const config = parseConfig({
+      links: [
+        { id: "ok", title: "Docs", url: "https://example.com" },
+        { id: "evil", title: "Evil", url: "javascript:alert(1)" },
+      ],
+    });
+    expect(config.links.map((link) => link.id)).toEqual(["ok"]);
+  });
+
+  it("drops a malformed custom theme while keeping zones and links", () => {
+    const config = parseConfig({
+      zones: [{ id: "home", label: "Home", timeZone: "Europe/Lisbon", isHome: true }],
+      links: [{ id: "ok", title: "Docs", url: "https://example.com" }],
+      customThemes: [{ meta: { themeId: "x" } }], // missing tokens
+    });
+    expect(config.zones).toHaveLength(1);
+    expect(config.links).toHaveLength(1);
+    expect(config.customThemes).toEqual([]);
+  });
+
+  it("falls back to the default for a malformed settings section, keeping the rest", () => {
+    const config = parseConfig({
+      zones: [{ id: "home", label: "Home", timeZone: "Europe/Lisbon", isHome: true }],
+      weather: "not an object",
+    });
+    expect(config.zones).toHaveLength(1);
+    expect(config.weather.showForZones).toBe(true);
+  });
+});
+
 describe("config migration (connection config moves onto cards)", () => {
   it("moves per-card fields from an old connection onto the card that references it", () => {
     const config = parseConfig({

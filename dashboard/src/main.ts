@@ -5,6 +5,7 @@ import { runDashboard } from "./app/run";
 import { createEnvironmentStore } from "./config/store";
 import { devProxyFetch, devUnsplashFetch } from "./integrations/devProxy";
 import { measureFirstPaint } from "./perf/perf";
+import { isSafeUrl } from "./security/url";
 
 /**
  * New tab entry point. It selects the right config store for the environment
@@ -21,7 +22,9 @@ if (mount) {
       store,
       now: () => new Date(),
       navigate: (url) => {
-        window.location.href = url;
+        // The invariant lives at the sink, not just every call site: an unsafe
+        // scheme never becomes a live navigation, even if a future caller forgets.
+        if (isSafeUrl(url)) window.location.href = url;
       },
       scheduleTick: (cb) => {
         window.setInterval(cb, 60_000);

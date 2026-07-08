@@ -13,6 +13,13 @@ describe("ThemeTokensSchema", () => {
     expect(ThemeTokensSchema.safeParse(broken).success).toBe(false);
   });
 
+  it("rejects a color value that smuggles a url() or markup", () => {
+    for (const evil of ["url(https://tracker.example/pixel)", "red;<script>", "javascript:1"]) {
+      const broken = { ...aurora.tokens, color: { ...aurora.tokens.color, accent: evil } };
+      expect(ThemeTokensSchema.safeParse(broken).success).toBe(false);
+    }
+  });
+
   it("rejects an unknown background mode", () => {
     const broken = {
       ...aurora.tokens,
