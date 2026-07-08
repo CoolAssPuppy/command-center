@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import type { HttpFetch } from "./types";
 
 /** One entry from a Google account's calendar list. */
@@ -7,6 +9,15 @@ export interface CalendarListEntry {
 }
 
 const CALENDAR_LIST_URL = "https://www.googleapis.com/calendar/v3/users/me/calendarList";
+
+// Validate the response like every other integration, rather than hand-rolling
+// `as` casts. Entries are validated one at a time so a single malformed calendar
+// is dropped rather than discarding the whole list.
+const CalendarListSchema = z.object({ items: z.array(z.unknown()).optional() });
+const EntrySchema = z.object({
+  id: z.string(),
+  summary: z.string().optional().catch(undefined),
+});
 
 /**
  * Fetch one Google account's calendar list with its own access token. Returns
@@ -24,20 +35,14 @@ export async function fetchGoogleCalendarList(
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!response.ok) return undefined;
-    const body = (await response.json()) as { items?: unknown };
-    if (!Array.isArray(body.items)) return undefined;
-    const entries: CalendarListEntry[] = [];
-    for (const raw of body.items) {
-      if (typeof raw !== "object" || raw === null) continue;
-      const item = raw as { id?: unknown; summary?: unknown };
-      if (typeof item.id !== "string") continue;
-      entries.push(
-        typeof item.summary === "string"
-          ? { id: item.id, summary: item.summary }
-          : { id: item.id },
-      );
-    }
-    return entries;
+    const parsed = CalendarListSchema.safeParse(await response.json());
+    if (!parsed.success) return undefined;
+    return (parsed.data.items ?? []).flatMap((raw) => {
+      const entry = EntrySchema.safeParse(raw);
+      if (!entry.success) return [];
+      const { id, summary } = entry.data;
+      return [summary !== undefined ? { id, summary } : { id }];
+    });
   } catch {
     return undefined;
   }
