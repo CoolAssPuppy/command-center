@@ -915,32 +915,29 @@ button.cc-lane__item:hover {
   font-variant-numeric: tabular-nums;
 }
 
-/* A quiet outline affordance, not a filled button: a hairline pill whose label,
-   glyph, ring, and hover wash all take the provider's brand color, so "Join Meet
-   / Zoom / Teams" reads as itself. --cc-join-tint is the provider color; the
-   label blends it toward the theme's ink so it stays legible on light and dark
-   surfaces alike. An unknown provider falls back to the theme accent. */
+/* A solid pill in the provider's brand color with a white label and glyph, so
+   "Join Meet / Zoom / Teams" reads as the brand's own button. --cc-join-tint is
+   the provider color; an unknown provider falls back to the theme accent. */
 .cc-lane__join {
   --cc-join-tint: var(--cc-color-accent, #2f7a6f);
-  --cc-join-ink: color-mix(in srgb, var(--cc-join-tint) 78%, var(--cc-color-text, #21242a));
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 11px;
-  border: 1px solid color-mix(in srgb, var(--cc-join-tint) 50%, transparent);
+  padding: 6px 12px;
+  border: 0;
   border-radius: 999px;
-  background: transparent;
-  color: var(--cc-join-ink);
+  background: var(--cc-join-tint);
+  color: #fff;
   font: inherit;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background calc(var(--cc-motion-speed, 1) * 120ms) ease-out;
+  transition: filter calc(var(--cc-motion-speed, 1) * 120ms) ease-out;
 }
 
 .cc-lane__join[data-provider="meet"] {
-  --cc-join-tint: #00ac47;
+  --cc-join-tint: #00832d;
 }
 .cc-lane__join[data-provider="zoom"] {
   --cc-join-tint: #2d8cff;
@@ -950,7 +947,7 @@ button.cc-lane__item:hover {
 }
 
 .cc-lane__join:hover {
-  background: color-mix(in srgb, var(--cc-join-tint) 14%, transparent);
+  filter: brightness(1.08);
 }
 
 /* Slots filled by later phases ------------------------------------------- */

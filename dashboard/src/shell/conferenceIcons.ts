@@ -4,9 +4,9 @@ import { svgEl } from "../render/helpers";
 /**
  * Brand glyphs for the lane's Join button, one per recognizable video provider.
  * Each is the provider's real logo (Simple Icons paths). The glyph inherits the
- * button's `currentColor` so it always matches the label and stays legible on
- * both light and dark themes (the button blends the brand hue toward the theme's
- * ink; see styles.css). An unknown provider falls back to a camera outline.
+ * button's `currentColor`, which is white on the solid brand-colored pill (see
+ * the .cc-lane__join rules in styles.css). An unknown provider falls back to a
+ * camera outline.
  */
 export const PROVIDER_LABEL: Record<ConferenceProvider, string> = {
   meet: "Join Meet",
