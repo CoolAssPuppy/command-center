@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Command Center (Safari)</title>
+    <description>Auto-updates for the Command Center Safari container app.</description>
+    <language>en</language>
+    <!-- release.sh prepends each new <item> at the marker below, newest first. -->
+        <item>
+      <title>0.3.3</title>
+      <pubDate>Wed, 08 Jul 2026 21:27:10 -0000</pubDate>
+      <sparkle:version>3</sparkle:version>
+      <sparkle:shortVersionString>0.3.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[<li>First Safari release: the full Command Center dashboard as a signed macOS app.</li><li>Google Calendar and Tasks sign in through the app, so your tokens never touch the browser.</li>]]></description>
+      <enclosure url="https://pub-9c8d72fe664b4ce18aac0d718b4e0346.r2.dev/apps/command-center/CommandCenter-0.3.3.dmg" type="application/x-apple-diskimage" sparkle:edSignature="uZDSYyvugB2XOAPH1CDGXDFjNp+sm8M0cHLMg7/6Ut/zAzO2P65yM7lAg3lqNcPMr2cg/gOtjtBLQd78sYhPBA==" length="2211979"/>
+    </item>
+    <!-- INSERT NEW ITEM ABOVE -->
+  </channel>
+</rss>
