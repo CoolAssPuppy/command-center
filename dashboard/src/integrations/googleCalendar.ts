@@ -37,6 +37,9 @@ const EventSchema = z.object({
   start: z
     .object({ dateTime: z.string().optional(), date: z.string().optional() })
     .optional(),
+  end: z
+    .object({ dateTime: z.string().optional(), date: z.string().optional() })
+    .optional(),
 });
 
 const ResponseSchema = z.object({ items: z.array(EventSchema).optional() });
@@ -151,9 +154,14 @@ function toItem(event: z.infer<typeof EventSchema>, now: Date): NormalizedItem {
   if (event.location !== undefined) item.meta = event.location;
   const startKey = event.start?.dateTime ?? event.start?.date;
   if (startKey !== undefined) item.sortKey = startKey;
+  // A date-only start marks an all-day event, which the calendar card groups
+  // apart from the timed schedule.
+  if (event.start?.dateTime === undefined && event.start?.date !== undefined) {
+    item.isAllDay = true;
+  }
   // A timed event about to start (or just started) is the most pressing thing
   // on the calendar, so lift it into the "needs you" lane and carry its exact
-  // start for a live countdown.
+  // start for a live countdown. The end lets the card fold events that are over.
   if (event.start?.dateTime !== undefined) {
     const startMs = Date.parse(event.start.dateTime);
     if (!Number.isNaN(startMs)) {
@@ -161,6 +169,10 @@ function toItem(event: z.infer<typeof EventSchema>, now: Date): NormalizedItem {
       const minutesAway = (startMs - now.getTime()) / 60_000;
       if (minutesAway >= -5 && minutesAway <= 30) item.tone = "urgent";
     }
+  }
+  if (event.end?.dateTime !== undefined) {
+    const endMs = Date.parse(event.end.dateTime);
+    if (!Number.isNaN(endMs)) item.endMs = endMs;
   }
 
   const videoUris = (event.conferenceData?.entryPoints ?? [])

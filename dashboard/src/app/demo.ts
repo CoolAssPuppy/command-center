@@ -64,18 +64,62 @@ function isoDate(date: Date): string {
  * button: the next meeting starts in a quarter hour with a Google Meet link.
  */
 function demoCalendarItems(now: Date): NormalizedItem[] {
+  const standup = new Date(now.getTime() - 3 * HOUR);
+  const syncPast = new Date(now.getTime() - 80 * MINUTE);
   const next = new Date(now.getTime() + 14 * MINUTE);
   const oneOnOne = new Date(now.getTime() + 95 * MINUTE);
   const lunch = new Date(now.getTime() + 3 * HOUR);
   const review = new Date(now.getTime() + 5 * HOUR);
+  const allDayKey = isoDate(now);
   return [
+    // All-day events (three, so the demo shows the "N all-day events" fold).
+    {
+      id: "demo-cal-offsite",
+      title: "Company offsite",
+      subtitle: "All day",
+      sortKey: allDayKey,
+      isAllDay: true,
+    },
+    {
+      id: "demo-cal-pto",
+      title: "Jordan out (PTO)",
+      subtitle: "All day",
+      sortKey: allDayKey,
+      isAllDay: true,
+    },
+    {
+      id: "demo-cal-freeze",
+      title: "Release freeze",
+      subtitle: "All day",
+      sortKey: allDayKey,
+      isAllDay: true,
+    },
+    // Finished earlier today, so they fold behind "N prior events".
     {
       id: "demo-cal-standup",
+      title: "Daily standup",
+      subtitle: clockLabel(standup),
+      sortKey: standup.toISOString(),
+      startMs: standup.getTime(),
+      endMs: standup.getTime() + 15 * MINUTE,
+    },
+    {
+      id: "demo-cal-sync",
+      title: "Marketing sync",
+      subtitle: clockLabel(syncPast),
+      sortKey: syncPast.toISOString(),
+      startMs: syncPast.getTime(),
+      endMs: syncPast.getTime() + 30 * MINUTE,
+    },
+    // Still ahead: shown inline.
+    {
+      id: "demo-cal-review",
       title: "Design review",
       subtitle: clockLabel(next),
       meta: "Google Meet",
       sortKey: next.toISOString(),
       startMs: next.getTime(),
+      endMs: next.getTime() + 30 * MINUTE,
       joinUrl: "https://meet.google.com/demo-abcd-efg",
       conferenceProvider: "meet",
     },
@@ -85,6 +129,7 @@ function demoCalendarItems(now: Date): NormalizedItem[] {
       subtitle: clockLabel(oneOnOne),
       sortKey: oneOnOne.toISOString(),
       startMs: oneOnOne.getTime(),
+      endMs: oneOnOne.getTime() + 30 * MINUTE,
     },
     {
       id: "demo-cal-lunch",
@@ -92,6 +137,7 @@ function demoCalendarItems(now: Date): NormalizedItem[] {
       subtitle: clockLabel(lunch),
       sortKey: lunch.toISOString(),
       startMs: lunch.getTime(),
+      endMs: lunch.getTime() + HOUR,
     },
     {
       id: "demo-cal-ship",
@@ -100,6 +146,7 @@ function demoCalendarItems(now: Date): NormalizedItem[] {
       meta: "War room",
       sortKey: review.toISOString(),
       startMs: review.getTime(),
+      endMs: review.getTime() + HOUR,
     },
   ];
 }

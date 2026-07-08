@@ -6,6 +6,7 @@ import { brandIcon } from "../shell/brandIcons";
 import { makeCardDraggable, makeColumnDropZone, type MoveCardHandler } from "../shell/cardDrag";
 import type { CardColumn } from "../shell/cardMove";
 import { itemIcon } from "../shell/itemIcons";
+import { renderCalendarItems } from "./calendarView";
 
 /**
  * Work-stream panels. Each stream names a connection and shows that connection's
@@ -18,6 +19,8 @@ export interface StreamsModel {
   connections: Connection[];
   /** Which work-area column to render; only cards in this column appear here. */
   column: CardColumn;
+  /** The current time, so calendar cards can fold events that have finished. */
+  now: Date;
   /** Per-stream open override; absent means use collapsedByDefault. */
   expanded: Record<string, boolean>;
   /** Resolved integration data, keyed by connection id. */
@@ -120,7 +123,7 @@ function renderStream(
   if (!isCombined && connection === undefined) {
     body.appendChild(el("div", "cc-stream__empty", "This connection was removed."));
   } else {
-    renderResult(body, result, deps);
+    renderResult(body, result, service === "google-calendar", model.now, deps);
   }
   details.appendChild(body);
 
@@ -137,6 +140,8 @@ function renderStream(
 function renderResult(
   body: HTMLElement,
   result: IntegrationResult | undefined,
+  isCalendar: boolean,
+  now: Date,
   deps: StreamsDeps,
 ): void {
   if (result === undefined || result.status === "loading") {
@@ -157,7 +162,13 @@ function renderResult(
     return;
   }
   const list = el("div", "cc-stream__items");
-  for (const item of items) list.appendChild(renderItem(item, deps));
+  // Calendar cards fold finished and (when many) all-day events; every other
+  // stream renders its items as a flat list.
+  if (isCalendar) {
+    renderCalendarItems(list, items, now.getTime(), (item) => renderItem(item, deps));
+  } else {
+    for (const item of items) list.appendChild(renderItem(item, deps));
+  }
   body.appendChild(list);
 }
 

@@ -235,6 +235,7 @@ export function renderDashboard(
     const baseStreamsModel = {
       streams: model.config.streams,
       connections: model.config.connections,
+      now: model.now,
       expanded: model.streamExpanded ?? {},
       ...(model.integrationResults !== undefined
         ? { integrationResults: model.integrationResults }

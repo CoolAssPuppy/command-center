@@ -50,6 +50,10 @@ export interface NormalizedItem {
   tone?: ItemTone;
   /** Event start as epoch ms, for a live countdown (calendar items). */
   startMs?: number;
+  /** Event end as epoch ms, so the calendar can fold events that have finished. */
+  endMs?: number;
+  /** True for a date-only (all-day) calendar event, which the card groups apart. */
+  isAllDay?: boolean;
   /** A video-call link detected on the item, for a Join button. */
   joinUrl?: string;
   /** Which provider joinUrl points at, for the Join button's mark. */

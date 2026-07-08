@@ -1947,6 +1947,52 @@ body.cc-dragging .cc-streams.is-drop-target .cc-streams__empty {
   gap: 1px;
 }
 
+/* A folded calendar group (finished events, or a run of all-day events): a quiet
+   disclosure row that opens to reveal the events it stands in for. Built on
+   native <details> so it toggles by keyboard with no script. */
+.cc-calfold {
+  border: 0;
+}
+
+.cc-calfold__summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--cc-color-muted, #6a6e76);
+}
+
+.cc-calfold__summary::-webkit-details-marker {
+  display: none;
+}
+
+.cc-calfold__summary:hover {
+  color: var(--cc-color-text, #21242a);
+}
+
+.cc-calfold__chevron {
+  display: inline-flex;
+  font-size: 14px;
+  line-height: 1;
+  transition: transform calc(var(--cc-motion-speed, 1) * 120ms) ease-out;
+}
+
+.cc-calfold[open] .cc-calfold__chevron {
+  transform: rotate(90deg);
+}
+
+/* The revealed rows sit slightly inset, so they read as belonging to the group. */
+.cc-calfold__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 8px;
+}
+
 .cc-stream__item {
   display: flex;
   align-items: center;

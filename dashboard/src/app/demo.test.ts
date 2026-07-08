@@ -29,17 +29,27 @@ describe("screenshot mode flag", () => {
 describe("demo integration data", () => {
   it("anchors the next meeting to now with a join link the lane can use", () => {
     const result = demoResultFor("google-calendar", NOW);
-    const meeting = result.items?.[0];
+    const meeting = result.items?.find((item) => item.joinUrl !== undefined);
     expect(meeting?.startMs).toBeGreaterThan(NOW.getTime());
     expect(meeting?.startMs).toBeLessThanOrEqual(NOW.getTime() + 60 * 60 * 1000);
     expect(meeting?.joinUrl).toMatch(/^https:\/\//);
     expect(meeting?.conferenceProvider).toBe("meet");
   });
 
+  it("includes finished and all-day events for the calendar card to fold", () => {
+    const items = demoResultFor("google-calendar", NOW).items ?? [];
+    expect(items.some((item) => item.isAllDay === true)).toBe(true);
+    expect(items.filter((item) => item.isAllDay === true).length).toBeGreaterThan(2);
+    expect(items.some((item) => item.endMs !== undefined && item.endMs < NOW.getTime())).toBe(true);
+  });
+
   it("uses the same anchored events for combined calendars", () => {
     const combined = demoCombinedCalendars(NOW);
+    const google = demoResultFor("google-calendar", NOW);
     expect(combined.status).toBe("ok");
-    expect(combined.items?.[0]?.startMs).toBe(demoResultFor("google-calendar", NOW).items?.[0]?.startMs);
+    const combinedMeeting = combined.items?.find((item) => item.joinUrl !== undefined);
+    const googleMeeting = google.items?.find((item) => item.joinUrl !== undefined);
+    expect(combinedMeeting?.startMs).toBe(googleMeeting?.startMs);
   });
 
   it("flags review-requested pull requests as urgent so the lane lifts them", () => {

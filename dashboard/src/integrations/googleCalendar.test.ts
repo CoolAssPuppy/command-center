@@ -175,6 +175,33 @@ describe("googleCalendarIntegration", () => {
     if (!result.ok) return;
     expect(result.value[0]?.title).toBe("(no title)");
     expect(result.value[0]?.subtitle).toBe("All day");
+    expect(result.value[0]?.isAllDay).toBe(true);
+  });
+
+  it("carries the end time for a timed event and leaves all-day flags off", async () => {
+    const result = await googleCalendarIntegration.fetch(
+      connection(),
+      undefined,
+      ctx({
+        fetch: () =>
+          Promise.resolve(
+            json({
+              items: [
+                {
+                  id: "e6",
+                  summary: "Standup",
+                  start: { dateTime: "2026-06-23T09:30:00Z" },
+                  end: { dateTime: "2026-06-23T10:00:00Z" },
+                },
+              ],
+            }),
+          ),
+      }),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value[0]?.endMs).toBe(Date.parse("2026-06-23T10:00:00Z"));
+    expect(result.value[0]?.isAllDay).toBeUndefined();
   });
 
   it("reads exactly the calendars in calendarIds, sorted by start time", async () => {
