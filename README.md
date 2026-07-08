@@ -155,9 +155,17 @@ Open-Meteo (weather and geocoding), Unsplash, Notion, Linear, and Google. A
 credential in extension storage is fine for a personal tool, but anything with
 access to your Chrome profile can read it.
 
+## Safari
+
+Chrome is the primary, clone-and-run target. Safari is also supported: it runs
+the same dashboard inside a signed macOS app that hosts the extension, and Google
+sign-in runs in that app because Safari has no `chrome.identity`. Building or
+releasing the Safari target needs Xcode, an Apple Developer account, and a signing
+identity, so it is an advanced target rather than a peer of Chrome. See
+`docs/safari-release-setup.md` for the full setup.
+
 ## History
 
-This project started as a Safari extension with a native macOS app and an open
-provider platform. That work is preserved at the git tag
-`archive/safari-platform-2026-06-23`, with its plan under `tasks/archive/` and
-older design docs under `docs/archive/`. The current direction is Chrome only.
+This project once explored a broader native provider platform. That earlier work
+is preserved at the git tag `archive/safari-platform-2026-06-23`, with its plan
+under `tasks/archive/` and older design docs under `docs/archive/`.
