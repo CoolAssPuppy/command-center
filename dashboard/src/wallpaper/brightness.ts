@@ -1,12 +1,19 @@
+import { isSafeUrl } from "../security/url";
+
 /**
  * Estimate whether a wallpaper photo is light or dark, so the scrim can be
  * strengthened over a light photo and the hero text stays readable. The image
  * is drawn small onto a canvas and its average luminance is sampled. Anything
- * that blocks the read (a tainted cross-origin canvas, no DOM) resolves to
- * "dark", which keeps the existing light-text-over-scrim behaviour.
+ * that blocks the read (an unsafe URL, a tainted cross-origin canvas, no DOM)
+ * resolves to "dark", which keeps the existing light-text-over-scrim behaviour.
  */
 export function analyzePhotoTone(url: string): Promise<"light" | "dark"> {
-  if (typeof document === "undefined" || typeof Image === "undefined") {
+  // Only load a validated https image; never point an <img> at an arbitrary URL.
+  if (
+    !isSafeUrl(url, ["https:"]) ||
+    typeof document === "undefined" ||
+    typeof Image === "undefined"
+  ) {
     return Promise.resolve("dark");
   }
   return new Promise((resolve) => {
