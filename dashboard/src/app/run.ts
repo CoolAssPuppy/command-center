@@ -102,8 +102,10 @@ export interface RunDeps {
   unsplashFetch?: FetchLike;
   /** HTTP client used by integrations. Defaults to the real one. */
   httpFetch?: HttpFetch;
-  /** OAuth token getter for integrations. Defaults to chrome.identity (Google). */
-  getAuthToken?: (provider: string) => Promise<string | undefined>;
+  /** OAuth token getter for integrations. Defaults to chrome.identity (Google).
+   *  The optional connectionId selects a per-account token, matching
+   *  IntegrationContext.getAuthToken so an injected getter can pick an account. */
+  getAuthToken?: (provider: string, connectionId?: string) => Promise<string | undefined>;
 }
 
 interface LocatedZone {

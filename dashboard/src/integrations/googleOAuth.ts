@@ -39,12 +39,25 @@ export function isGoogleOAuthAvailable(): boolean {
   return getIdentity() !== undefined && GOOGLE_OAUTH_CLIENT_ID.length > 0;
 }
 
-function buildAuthUrl(redirectUri: string, interactive: boolean, loginHint?: string): string {
+/** A random opaque value to tie the auth request to its redirect (CSRF guard). */
+function randomState(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function buildAuthUrl(
+  redirectUri: string,
+  interactive: boolean,
+  state: string,
+  loginHint?: string,
+): string {
   const url = new URL(AUTH_ENDPOINT);
   url.searchParams.set("client_id", GOOGLE_OAUTH_CLIENT_ID);
   url.searchParams.set("response_type", "token");
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("scope", GOOGLE_OAUTH_SCOPES.join(" "));
+  url.searchParams.set("state", state);
   // Interactive: let the user pick an account and grant consent. Silent: no UI,
   // pinned to the known account, so an expired token renews without a prompt.
   url.searchParams.set("prompt", interactive ? "select_account consent" : "none");
@@ -54,14 +67,20 @@ function buildAuthUrl(redirectUri: string, interactive: boolean, loginHint?: str
   return url.toString();
 }
 
-/** Parse access_token and expires_in from the redirect URL's fragment. */
-function parseFragment(responseUrl: string): { accessToken: string; expiresInSec: number } | undefined {
+/** Parse access_token, expires_in, and state from the redirect URL's fragment. */
+function parseFragment(
+  responseUrl: string,
+): { accessToken: string; expiresInSec: number; state: string | null } | undefined {
   const hash = responseUrl.includes("#") ? responseUrl.slice(responseUrl.indexOf("#") + 1) : "";
   const params = new URLSearchParams(hash);
   const accessToken = params.get("access_token");
   if (accessToken === null || accessToken.length === 0) return undefined;
   const expiresInSec = Number(params.get("expires_in") ?? "3600");
-  return { accessToken, expiresInSec: Number.isFinite(expiresInSec) ? expiresInSec : 3600 };
+  return {
+    accessToken,
+    expiresInSec: Number.isFinite(expiresInSec) ? expiresInSec : 3600,
+    state: params.get("state"),
+  };
 }
 
 async function fetchEmail(accessToken: string): Promise<string | undefined> {
@@ -96,7 +115,8 @@ export async function authorizeGoogleAccount(
   if (identity === undefined || GOOGLE_OAUTH_CLIENT_ID.length === 0) return undefined;
 
   const redirectUri = identity.getRedirectURL();
-  const url = buildAuthUrl(redirectUri, options.interactive, options.loginHint);
+  const state = randomState();
+  const url = buildAuthUrl(redirectUri, options.interactive, state, options.loginHint);
 
   let responseUrl: string | undefined;
   try {
@@ -110,6 +130,9 @@ export async function authorizeGoogleAccount(
 
   const parsed = parseFragment(responseUrl);
   if (parsed === undefined) return undefined;
+  // Reject a redirect that does not echo our state, so a forged callback cannot
+  // inject a token.
+  if (parsed.state !== state) return undefined;
 
   const token: GoogleToken = {
     accessToken: parsed.accessToken,

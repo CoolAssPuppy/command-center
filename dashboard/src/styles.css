@@ -2140,7 +2140,8 @@ button.cc-ticker__entry {
 }
 
 .cc-ticker__delta[data-dir="down"] {
-  color: #cf3322;
+  /* Themeable, so a palette can recolor a negative delta; the red is the default. */
+  color: var(--cc-color-negative, #cf3322);
 }
 
 .cc-ticker__source {
