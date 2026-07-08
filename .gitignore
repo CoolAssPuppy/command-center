@@ -17,9 +17,8 @@ build/
 coverage/
 .vite/
 
-# The dashboard bundle is regenerated into the extension on every native build.
-native/CommandCenterExtension/Resources/app/*
-!native/CommandCenterExtension/Resources/app/.gitkeep
+# The dashboard bundle is regenerated straight into the built appex Resources on
+# every native build, so nothing extension-side needs tracking.
 *.tsbuildinfo
 
 # Swift / Xcode
@@ -48,3 +47,14 @@ native/*.xcodeproj/
 # Packaged extension
 command-center.zip
 dashboard/command-center.zip
+
+# Release artifacts live in the repo-root dist/ but stay local; only the Sparkle
+# appcast is committed so the update feed has a tracked history. The broad
+# `dist/` rule above still fully ignores dashboard/dist.
+!/dist/
+/dist/*
+!/dist/appcast.xml
+
+# Swift Package Manager local state for the native app.
+native/**/.swiftpm/
+native/CommandCenterAuth/.build/
