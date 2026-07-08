@@ -9,6 +9,43 @@ edit pane, shell and rendering, config and core libraries, security and config i
 depth), plus tooling: `pnpm audit`, `knip`, `madge --circular`, `depcheck`, and
 targeted greps. Every concrete finding cites `file:line` relative to `dashboard/`.
 
+## Resolution status (2026-07-08)
+
+A follow-up pass fixed the findings below; the tables further down are the original
+audit and still describe each item in full.
+
+**Fixed:** DATA-1, DATA-2; SEC-1 through SEC-6 (SEC-4 as a URL guard on the tone
+analysis); CORR-1, CORR-2; CFG-1, CFG-3, CFG-4; ERR-1, ERR-2; ARCH-3 (and M2);
+DEAD-1 through DEAD-6; DUP-1, DUP-3, DUP-5; TYPE-1, TYPE-2; PERF-1, PERF-6, PERF-7;
+DEP-1; THM-1 (color guard). Test coverage was added for the config-pruning paths,
+`fetchJson`, the extracted token resolver, `taskFilterState`, the tone-analysis
+guard, shorthand-hex contrast, the feed-link filter, the theme color guard, the
+calendar grouping, and the Linear 400 case.
+
+**Verified as a non-issue:** CORR-3. The cache paint in `runDashboard` runs
+synchronously before the first `await` (`app/run.ts`), so `measureFirstPaint` does
+capture it; the guard works. (An earlier reviewer's "always ~0" claim was wrong.)
+
+**Correction:** DEAD-5 was a false positive. The `.cc-edit__calendars*` styles are
+used by the calendar pickers in `streamsSection.ts`; an earlier grep skipped that
+file because it contains a non-ASCII byte. Only `.cc-stream__link*` was truly dead.
+
+**Deferred (still open), with reason:**
+- ARCH-1 (split `run.ts`): large, and the orchestrator is thinly tested; partly
+  reduced by ARCH-3. Do it incrementally with tests first, not as a rewrite.
+- ARCH-2 (edit-pane circular deps): a benign type-only cycle; no runtime effect.
+- DUP-2, DUP-4, DUP-6, DUP-7, DUP-8, DUP-9, DUP-10 and CON-1..4: further
+  deduplication and naming consistency; safe but lower value.
+- PERF-2 (whole-tree rebuild): a deliberate, documented architecture. PERF-3
+  (weather cache), PERF-4 (apply debounce; risky for a short-lived new tab),
+  PERF-5 (dock rects): perf polish.
+- SEC-7 (trim image `host_permissions`): correct but its image-loading effect
+  can only be confirmed in the packaged extension, not in dev; left for a
+  packaged-build check.
+- THM-2, THM-4; CFG-2 (sync quota split; behavior change), CFG-5 (the Notion
+  `filter` blob is the user's own data); TYPE-3, TYPE-4; WX-1, WX-5, WX-6, WX-7;
+  TEST-2, TEST-3, TEST-4, TEST-8.
+
 ## Executive summary
 
 Ranked by impact.
