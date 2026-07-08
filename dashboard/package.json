@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "build:extension": "vite build --config vite.extension.config.ts && node scripts/finish-extension.mjs",
+    "build:safari": "VITE_TARGET=safari vite build --config vite.extension.config.ts && node scripts/finish-safari.mjs",
     "icons": "node scripts/make-icons.mjs",
     "package": "pnpm run build:extension && node scripts/package-store.mjs",
     "size": "node scripts/check-bundle.mjs",
