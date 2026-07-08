@@ -113,17 +113,6 @@ export function collapsibleSection(
   host.appendChild(details);
 }
 
-/** Swap an item with its neighbour, in place. A no-op at the ends. */
-export function moveInArray<T>(items: T[], index: number, delta: number): void {
-  const target = index + delta;
-  if (target < 0 || target >= items.length) return;
-  const moved = items[index];
-  const swapped = items[target];
-  if (moved === undefined || swapped === undefined) return;
-  items[index] = swapped;
-  items[target] = moved;
-}
-
 /** Move an item from one index to another, in place (for drag reordering). */
 export function reorderInArray<T>(items: T[], from: number, to: number): void {
   if (from === to) return;

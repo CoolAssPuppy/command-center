@@ -1609,60 +1609,6 @@ button.cc-lane__item:hover {
   accent-color: var(--cc-color-accent, #2f7a6f);
 }
 
-/* Clear space above the calendar picker, separating it from the account row. */
-.cc-edit__calendars {
-  margin-top: 12px;
-}
-
-.cc-edit__calendars-summary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  list-style: none;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--cc-color-text, #21242a);
-}
-
-.cc-edit__calendars-summary::-webkit-details-marker {
-  display: none;
-}
-
-.cc-edit__calendars-chevron {
-  display: inline-flex;
-  font-size: 15px;
-  color: var(--cc-color-muted, #6a6e76);
-  transition: transform calc(var(--cc-motion-speed, 1) * 140ms) ease;
-}
-
-.cc-edit__calendars-disclosure[open] .cc-edit__calendars-chevron {
-  transform: rotate(90deg);
-}
-
-.cc-edit__calendar-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 168px;
-  overflow-y: auto;
-  margin-top: 8px;
-}
-
-/* Account heading above each group of calendars in the combined-card picker. */
-.cc-edit__calendar-account {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--cc-color-muted, #6a6e76);
-  margin-top: 8px;
-}
-
-.cc-edit__calendar-account:first-child {
-  margin-top: 0;
-}
-
 /* A chevron dropdown wrapping a multi-select checklist (news sources, etc.). */
 .cc-edit__picker-summary {
   display: flex;
@@ -1895,50 +1841,6 @@ body.cc-dragging .cc-streams.is-drop-target .cc-streams__empty {
 .cc-stream__empty {
   font-size: 13px;
   color: var(--cc-color-muted, #6a6e76);
-}
-
-.cc-stream__links {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.cc-stream__link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-align: left;
-  padding: 8px 6px;
-  border: 0;
-  background: transparent;
-  border-radius: 8px;
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  color: var(--cc-color-text, #21242a);
-}
-
-.cc-stream__link:hover {
-  background: color-mix(in srgb, var(--cc-color-muted, #6a6e76) 10%, transparent);
-}
-
-.cc-stream__link-icon {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-}
-
-.cc-stream__link-glyph {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--cc-color-bg, #fff);
-  background: var(--cc-color-accent, #2f7a6f);
 }
 
 .cc-stream__items {

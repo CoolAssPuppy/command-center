@@ -19,7 +19,7 @@ export interface CalendarGroups {
 }
 
 /** Up to this many all-day events show inline; beyond it, they fold away. */
-export const ALL_DAY_INLINE_LIMIT = 2;
+const ALL_DAY_INLINE_LIMIT = 2;
 
 /** Whether a timed event has finished by `nowMs` (falls back to its start). */
 function hasFinished(item: NormalizedItem, nowMs: number): boolean {
