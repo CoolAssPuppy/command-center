@@ -35,9 +35,9 @@ import type { ParseResult } from "../domain/result";
 import { openEditPane } from "../edit/editPane";
 import { searchCities as geoSearch, type GeoResult } from "../geo/geocode";
 import {
-  authorizeGoogleAccount,
-  isGoogleOAuthAvailable,
-} from "../integrations/googleOAuth";
+  selectGoogleAuthProvider,
+  type GoogleAuthProvider,
+} from "../integrations/googleAuth";
 import { resolveGoogleTokens } from "../integrations/googleTokens";
 import { realHttpFetch } from "../integrations/http";
 import { integrationById } from "../integrations/registry";
@@ -107,6 +107,9 @@ export interface RunDeps {
    *  The optional connectionId selects a per-account token, matching
    *  IntegrationContext.getAuthToken so an injected getter can pick an account. */
   getAuthToken?: (provider: string, connectionId?: string) => Promise<string | undefined>;
+  /** How Google sign-in runs. Defaults to the host's provider (chrome.identity on
+   *  Chrome, the native bridge on Safari); injected in tests. */
+  googleAuth?: GoogleAuthProvider;
 }
 
 interface LocatedZone {
@@ -130,6 +133,7 @@ function persist(write: Promise<void>, what: string): void {
 
 export async function runDashboard(deps: RunDeps): Promise<void> {
   const reducedMotion = deps.reducedMotion ?? prefersReducedMotion();
+  const googleAuth = deps.googleAuth ?? selectGoogleAuthProvider();
   const loadCache = deps.loadCache ?? ((): Config | undefined => loadCachedConfig());
   const saveCache = deps.saveCache ?? ((config: Config): void => saveCachedConfig(config));
   const fetchWeather =
@@ -256,12 +260,12 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
           // id is configured. Elsewhere the connection row shows a hint. The
           // chosen account's token is returned for the section to store against
           // the connection; persisting it triggers a refresh.
-          ...(isGoogleOAuthAvailable()
+          ...(googleAuth.isAvailable()
             ? {
                 connectGoogleAccount: (
                   _connectionId: string,
                 ): Promise<GoogleToken | undefined> =>
-                  authorizeGoogleAccount({ interactive: true }),
+                  googleAuth.authorize({ interactive: true }),
               }
             : {}),
         },
@@ -401,7 +405,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         googleConnections,
         secrets,
         deps.now().getTime(),
-        authorizeGoogleAccount,
+        (options) => googleAuth.authorize(options),
       );
       if (resolution.changed) {
         persist(deps.store.saveSecrets(resolution.secrets), "your credentials");

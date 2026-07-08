@@ -143,3 +143,13 @@ export async function authorizeGoogleAccount(
   else if (options.loginHint !== undefined) token.email = options.loginHint;
   return token;
 }
+
+/**
+ * The Chrome sign-in path as a GoogleAuthProvider. It is a thin binding over the
+ * two functions above so run.ts can select a provider without knowing which host
+ * it is on. Safari supplies its own provider from the native bridge instead.
+ */
+export const chromeIdentityGoogleAuth = {
+  isAvailable: isGoogleOAuthAvailable,
+  authorize: authorizeGoogleAccount,
+};
