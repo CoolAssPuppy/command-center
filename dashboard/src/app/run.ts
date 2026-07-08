@@ -38,6 +38,7 @@ import {
   authorizeGoogleAccount,
   isGoogleOAuthAvailable,
 } from "../integrations/googleOAuth";
+import { resolveGoogleTokens } from "../integrations/googleTokens";
 import { realHttpFetch } from "../integrations/http";
 import { integrationById } from "../integrations/registry";
 import {
@@ -329,50 +330,6 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
     }
   }
 
-  /**
-   * Resolve a usable Google access token for each Google Calendar connection,
-   * keyed by connection id. A token still comfortably in date is used as-is; an
-   * expired or missing one is renewed by a silent re-auth pinned to its account,
-   * and any renewals are persisted once. A connection with no obtainable token
-   * maps to undefined, which the integration reports as needs_auth.
-   */
-  async function resolveGoogleTokens(
-    connections: Connection[],
-    secrets: Secrets,
-    nowMs: number,
-  ): Promise<Record<string, string | undefined>> {
-    const byConnection: Record<string, string | undefined> = {};
-    let changed = false;
-    for (const connection of connections) {
-      if (connection.service !== "google-calendar") continue;
-      const stored = secrets.googleTokens[connection.id];
-      if (stored !== undefined && stored.expiresAt - nowMs > 60_000) {
-        byConnection[connection.id] = stored.accessToken;
-        continue;
-      }
-      const refreshed = await authorizeGoogleAccount({
-        interactive: false,
-        ...(stored?.email !== undefined ? { loginHint: stored.email } : {}),
-      });
-      if (refreshed !== undefined) {
-        const email = refreshed.email ?? stored?.email;
-        const merged: GoogleToken = {
-          accessToken: refreshed.accessToken,
-          expiresAt: refreshed.expiresAt,
-          ...(email !== undefined ? { email } : {}),
-        };
-        secrets.googleTokens[connection.id] = merged;
-        byConnection[connection.id] = merged.accessToken;
-        changed = true;
-      } else {
-        byConnection[connection.id] =
-          stored !== undefined && stored.expiresAt > nowMs ? stored.accessToken : undefined;
-      }
-    }
-    if (changed) persist(deps.store.saveSecrets(secrets), "your credentials");
-    return byConnection;
-  }
-
   /** The per-card config a Data Card layers onto its base connection. */
   function cardConfig(stream: Stream): SourceConfig {
     const out: Record<string, unknown> = {};
@@ -435,11 +392,16 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         : calendarConnections.filter((connection) =>
             cards.some((stream) => stream.connectionId === connection.id),
           );
-      const googleTokenByConn = await resolveGoogleTokens(
+      const resolution = await resolveGoogleTokens(
         googleConnections,
         secrets,
         deps.now().getTime(),
+        authorizeGoogleAccount,
       );
+      if (resolution.changed) {
+        persist(deps.store.saveSecrets(resolution.secrets), "your credentials");
+      }
+      const googleTokenByConn = resolution.tokens;
       getAuthToken = (
         provider: string,
         connectionId?: string,
