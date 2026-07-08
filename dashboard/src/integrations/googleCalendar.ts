@@ -103,6 +103,19 @@ function startOfLocalDay(now: Date): Date {
 const ROLLOVER_HOUR = 17;
 
 /**
+ * How many events to fetch and keep for the card. The card folds prior and
+ * all-day events away, so they must not count against the visible budget: with a
+ * small count they sort first (all-day keys are bare dates, finished meetings are
+ * earliest) and would crowd out the upcoming meetings entirely. A day-covering
+ * cap keeps every remaining meeting, and a larger user count still wins.
+ */
+const MIN_CALENDAR_EVENTS = 50;
+
+function calendarEventCap(connection: IntegrationSource): number {
+  return Math.max(connection.count ?? 6, MIN_CALENDAR_EVENTS);
+}
+
+/**
  * The exclusive end of the window: tomorrow's midnight, so the card covers all
  * of today. Once it is past 5pm the day is winding down, so it extends through
  * tomorrow as well rather than leaving a near-empty card.
@@ -121,7 +134,7 @@ function buildUrl(calendarId: string, connection: IntegrationSource, now: Date):
   // never reaches days or weeks ahead just to fill its item count.
   url.searchParams.set("timeMin", startOfLocalDay(now).toISOString());
   url.searchParams.set("timeMax", windowEnd(now).toISOString());
-  url.searchParams.set("maxResults", String(connection.count ?? 6));
+  url.searchParams.set("maxResults", String(calendarEventCap(connection)));
   url.searchParams.set("singleEvents", "true");
   url.searchParams.set("orderBy", "startTime");
   return url.toString();
@@ -246,7 +259,7 @@ export const googleCalendarIntegration: Integration = {
       const items = fetched
         .flatMap((result) => (result.kind === "ok" ? result.items : []))
         .sort((a, b) => (a.sortKey ?? "").localeCompare(b.sortKey ?? ""))
-        .slice(0, connection.count ?? 6);
+        .slice(0, calendarEventCap(connection));
       return { ok: true, value: items };
     }
     if (fetched.some((result) => result.kind === "auth")) {

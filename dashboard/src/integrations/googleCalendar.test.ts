@@ -204,6 +204,47 @@ describe("googleCalendarIntegration", () => {
     expect(result.value[0]?.isAllDay).toBeUndefined();
   });
 
+  it("keeps the day's upcoming meetings even when all-day and finished events lead", async () => {
+    // now is 09:00Z. All-day events sort first (bare date key) and finished
+    // meetings (07:00, 08:00) are earliest, so a small count would drop the
+    // upcoming ones. The card must still return them.
+    const items = [
+      { id: "ad1", start: { date: "2026-06-23" } },
+      { id: "ad2", start: { date: "2026-06-23" } },
+      { id: "ad3", start: { date: "2026-06-23" } },
+      { id: "done1", start: { dateTime: "2026-06-23T07:00:00Z" }, end: { dateTime: "2026-06-23T07:30:00Z" } },
+      { id: "done2", start: { dateTime: "2026-06-23T08:00:00Z" }, end: { dateTime: "2026-06-23T08:30:00Z" } },
+      { id: "up1", start: { dateTime: "2026-06-23T10:00:00Z" }, end: { dateTime: "2026-06-23T10:30:00Z" } },
+      { id: "up2", start: { dateTime: "2026-06-23T11:00:00Z" }, end: { dateTime: "2026-06-23T11:30:00Z" } },
+      { id: "up3", start: { dateTime: "2026-06-23T14:00:00Z" }, end: { dateTime: "2026-06-23T14:30:00Z" } },
+    ];
+    const result = await googleCalendarIntegration.fetch(
+      connection({ count: 6 }),
+      undefined,
+      ctx({ fetch: () => Promise.resolve(json({ items })) }),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const ids = result.value.map((item) => item.id);
+    expect(ids).toEqual(expect.arrayContaining(["up1", "up2", "up3"]));
+  });
+
+  it("requests enough events to cover the day, not just the item count", async () => {
+    let captured: HttpRequest | undefined;
+    await googleCalendarIntegration.fetch(
+      connection({ count: 4 }),
+      undefined,
+      ctx({
+        fetch: (request) => {
+          captured = request;
+          return Promise.resolve(json({ items: [] }));
+        },
+      }),
+    );
+    const maxResults = new URL(captured?.url ?? "").searchParams.get("maxResults");
+    expect(Number(maxResults)).toBeGreaterThanOrEqual(50);
+  });
+
   it("reads exactly the calendars in calendarIds, sorted by start time", async () => {
     const fetch = (request: HttpRequest): Promise<HttpResponseLike> => {
       const onPrimary = request.url.includes("/calendars/primary/");
