@@ -150,6 +150,9 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
       }
     | undefined;
   let integrationResults: Record<string, IntegrationResult> = {};
+  // Bumped on each integration refresh so a slow in-flight run can tell it has
+  // been superseded and not write stale results over a newer run's.
+  let integrationsRunToken = 0;
   let tickerStocks: StockQuote[] = [];
   let tickerStocksNeedKey = false;
   let tickerNews: NewsItem[] = [];
@@ -341,6 +344,8 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
 
   async function refreshIntegrations(): Promise<void> {
     if (config === undefined) return;
+    const runToken = ++integrationsRunToken;
+    const isCurrent = (): boolean => runToken === integrationsRunToken;
 
     const connectionById = new Map<string, Connection>(
       config.connections.map((connection) => [connection.id, connection]),
@@ -448,9 +453,13 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
         const connection = connectionById.get(stream.connectionId);
         if (connection === undefined) return;
         const source: IntegrationSource = { ...connection, ...cardConfig(stream) };
-        integrationResults[stream.id] = await fetchSource(source, connection.id);
+        const result = await fetchSource(source, connection.id);
+        // A newer refresh may have replaced integrationResults while this fetch
+        // was in flight; don't write a stale result into it.
+        if (isCurrent()) integrationResults[stream.id] = result;
       }),
     );
+    if (!isCurrent()) return;
 
     if (usesCombine) {
       const combineCard = config.streams.find(
@@ -477,6 +486,7 @@ export async function runDashboard(deps: RunDeps): Promise<void> {
           return fetchSource({ ...connection, calendarIds: target.calendarIds }, connection.id);
         }),
       );
+      if (!isCurrent()) return;
       integrationResults[COMBINED_CALENDARS_ID] = combineCalendars(calendarResults);
     }
     paint();
