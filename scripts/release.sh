@@ -21,8 +21,23 @@ APPCAST="$DIST/appcast.xml"
 NOTARY_PROFILE="${NOTARY_PROFILE:-command-center}"
 DOPPLER_PROJECT="${DOPPLER_PROJECT:-command-center}"
 DOPPLER_CONFIG="${DOPPLER_CONFIG:-prd}"
+
+# Pull the Doppler secrets up front, before anything derived from them is computed.
+# R2_PUBLIC_BASE_URL in particular ends up baked into the appcast enclosure URL, so
+# reading it after the fact silently publishes an appcast pointing at the wrong host.
+# set -a exports them into wrangler's (child) environment; `doppler secrets download
+# --format env` emits KEY="val" lines without `export`.
+if command -v doppler >/dev/null 2>&1 && [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+  set -a
+  eval "$(doppler secrets download --no-file --format env \
+    --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG" 2>/dev/null || true)"
+  set +a
+fi
+
 R2_BUCKET="${R2_BUCKET_NAME:-strategic-nerds-downloads}"
-R2_PUBLIC_BASE="${R2_PUBLIC_BASE_URL:-https://downloads.strategicnerds.com}"
+# The r2.dev public URL is the live host. downloads.strategicnerds.com does not
+# resolve, so it must never be a fallback: a dead enclosure URL breaks auto-update.
+R2_PUBLIC_BASE="${R2_PUBLIC_BASE_URL:-https://pub-9c8d72fe664b4ce18aac0d718b4e0346.r2.dev}"
 R2_PREFIX="apps/command-center"
 
 mkdir -p "$DIST"
@@ -118,14 +133,6 @@ upload() { # <local> <key>
   run_wrangler r2 object put "$R2_BUCKET/$2" --file="$1" \
     --content-type="application/x-apple-diskimage" --remote
 }
-if command -v doppler >/dev/null 2>&1 && [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
-  # set -a so the eval'd secrets are exported into wrangler's (child) environment;
-  # `doppler secrets download --format env` emits KEY="val" lines without `export`.
-  set -a
-  eval "$(doppler secrets download --no-file --format env \
-    --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG" 2>/dev/null || true)"
-  set +a
-fi
 upload "$DMG" "$R2_PREFIX/CommandCenter-$VERSION.dmg"
 upload "$DMG" "$R2_PREFIX/CommandCenter-latest.dmg"
 
