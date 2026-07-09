@@ -160,6 +160,38 @@ xml = open(appcast).read().replace(marker, item + "\n    " + marker)
 open(appcast, "w").write(xml)
 PY
 
+echo "==> Validating the appcast before publishing"
+# Sparkle silently stops offering updates if the feed does not parse, so never
+# upload one that has not been checked. set -e aborts the release on failure.
+python3 - "$APPCAST" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+SPARKLE = "{http://www.andymatuschak.org/xml-namespaces/sparkle}"
+raw = open(sys.argv[1], encoding="utf-8").read()
+
+# The stdlib parser expands entities. This feed is generated locally, but refuse a
+# DTD outright rather than rely on that: it is what XXE and billion-laughs need.
+if "<!DOCTYPE" in raw or "<!ENTITY" in raw:
+    sys.exit("appcast contains a DTD or entity declaration; refusing to parse")
+
+root = ET.fromstring(raw)  # raises ParseError on malformed XML
+items = root.findall("./channel/item")
+if not items:
+    sys.exit("appcast has no <item>")
+for item in items:
+    enc = item.find("enclosure")
+    if enc is None:
+        sys.exit("appcast item has no <enclosure>")
+    if not enc.get("url", "").startswith("https://"):
+        sys.exit(f"enclosure url is not https: {enc.get('url')!r}")
+    if not enc.get(SPARKLE + "edSignature"):
+        sys.exit("enclosure is missing sparkle:edSignature")
+    if not enc.get("length"):
+        sys.exit("enclosure is missing length")
+print(f"  appcast ok: {len(items)} item(s)")
+PY
+
 run_wrangler r2 object put "$R2_BUCKET/$R2_PREFIX/appcast.xml" --file="$APPCAST" \
   --content-type="application/xml" --remote
 
