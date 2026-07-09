@@ -72,3 +72,6 @@ targets:
         INFOPLIST_FILE: CommandCenterExtension/Info.plist
         CODE_SIGN_ENTITLEMENTS: CommandCenterExtension/CommandCenterExtension.entitlements
         MACOSX_DEPLOYMENT_TARGET: "14.0"
+        # Overrides the project-wide NO. macOS refuses to register a non-sandboxed
+        # app extension, so Safari would never list it.
+        ENABLE_APP_SANDBOX: YES

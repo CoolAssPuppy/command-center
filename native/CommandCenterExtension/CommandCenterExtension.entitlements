@@ -2,8 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- macOS app extensions must be sandboxed. pkd silently refuses to register a
+	     non-sandboxed appex, so Safari never lists the extension. The container app
+	     stays unsandboxed (it owns the Keychain and the loopback listener); this
+	     process only needs to make an outgoing loopback connection to it. -->
 	<key>com.apple.security.app-sandbox</key>
-	<false/>
+	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
 </dict>
