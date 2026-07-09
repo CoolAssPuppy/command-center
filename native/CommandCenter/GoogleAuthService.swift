@@ -117,9 +117,12 @@ final class GoogleAuthService: NSObject {
                 else { continuation.resume(throwing: AuthError(cancelCode(error))) }
             }
             session.presentationContextProvider = self
-            // A first-run sign-in has no cookies to share; keep it ephemeral so the
-            // account chooser always appears rather than silently reusing one.
-            session.prefersEphemeralWebBrowserSession = false
+            // Ephemeral: do not share Safari's cookie jar. Otherwise Google silently
+            // signs in as whichever account happens to be the default on this Mac and
+            // never offers a chooser, so a second account can never be connected (and
+            // an unapproved account just gets "Access blocked"). With no cookies,
+            // prompt=select_account always lets the user pick the account.
+            session.prefersEphemeralWebBrowserSession = true
             if !session.start() { continuation.resume(throwing: AuthError("session_start_failed")) }
         }
     }
