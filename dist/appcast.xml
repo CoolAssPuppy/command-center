@@ -14,6 +14,15 @@
       <description><![CDATA[<li>First Safari release: the full Command Center dashboard as a signed macOS app.</li><li>Google Calendar and Tasks sign in through the app, so your tokens never touch the browser.</li>]]></description>
       <enclosure url="https://pub-9c8d72fe664b4ce18aac0d718b4e0346.r2.dev/apps/command-center/CommandCenter-0.3.3.dmg" type="application/x-apple-diskimage" sparkle:edSignature="uZDSYyvugB2XOAPH1CDGXDFjNp+sm8M0cHLMg7/6Ut/zAzO2P65yM7lAg3lqNcPMr2cg/gOtjtBLQd78sYhPBA==" length="2211979"/>
     </item>
+        <item>
+      <title>0.3.4</title>
+      <pubDate>Thu, 09 Jul 2026 06:42:45 -0000</pubDate>
+      <sparkle:version>4</sparkle:version>
+      <sparkle:shortVersionString>0.3.4</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[<li>Safari: the extension now registers correctly and appears in Safari Settings.</li><li>Google sign-in opens a native sheet with an account picker, so you can connect more than one account.</li><li>Sign-in runs in the app; your tokens never enter the browser.</li>]]></description>
+      <enclosure url="https://pub-9c8d72fe664b4ce18aac0d718b4e0346.r2.dev/apps/command-center/CommandCenter-0.3.4.dmg" type="application/x-apple-diskimage" sparkle:edSignature="b0m8aFWWzOkLD2gF1iOqZFG65balj9mwyoHy/AGPVDYhobXW/H8aIWkXr5YbDdSnX7ENQ7dCsuahl12bfJOqCQ==" length="2212032"/>
+    </item>
     <!-- INSERT NEW ITEM ABOVE -->
   </channel>
 </rss>
