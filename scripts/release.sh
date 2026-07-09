@@ -92,6 +92,23 @@ echo "==> Building the DMG"
 DMG="$DIST/CommandCenter-$VERSION.dmg"
 SPARKLE_TXT="$DIST/CommandCenter-$VERSION.sparkle.txt"
 
+echo "==> Unregistering build copies from LaunchServices"
+# Each copy the build produces (the archive, the export, the DMG's mounted volume)
+# registers itself with LaunchServices. Safari enumerates registered app bundles,
+# so every leftover shows up as another "Command Center" extension in its settings.
+# Drop everything that is not the installed app.
+LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+if [ -x "$LSREGISTER" ]; then
+  "$LSREGISTER" -dump 2>/dev/null \
+    | grep -E '^[[:space:]]*path:.*Command Center\.app \(0x' \
+    | sed -E 's/^[[:space:]]*path:[[:space:]]*(.*\.app) \(0x[0-9a-f]+\)$/\1/' \
+    | sort -u \
+    | grep -vFx "/Applications/Command Center.app" \
+    | while IFS= read -r stray; do
+        "$LSREGISTER" -u "$stray" 2>/dev/null && echo "  unregistered $stray"
+      done
+fi
+
 echo "==> Uploading to R2"
 # Prefer inline creds (e.g. exported from Doppler); fall back to `doppler run`.
 run_wrangler() {
