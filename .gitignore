@@ -9,6 +9,14 @@ mcp.json
 .env.local
 .env.*.local
 
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.p8
+
 # Dependencies and build artifacts
 node_modules/
 dist/
